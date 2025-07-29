@@ -1,0 +1,5 @@
+.main {
+    display: flex;
+    height: calc(100vh - (14vh) - 1rem);
+    margin: 1rem;
+}
