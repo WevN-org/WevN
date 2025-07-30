@@ -47,6 +47,18 @@
     -webkit-mask-size: contain;
 }
 
+.nav-item {
+    text-decoration: none;
+    color: #444;
+    margin-left: 20px;
+}
+
+.nav-item.active {
+    font-weight: bold;
+    color: black;
+    border-bottom: 2px solid black;
+}
+
 /* Placeholder icons */
 .home-icon {
     mask-image: url('/icons/home.svg');

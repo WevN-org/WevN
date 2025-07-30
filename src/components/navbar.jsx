@@ -1,3 +1,4 @@
+import GraphToggle from './graph_toggle';
 import './styles/navbar.css'
 import { Link, useLocation } from 'react-router-dom';
 
@@ -15,7 +16,15 @@ export default function Navbar() {
             </div>
 
             <div className="navbar-right">
-                <button className="create-db-btn">Create New Database</button>
+                {
+                    location.pathname === '/graph' ? (
+                        <GraphToggle />
+                    ) : location.pathname === '/nodes' ? (
+                        <button className="create-db-btn">Create New Node</button>
+                    ) : (
+                        <button className="create-db-btn">Create New Database</button>
+                    )
+                }
                 <div className="avatar">A</div>
             </div>
         </nav>
