@@ -1,16 +1,20 @@
-import './app.css'
-import Collection from "./components/collection";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from "./components/navbar";
-import Sidebar from "./components/sidebar";
+import Dashboard from './pages/Dashboard';
+import Graph from './pages/Graph';
+import Nodes from './pages/Nodes';
 
 export default function App() {
     return (
         <>
-            <Navbar />
-            <div className="main">
-                <Sidebar />
-                <Collection />
-            </div>
+            <Router>
+                <Navbar />
+                <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/graph" element={<Graph />} />
+                    <Route path="/nodes" element={<Nodes />} />
+                </Routes>
+            </Router>
         </>
     );
 }

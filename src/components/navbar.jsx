@@ -1,22 +1,17 @@
 import './styles/navbar.css'
+import { Link, useLocation } from 'react-router-dom';
 
 export default function Navbar() {
+    const location = useLocation();
+
     return (
         <nav className="navbar">
             <div className="navbar-left">
                 <span className="logo">WevN</span>
-                <div className="nav-item active">
-                    <i className="icon home-icon"></i>
-                    Dashboard
-                </div>
-                <div className="nav-item">
-                    <i className="icon graph-icon"></i>
-                    Graph
-                </div>
-                <div className="nav-item">
-                    <i className="icon nodes-icon"></i>
-                    Nodes
-                </div>
+
+                <Link to="/" className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}>Dashboard</Link>
+                <Link to="/graph" className={`nav-item ${location.pathname === '/graph' ? 'active' : ''}`}>Graph</Link>
+                <Link to="/nodes" className={`nav-item ${location.pathname === '/nodes' ? 'active' : ''}`}>Nodes</Link>
             </div>
 
             <div className="navbar-right">
