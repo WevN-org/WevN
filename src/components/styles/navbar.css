@@ -1,0 +1,93 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #d3d3d3;
+    /* light grey background */
+    padding: 12px 20px;
+    font-family: sans-serif;
+    height: 7vh;
+    margin: 1rem;
+    border-radius: 8px;
+}
+
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.logo {
+    font-weight: bold;
+    font-size: 25px;
+    color: #000;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #000;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.nav-item.active {
+    font-weight: bold;
+}
+
+.icon {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    background-color: black;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+}
+
+/* Placeholder icons */
+.home-icon {
+    mask-image: url('/icons/home.svg');
+    -webkit-mask-image: url('/icons/home.svg');
+}
+
+.graph-icon {
+    mask-image: url('/icons/graph.svg');
+    -webkit-mask-image: url('/icons/graph.svg');
+}
+
+.nodes-icon {
+    mask-image: url('/icons/nodes.svg');
+    -webkit-mask-image: url('/icons/nodes.svg');
+}
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.create-db-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background-color: #a9a9a9;
+    /* darker grey */
+    color: black;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    background-color: #90a4ae;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    color: black;
+}
