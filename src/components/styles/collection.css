@@ -1,0 +1,65 @@
+.table-container {
+    padding: 20px;
+    /*background-color: #000;*/
+    border-radius: 8px;
+    font-family: sans-serif;
+    color: black;
+    width: 100%;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.table-header .start {
+    display: flex;
+    align-items: center;
+}
+
+.table-header h2 {
+    color: #fff;
+    margin-right: 1rem;
+}
+
+.delete-btn {
+    background-color: #e57373;
+    color: #fff;
+    font-weight: 500;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.delete-btn:hover {
+    background-color: #d32f2f;
+}
+
+.table {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.table-row {
+    display: grid;
+    grid-template-columns: 1fr repeat(5, 2fr);
+    padding: 10px 12px;
+    align-items: center;
+    border-bottom: 1px solid #ccc;
+    background-color: #f4f4f4;
+}
+
+.table-head {
+    background-color: #999;
+    font-weight: bold;
+    border-radius: 8px 8px 0 0;
+    border-bottom: none;
+}

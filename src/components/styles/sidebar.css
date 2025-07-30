@@ -1,0 +1,91 @@
+.sidebar {
+    width: 250px;
+    background-color: #d6d6d6;
+    /* soft gray */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background-color: #b0b0b0;
+    padding: .5rem;
+    border-radius: 12px;
+    gap: 8px;
+}
+
+.search-bar input {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 14px;
+    width: 100%;
+    color: #333;
+}
+
+.database-list {
+    display: flex;
+    flex-direction: column;
+    margin-top: 24px;
+    gap: 12px;
+}
+
+.db-item {
+    color: #555;
+    font-weight: 500;
+    cursor: pointer;
+    padding-left: 4px;
+    transition: all 0.2s ease;
+}
+
+.db-item:hover {
+    color: #222;
+}
+
+.db-item.active {
+    color: #000;
+    font-weight: bold;
+}
+
+.archive-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #a2a2a2;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-weight: 500;
+    color: #000;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.archive-bar:hover {
+    background-color: #919191;
+}
+
+.icon {
+    width: 16px;
+    height: 16px;
+    background-color: #000;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+}
+
+/* Replace these with real icons or use a library */
+.search-icon {
+    mask-image: url('/icons/search.svg');
+    -webkit-mask-image: url('/icons/search.svg');
+}
+
+.archive-icon {
+    mask-image: url('/icons/archive.svg');
+    -webkit-mask-image: url('/icons/archive.svg');
+}

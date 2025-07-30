@@ -7,6 +7,10 @@ export default function App() {
     return (
         <>
             <Navbar />
+            <div className="main">
+                <Sidebar />
+                <Collection />
+            </div>
         </>
     );
 }
