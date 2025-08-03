@@ -1,6 +1,5 @@
 .table-container {
-    padding: 20px;
-    /*background-color: #000;*/
+    margin-left: var(--main-margin);
     border-radius: 8px;
     font-family: sans-serif;
     color: black;

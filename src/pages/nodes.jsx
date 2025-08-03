@@ -1,5 +1,9 @@
+import Sidebar from "../components/sidebar";
 export default function Nodes() {
     return (
-        <h1>Nodes</h1>
+        <div className="main">
+            <Sidebar />
+            {/*<Collection selectedCollection={selectedCollection} />*/}
+        </div>
     );
 }

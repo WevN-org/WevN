@@ -17,21 +17,37 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --navbar-height: 8vh;
+  --sidebar-width: 250px;
+  --sidebar-bg-color: #d6d6d6;
+  --main-bg-color: #f4f4f4;
+  --main-margin: 1.25rem;
+  --delete-btn-bg-color: #e57373;
+  --delete-btn-hover-bg-color: #d32f2f;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+a,
+.menu-item {
+  color: #404040;
+  transition: color 0.2s ease-in-out, text-shadow 0.2s ease-in-out;
 }
 
-a:hover {
-  color: #535bf2;
+a:hover,
+.menu-item:hover {
+  cursor: pointer;
+  color: #000;
+  text-shadow: 0 0 .75px #000;
+}
+
+a.active,
+.menu-item.active {
+  color: #000;
+  font-weight: bold;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   width: 100%;
-  min-height: 100vh;
 }

@@ -1,0 +1,12 @@
+make collection table title dynamic
+-> delete button should show cursor differently
+-> create page to add :
+    -> new collection
+    -> new node
+-> add color to the site
+-> implement accounts page
+-> add a theme
+-> add graphview
+-> delete colltion
+-> search collection
+-> archive collection

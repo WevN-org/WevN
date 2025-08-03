@@ -1,7 +1,6 @@
 .sidebar {
     width: 250px;
-    background-color: #d6d6d6;
-    /* soft gray */
+    background-color: var(--sidebar-bg-color);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -31,25 +30,13 @@
 .database-list {
     display: flex;
     flex-direction: column;
-    margin-top: 24px;
+    margin-top: var(--main-margin);
     gap: 12px;
 }
 
-.db-item {
-    color: #555;
-    font-weight: 500;
-    cursor: pointer;
-    padding-left: 4px;
-    transition: all 0.2s ease;
-}
-
-.db-item:hover {
-    color: #222;
-}
-
-.db-item.active {
-    color: #000;
-    font-weight: bold;
+.database-list .menu-item {
+    display: flex;
+    justify-content: space-between;
 }
 
 .archive-bar {
