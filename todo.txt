@@ -1,5 +1,5 @@
 make collection table title dynamic
--> delete button should show cursor differently
+-> delete button should show cursor differently + colors + add archive button
 -> create page to add :
     -> new collection
     -> new node

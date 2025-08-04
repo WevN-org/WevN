@@ -20,9 +20,9 @@ export default function Navbar() {
                     location.pathname === '/graph' ? (
                         <GraphToggle />
                     ) : location.pathname === '/nodes' ? (
-                        <button className="create-db-btn">Create New Node</button>
+                        <button className="create-db-btn">Create Node</button>
                     ) : (
-                        <button className="create-db-btn">Create New Database</button>
+                        <button className="create-db-btn">Create Database</button>
                     )
                 }
                 <div className="avatar">A</div>

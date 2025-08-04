@@ -8,7 +8,7 @@ export default function Sidebar({ onClick, selectedCollection }) {
         <aside className="sidebar">
             <div>
                 <div className="search-bar">
-                    <FiSearch size={16} color='#000' />
+                    <FiSearch size={16} color='#fff' />
                     <input type="text" placeholder="search databases" />
                 </div>
 
@@ -26,7 +26,7 @@ export default function Sidebar({ onClick, selectedCollection }) {
 
             <div className="archive-bar">
                 <span>Archive</span>
-                <FiArchive size={16} />
+                <FiArchive size={16} color='#fff' />
             </div>
         </aside>
     );

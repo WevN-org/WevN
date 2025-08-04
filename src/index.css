@@ -1,34 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bitcount+Prop+Single:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  font-family: 'Poppins', system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  --navbar-height: 8vh;
+  --navbar-height: 10vh;
   --sidebar-width: 250px;
-  --sidebar-bg-color: #d6d6d6;
-  --main-bg-color: #f4f4f4;
-  --main-margin: 1.25rem;
-  --delete-btn-bg-color: #e57373;
-  --delete-btn-hover-bg-color: #d32f2f;
+  --main-margin: .75rem;
+  --main-x: 1rem;
 
   --content-height: calc(100vh - calc(var(--navbar-height) + calc(3* var(--main-margin))));
   /*--content-width: calc(100vw - var(--sidebar-width) - calc(2 * var(--main-margin)));
   --content-padding: calc(var(--main-margin) / 2);  */
+
+  --color-bg: #f9f7f3;
+
+  --color-primary: #f2e9e4;
+  --color-primary-hover: #4338CA;
+  --color-secondary: #7a6f5c;
+  --color-secondary-hover: #5e503f;
+  /*92B4A7*/
+
+  --color-danger: #EF4444;
+  --color-danger-hover: #B91C1C;
+
+  --color-input-bg: #2D2D2D;
+  --color-input-border: #444444;
+  --color-input-focus: #4F46E5;
 }
 
 a,
