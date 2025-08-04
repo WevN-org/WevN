@@ -25,6 +25,10 @@
   --main-margin: 1.25rem;
   --delete-btn-bg-color: #e57373;
   --delete-btn-hover-bg-color: #d32f2f;
+
+  --content-height: calc(100vh - calc(var(--navbar-height) + calc(3* var(--main-margin))));
+  /*--content-width: calc(100vw - var(--sidebar-width) - calc(2 * var(--main-margin)));
+  --content-padding: calc(var(--main-margin) / 2);  */
 }
 
 a,
