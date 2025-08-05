@@ -8,7 +8,7 @@
 -> create modal to add :
     -> new collection -- done
     -> new node
-
+-> add logger to dashboard/dashboard bottom. and move the details to nodes page
 -> implement accounts page
 -> search collection
 -> archive collection
