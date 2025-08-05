@@ -77,3 +77,8 @@
 .sidebar-action:hover {
     background-color: var(--color-secondary-hover);
 }
+
+.dialog {
+    position: absolute;
+    inset: 0;
+}
