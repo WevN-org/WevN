@@ -7,8 +7,17 @@ import { useLog } from '../context/LogContext';
 
 export default function CollectionsProvider({ children }) {
   // Load on first mount
-  const [CurrentCollection,changeCollection]=useState[""]
+  const [currentCollection,setCurrentCollection]=useState("")
   const { addLog } = useLog();
+
+    const setCollection = useCallback((collection_name) => {
+      
+      setCurrentCollection(collection_name);
+      localStorage.setItem("CurrentCollection", collection_name);
+      addLog(`Global Collection Changed to ${collection_name}`)
+      
+    }, [addLog]);
+
 
 
       useEffect(() => {
@@ -19,18 +28,11 @@ export default function CollectionsProvider({ children }) {
   }, [setCollection]);
 
 
-  const setCollection = useCallback((collection_name) => {
-      
-      changeCollection(collection_name);
-      localStorage.setItem("CurrentCollection", collection_name);
-      addLog(`Global Collection Changed to ${collection_name}`)
-      
-    }, [addLog, changeCollection]);
 
 
 
   return (
-    <CollectionContext.Provider value={{ CurrentCollection, setCollection }}>
+    <CollectionContext.Provider value={{ currentCollection, setCollection }}>
       {children}
     </CollectionContext.Provider>
   );

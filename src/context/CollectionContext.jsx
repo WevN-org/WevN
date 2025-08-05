@@ -1,12 +1,11 @@
-
-// src/context/LogContext.jsx
+// src/context/CollectionContext.jsx
 import { createContext, useContext } from 'react';
 
 export const CollectionContext = createContext({
-  CurrentCollection: "",
-  changeCollection: () => {},
+  currentCollection: "",
+  setCollection: () => {},
 });
 
-export function useLog() {
+export function useCollection() {
   return useContext(CollectionContext);
 }
