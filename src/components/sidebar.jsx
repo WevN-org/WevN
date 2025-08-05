@@ -1,5 +1,6 @@
-import { collections } from '../../data/collection_data';
+// import { collections } from '../../data/collection_data';
 import { ApiService } from '../services/apiservice';
+import React, { useEffect, useState} from 'react';
 import './styles/sidebar.css';
 import { FiSearch, FiArchive, FiTrash } from 'react-icons/fi'; // Feather Icons
 import { IoIosAddCircle } from "react-icons/io";
@@ -8,8 +9,21 @@ import { useLocation } from 'react-router-dom';
 
 
 export default function Sidebar({ onClick, selectedCollection }) {
+
     const location = useLocation();
 
+
+    const [collections, setCollections] = useState([]);
+    useEffect(() => {
+    ApiService.getCollections()
+      .then((res) => {
+        setCollections(res);
+        console.log('📦 Loaded collections');
+      })
+      .catch((e) => {
+        console.log(`❌ Failed to load collections: ${e.message || e}`);
+      });
+  }, []);
     return (
         <aside className="sidebar">
             <div>

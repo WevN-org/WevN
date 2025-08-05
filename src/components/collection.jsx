@@ -4,6 +4,7 @@ import { FiTrash, FiChevronDown } from 'react-icons/fi';
 
 export default function Collection({ selectedCollection }) {
     const selected = collections.find(col => col.name === selectedCollection);
+    
 
     if (!selected) {
         return <div className="table-container">Collection not found.</div>;
