@@ -159,7 +159,7 @@ export default function GraphPage() {
 
 
                     linkColor={() => "#ccc"}
-                    backgroundColor="#000"
+                    backgroundColor="#f9f7f3"
 
                     onNodeClick={(node) => {
 
