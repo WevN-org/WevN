@@ -2,13 +2,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #d3d3d3;
-    /* light grey background */
-    padding: 12px 20px;
+    background-color: var(--color-primary);
+    padding: 0 1.25rem;
     font-family: sans-serif;
     height: var(--navbar-height);
-    margin: var(--main-margin);
-    border-radius: 8px;
 }
 
 .navbar-left {
@@ -18,8 +15,9 @@
 }
 
 .logo {
+    font-family: "Bitcount Prop Single", system-ui;
     font-weight: bold;
-    font-size: 25px;
+    font-size: 2.25rem;
     color: #000;
 }
 
@@ -30,6 +28,7 @@
     color: #000;
     font-weight: 500;
     cursor: pointer;
+    font-size: 1.1rem;
 }
 
 .icon {
@@ -51,8 +50,8 @@
 
 .nav-item.active {
     font-weight: bold;
-    color: black;
-    border-bottom: 2px solid black;
+    color: var(--color-secondary);
+    border-bottom: 2px solid var(--color-secondary);
 }
 
 /* Placeholder icons */
@@ -77,25 +76,16 @@
     gap: 16px;
 }
 
-.create-db-btn {
-    padding: 8px 16px;
-    border-radius: 8px;
-    border: none;
-    background-color: #a9a9a9;
-    /* darker grey */
-    color: black;
-    font-weight: 500;
-    cursor: pointer;
-}
-
 .avatar {
-    width: 36px;
-    height: 36px;
-    background-color: #90a4ae;
+    width: 3rem;
+    height: 3rem;
+    background-color: #fff;
+    border: 3px solid var(--color-secondary);
     border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
     font-weight: bold;
-    color: black;
+    color: var(--color-secondary);
+    cursor: pointer;
 }

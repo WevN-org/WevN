@@ -1,12 +1,15 @@
+-> delete button should show cursor differently + colors + add archive button  -- done
+-> add color to the site -- done
+-> add a theme  -- done
+-> add graphview  -- done
+
+
 make collection table title dynamic
--> delete button should show cursor differently
+-> move link/semantic to graph
 -> create page to add :
     -> new collection
     -> new node
--> add color to the site
 -> implement accounts page
--> add a theme
--> add graphview
 -> delete colltion
 -> search collection
 -> archive collection

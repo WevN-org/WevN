@@ -1,0 +1,32 @@
+/* Main container */
+.graph-container {
+  position: relative;
+  /*margin: var(--main-margin);*/
+  height: calc(100vh - var(--navbar-height));
+  border-radius: 8px;
+}
+
+/* Header layout */
+.graph-header {
+  position: absolute;
+  top: 5%;
+  left: 2%;
+  margin-bottom: 12px;
+  z-index: 2;
+}
+
+.graph-header select {
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: white;
+  color: black;
+  font-size: 1rem;
+}
+
+/* Graph container box */
+.graph-view {
+  z-index: 1;
+  border-radius: 8px;
+  position: relative;
+}

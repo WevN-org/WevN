@@ -16,15 +16,9 @@ export default function Navbar() {
             </div>
 
             <div className="navbar-right">
-                {
-                    location.pathname === '/graph' ? (
-                        <GraphToggle />
-                    ) : location.pathname === '/nodes' ? (
-                        <button className="create-db-btn">Create New Node</button>
-                    ) : (
-                        <button className="create-db-btn">Create New Database</button>
-                    )
-                }
+
+                <h2>collection</h2>
+
                 <div className="avatar">A</div>
             </div>
         </nav>
