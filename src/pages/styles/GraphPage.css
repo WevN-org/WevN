@@ -1,8 +1,8 @@
 /* Main container */
 .graph-container {
   position: relative;
-  margin: var(--main-margin);
-  height: var(--content-height);
+  /*margin: var(--main-margin);*/
+  height: calc(100vh - var(--navbar-height));
   border-radius: 8px;
 }
 

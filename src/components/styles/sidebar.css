@@ -47,45 +47,33 @@
     transition: color 0.2s ease;
 }
 
-.database-list .menu-icons> :last-child {
+.database-list .menu-icons__delete {
+    display: inline-grid;
+    place-items: center;
     margin-left: 1rem;
-    color: var(--color-danger);
+    background-color: var(--color-danger);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
 }
 
-.archive-bar {
+.database-list .menu-icons__delete> :first-child {
+    color: #fff;
+}
+
+.sidebar-action {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background-color: var(--color-secondary);
     padding: 10px 14px;
     border-radius: 10px;
     font-weight: 500;
     color: #fff;
     cursor: pointer;
+    background-color: var(--color-secondary);
     transition: background-color 0.2s ease;
 }
 
-.archive-bar:hover {
+.sidebar-action:hover {
     background-color: var(--color-secondary-hover);
-}
-
-.icon {
-    width: 16px;
-    height: 16px;
-    background-color: #000;
-    mask-repeat: no-repeat;
-    mask-size: contain;
-    -webkit-mask-repeat: no-repeat;
-    -webkit-mask-size: contain;
-}
-
-/* Replace these with real icons or use a library */
-.search-icon {
-    mask-image: url('/icons/search.svg');
-    -webkit-mask-image: url('/icons/search.svg');
-}
-
-.archive-icon {
-    mask-image: url('/icons/archive.svg');
-    -webkit-mask-image: url('/icons/archive.svg');
 }

@@ -163,7 +163,7 @@ export default function GraphPage() {
 
                     onNodeClick={(node) => {
 
-                        fgRef.current.zoomToFit(500, 430, n => n.id === node.id);
+                        fgRef.current.zoomToFit(500, 325, n => n.id === node.id);
                     }}
                 />
             </div>
