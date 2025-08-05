@@ -1,6 +1,6 @@
 // src/context/LogProvider.jsx
 import React, { useCallback, useState } from 'react';
-import { LogContext } from './logContext';
+import { LogContext } from './LogContext';
 
 export default function LogProvider({ children }) {
   const [logs, setLogs] = useState(["🔧 Logging initialized"]);

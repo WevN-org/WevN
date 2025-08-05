@@ -6,11 +6,13 @@ import { FiSearch, FiArchive, FiTrash } from 'react-icons/fi'; // Feather Icons
 import { IoIosAddCircle } from "react-icons/io";
 import { MdDelete } from "react-icons/md";
 import { useLocation } from 'react-router-dom';
+import { useLog } from '../context/LogContext';
 
 
 export default function Sidebar({ onClick, selectedCollection }) {
 
     const location = useLocation();
+    const { addLog } = useLog();
 
 
     const [collections, setCollections] = useState([]);
@@ -18,12 +20,12 @@ export default function Sidebar({ onClick, selectedCollection }) {
     ApiService.getCollections()
       .then((res) => {
         setCollections(res);
-        console.log('📦 Loaded collections');
+        addLog('📦 Loaded collections');
       })
       .catch((e) => {
-        console.log(`❌ Failed to load collections: ${e.message || e}`);
+        addLog(`❌ Failed to load collections: ${e.message || e}`);
       });
-  }, []);
+  }, [addLog]);
     return (
         <aside className="sidebar">
             <div>

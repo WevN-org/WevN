@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { ForceGraph2D } from 'react-force-graph';
 import { ApiService } from '../services/apiservice';
-import { useLog } from '../context/logContext';
+import { useLog } from '../context/LogContext';
 import '../pages/styles/graphpage.css';
 
 export default function GraphPage() {
