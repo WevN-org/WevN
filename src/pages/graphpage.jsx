@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { ForceGraph2D } from 'react-force-graph';
 import { ApiService } from '../services/apiservice';
-import { useLog } from '../context/logcontext';
+import { useLog } from '../context/logContext';
 import '../pages/styles/graphpage.css';
 
 export default function GraphPage() {
@@ -59,10 +59,12 @@ export default function GraphPage() {
                 addLog(`❌ Failed to load collections: ${e.message || e}`);
             });
     }, [addLog]);
+
     function getRandomBrightColor() {
         const hue = Math.floor(Math.random() * 360); // hue: 0–360
         return `hsl(${hue}, 100%, 50%)`; // full saturation, medium lightness
     }
+
     // Load nodes when collection is selected
     useEffect(() => {
         if (!collectionName) return;

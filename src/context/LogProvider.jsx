@@ -1,6 +1,6 @@
 // src/context/LogProvider.jsx
 import React, { useCallback, useState } from 'react';
-import { LogContext } from './LogContext';
+import { LogContext } from './logContext';
 
 export default function LogProvider({ children }) {
   const [logs, setLogs] = useState(["🔧 Logging initialized"]);
@@ -9,7 +9,7 @@ export default function LogProvider({ children }) {
     const timestamp = new Date().toLocaleTimeString();
     setLogs(prev => [...prev, `[${timestamp}] ${message}`]);
     console.log(`[Log] ${message}`);
-  },[]);
+  }, []);
 
   return (
     <LogContext.Provider value={{ logs, addLog }}>

@@ -37,9 +37,19 @@
     gap: 12px;
 }
 
-.database-list .menu-item {
+.database-list .menu-wrapper {
     display: flex;
     justify-content: space-between;
+}
+
+.database-list .menu-icons>* {
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.database-list .menu-icons> :last-child {
+    margin-left: 1rem;
+    color: var(--color-danger);
 }
 
 .archive-bar {
