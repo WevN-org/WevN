@@ -1,5 +1,5 @@
 import GraphToggle from './graph_toggle';
-import './styles/navbar.css'
+import '../styles/component_styles/navbar.css';
 import { Link, useLocation } from 'react-router-dom';
 
 export default function Navbar() {

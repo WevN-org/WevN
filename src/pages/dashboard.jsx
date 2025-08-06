@@ -1,6 +1,6 @@
 import Sidebar from "../components/sidebar";
 import Collection from "../components/collection";
-import './styles/dashboard.css'
+import '../styles/page_styles/dashboard.css';
 import { useState } from "react";
 import { collections } from "../../data/collection_data";
 

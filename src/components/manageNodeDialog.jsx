@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { MdClose } from "react-icons/md";
-import "./styles/manageNodeDialog.css";
+import "../styles/component_styles/manageNodeDialog.css";
 
 const ManageNodeDialog = ({ onSubmit, onClose }) => {
   const [collectionName, setCollectionName] = useState("");

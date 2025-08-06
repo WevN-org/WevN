@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { ForceGraph2D } from 'react-force-graph';
 import { ApiService } from '../services/apiservice';
 import { useLog } from '../context/logContext';
-import '../pages/styles/graphpage.css';
+import '../styles/page_styles/graphpage.css';
 
 export default function GraphPage() {
     const fgRef = useRef();

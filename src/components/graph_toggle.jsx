@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import './styles/graph_toggle.css';
+import '../styles/component_styles/graph_toggle.css';
 
 export default function GraphToggle({ onToggle }) {
     const [active, setActive] = useState('link');

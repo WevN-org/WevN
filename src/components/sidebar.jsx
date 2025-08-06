@@ -1,7 +1,7 @@
 import { ApiService } from '../services/apiservice';
 import { useEffect, useState } from 'react';
-import './styles/sidebar.css';
-import { FiSearch, FiArchive, FiTrash } from 'react-icons/fi'; // Feather Icons
+import '../styles/component_styles/sidebar.css';
+import { FiSearch } from 'react-icons/fi'; // Feather Icons
 import { IoIosAddCircle } from "react-icons/io";
 import { MdDelete } from "react-icons/md";
 import { useLocation } from 'react-router-dom';

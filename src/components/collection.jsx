@@ -1,5 +1,5 @@
 import { collections } from '../../data/collection_data';
-import './styles/collection.css';
+import '../styles/component_styles/collection.css';
 import { FiTrash, FiChevronDown } from 'react-icons/fi';
 
 export default function Collection({ selectedCollection }) {
