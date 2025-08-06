@@ -42,6 +42,22 @@
     background-color: #2e2e2e;
     color: white;
     font-size: 14px;
+    resize: vertical;
+}
+
+.dialog-textarea {
+    min-height: 60px;
+    max-height: 150px;
+}
+
+.dialog-content {
+    display: flex;
+    align-items: center;
+}
+
+.dialog-content>* {
+    margin-bottom: 0;
+    margin-right: 8px;
 }
 
 .dialog-input::placeholder,
