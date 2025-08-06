@@ -73,7 +73,7 @@ body {
   margin: 0;
   min-width: 320px;
   width: 100%;
-  background-color: var(--color-bg);
+  background-color: var(--color-bg-dark);
 }
 
 /*---break---  */
