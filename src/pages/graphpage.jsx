@@ -3,6 +3,7 @@ import { ForceGraph2D } from 'react-force-graph';
 import { ApiService } from '../services/apiservice';
 import { useLog } from '../context/logContext';
 import '../styles/page_styles/graphpage.css';
+import { colors } from '../constants/colors';
 
 export default function GraphPage() {
     const fgRef = useRef();
@@ -113,6 +114,7 @@ export default function GraphPage() {
             <div className="graph-header">
                 <select
                     id="collection-select"
+                    className="collection-select"
                     value={collectionName}
                     onChange={(e) => setCollectionName(e.target.value)}
                 >
@@ -159,7 +161,7 @@ export default function GraphPage() {
 
 
                     linkColor={() => "#ccc"}
-                    backgroundColor="#f9f7f3"
+                    backgroundColor={colors.bgDark}
 
                     onNodeClick={(node) => {
 

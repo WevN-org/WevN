@@ -10,13 +10,43 @@ import ConfirmDeleteDialog from "./confirmDeleteDialog";
 import CreateCollectionDialog from './createCollectionDialog';
 
 
-export default function Sidebar({ onClick, selectedCollection, page = "" }) {
+export default function Sidebar({ onClick, selectedCollection }) {
     const location = useLocation();
     const [collections, setCollections] = useState([]);
     const [showDialog, setShowDialog] = useState(false);
     const [shownewCollectionDialog, setshownewCollectionDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [collectionToDelete, setCollectionToDelete] = useState(null);
+
+    // !---TEMP---
+
+    const [groupedNodes, setGroupedNodes] = useState({
+        Favourites: [],
+        History: [],
+    });
+
+    const [openSections, setOpenSections] = useState({
+        Favourites: true,
+        History: false,
+    });
+
+    useEffect(() => {
+        if (location.pathname !== '/') {
+            // Temporary mock data, replace with actual API call
+            setGroupedNodes({
+                Favourites: [
+                    { id: '1', name: 'Node A' },
+                    { id: '2', name: 'Node B' },
+                ],
+                History: [
+                    { id: '3', name: 'Node C' },
+                    { id: '4', name: 'Node D' },
+                ],
+            });
+        }
+    }, [location.pathname]);
+
+    // !--TEMP--
 
     const fetchCollections = async () => {
         try {
@@ -61,33 +91,67 @@ export default function Sidebar({ onClick, selectedCollection, page = "" }) {
             <div>
                 <div className="search-bar">
                     <FiSearch size={16} color='#fff' />
-                    <input type="text" placeholder="search databases" />
+                    <input type="text" placeholder={`search ${location.pathname === '/' ? 'databases' : 'Nodes'} `} />
                 </div>
 
-                <nav className="database-list">
-                    {collections.map((collection) => (
-                        // ! set a different key for each collection
-                        <div className='menu-wrapper' key={collection.name}>
-                            <div
-                                className={`menu-item ${collection.name === selectedCollection ? 'active' : ''}`}
-                                onClick={() => onClick(collection.name)}
-                            >
-                                {collection.name}
-                            </div>
-                            <div className="menu-icons">
-                                <div className="menu-icons__delete">
-                                    <MdDelete color='#fff' onClick={() => {
-                                        setCollectionToDelete(collection.name);
+                {
+                    location.pathname === '/' ?
+                        <nav className="database-list">
+                            {collections.map((collection) => (
+                                // ! set a different key for each collection
+                                <div className='menu-wrapper' key={collection.name}>
+                                    <div
+                                        className={`menu-item ${collection.name === selectedCollection ? 'active' : ''}`}
+                                        onClick={() => onClick(collection.name)}
+                                    >
+                                        <span> {collection.name}</span>
+                                    </div>
+                                    <div className="menu-icons">
+                                        <div className="menu-icons__delete">
+                                            <MdDelete color='#fff' onClick={() => {
+                                                setCollectionToDelete(collection.name);
 
-                                        setShowDeleteDialog(true)
-                                    }} />
+                                                setShowDeleteDialog(true)
+                                            }} />
+                                        </div>
+                                    </div>
+
                                 </div>
-                            </div>
 
-                        </div>
+                            ))}
+                        </nav> :
+                        (
+                            <nav className="database-list">
+                                {Object.entries(groupedNodes).map(([section, nodes]) => (
+                                    <div className="group-section" key={section}>
+                                        <div
+                                            className="group-header"
+                                            onClick={() =>
+                                                setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }))
+                                            }
+                                        >
+                                            <span>{section}</span>
+                                            <span>{openSections[section] ? '▼' : '▶'}</span>
+                                        </div>
 
-                    ))}
-                </nav>
+                                        {openSections[section] && (
+                                            <div className="group-nodes">
+                                                {nodes.map((node) => (
+                                                    <div
+                                                        key={node.id}
+                                                        className="menu-item"
+                                                        onClick={() => console.log("Clicked node:", node)}
+                                                    >
+                                                        {node.name}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </nav>
+                        )
+                }
             </div>
 
             {
