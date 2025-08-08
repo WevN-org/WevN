@@ -7,12 +7,14 @@ import { MdDelete } from "react-icons/md";
 import { useLocation } from 'react-router-dom';
 import ManageNodeDialog from './manageNodeDialog';
 import ConfirmDeleteDialog from "./confirmDeleteDialog";
+import CreateCollectionDialog from './createCollectionDialog';
 
 
-export default function Sidebar({ onClick, selectedCollection }) {
+export default function Sidebar({ onClick, selectedCollection, page = "" }) {
     const location = useLocation();
     const [collections, setCollections] = useState([]);
     const [showDialog, setShowDialog] = useState(false);
+    const [shownewCollectionDialog, setshownewCollectionDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [collectionToDelete, setCollectionToDelete] = useState(null);
 
@@ -64,6 +66,7 @@ export default function Sidebar({ onClick, selectedCollection }) {
 
                 <nav className="database-list">
                     {collections.map((collection) => (
+                        // ! set a different key for each collection
                         <div className='menu-wrapper' key={collection.name}>
                             <div
                                 className={`menu-item ${collection.name === selectedCollection ? 'active' : ''}`}
@@ -89,12 +92,12 @@ export default function Sidebar({ onClick, selectedCollection }) {
 
             {
                 location.pathname === '/' ? (
-                    <div className="sidebar-action" onClick={() => setShowDialog(true)} >
+                    <div className="sidebar-action" onClick={() => setshownewCollectionDialog(true)} >
                         <span>Create Collection</span>
                         <IoIosAddCircle size={24} color='#fff' />
                     </div>
                 ) : (
-                    <div className="sidebar-action">
+                    <div className="sidebar-action" onClick={() => setShowDialog(true)}>
                         <span>Create Node</span>
                         <IoIosAddCircle size={24} color='#fff' />
                     </div>
@@ -103,7 +106,7 @@ export default function Sidebar({ onClick, selectedCollection }) {
 
             {/* Render dialog at bottom, always part of the component tree */}
             {showDialog && (
-                <ManageNodeDialog onSubmit={handleNewCollection} onClose={() => setShowDialog(false)} />
+                <ManageNodeDialog onSubmit={handleNewCollection} onClose={() => setShowDialog(false)} collectionOptions={collections.map(c => c.name)} />
             )}
             {showDeleteDialog && (
                 <ConfirmDeleteDialog
@@ -111,6 +114,13 @@ export default function Sidebar({ onClick, selectedCollection }) {
                     onCancel={() => { setShowDeleteDialog(false); setCollectionToDelete(null); }}
 
                 />
+            )}
+            {shownewCollectionDialog && (
+                <CreateCollectionDialog
+                    onSubmit={(data) => {
+                        console.log("New collection data:", data);
+                    }}
+                    onClose={() => setshownewCollectionDialog(false)} />
             )}
         </aside>
     );

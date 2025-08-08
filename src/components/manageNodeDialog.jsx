@@ -1,8 +1,9 @@
+// ManageNodeDialog.jsx
 import React, { useState } from "react";
 import { MdClose } from "react-icons/md";
 import "../styles/component_styles/manageNodeDialog.css";
 
-const ManageNodeDialog = ({ onSubmit, onClose }) => {
+const ManageNodeDialog = ({ onSubmit, onClose, collectionOptions = [] }) => {
   const [collectionName, setCollectionName] = useState("");
   const [nodeId, setNodeId] = useState("");
   const [content, setContent] = useState("");
@@ -20,17 +21,23 @@ const ManageNodeDialog = ({ onSubmit, onClose }) => {
     <div className="dialog-backdrop">
       <div className="dialog-container">
         <div className="dialog-header">
-          <h2 className="dialog-title">Create new Collection</h2>
+          <h2 className="dialog-title">Add or Update Node</h2>
           <MdClose className="dialog-close" onClick={onClose} />
         </div>
 
-        <input
-          type="text"
-          placeholder="Collection Name"
+        <select
           value={collectionName}
           onChange={(e) => setCollectionName(e.target.value)}
           className="dialog-input"
-        />
+        >
+          <option value="">Select Collection</option>
+          {collectionOptions.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+
         <input
           type="text"
           placeholder="Node ID"
