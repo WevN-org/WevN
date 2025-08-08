@@ -54,9 +54,9 @@ export default function Sidebar({ onClick, selectedCollection }) {
         try {
             const res = await ApiService.getCollections();
             setCollections(res);
-            console.log('📦 Reloaded collections');
+            addLog('📦 Reloaded collections');
         } catch (e) {
-            console.log(`❌ Failed to load collections: ${e.message || e}`);
+            addLog(`❌ Failed to load collections: ${e.message || e}`);
         }
     };
 
@@ -70,18 +70,18 @@ export default function Sidebar({ onClick, selectedCollection }) {
 
         try {
             await ApiService.deleteCollection(collectionToDelete);
-            console.log("✅ Collection deleted");
+            addLog("✅ Collection deleted");
 
             await fetchCollections(); // reload from backend
             setShowDeleteDialog(false);
             setCollectionToDelete(null);
         } catch (err) {
-            console.error("❌ Failed to delete collection", err);
+            addLog("❌ Failed to delete collection", err);
         }
     };
 
     const handleNewCollection = (data) => {
-        console.log("Submitted data:", data);
+        addLog("Submitted data:", data);
         // TODO: Add your backend or state update logic here.
         setShowDialog(false); // close it
     };
