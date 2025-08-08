@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { ForceGraph2D } from 'react-force-graph';
 import { ApiService } from '../services/apiservice';
-import { useLog } from '../context/logContext';
 import '../styles/page_styles/graphpage.css';
 import { colors } from '../constants/colors';
+import { useLog } from '../context/LogContext';
 
 export default function GraphPage() {
     const fgRef = useRef();

@@ -8,10 +8,12 @@ import { useLocation } from 'react-router-dom';
 import ManageNodeDialog from './manageNodeDialog';
 import ConfirmDeleteDialog from "./confirmDeleteDialog";
 import CreateCollectionDialog from './createCollectionDialog';
-
+import { useLog } from '../context/LogContext';
 
 export default function Sidebar({ onClick, selectedCollection }) {
     const location = useLocation();
+    const { addLog } = useLog();
+
     const [collections, setCollections] = useState([]);
     const [showDialog, setShowDialog] = useState(false);
     const [shownewCollectionDialog, setshownewCollectionDialog] = useState(false);
@@ -83,8 +85,6 @@ export default function Sidebar({ onClick, selectedCollection }) {
         // TODO: Add your backend or state update logic here.
         setShowDialog(false); // close it
     };
-
-
 
     return (
         <aside className="sidebar">

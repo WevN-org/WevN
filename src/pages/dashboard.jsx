@@ -1,18 +1,19 @@
 import Sidebar from "../components/sidebar";
 import Collection from "../components/collection";
 import '../styles/page_styles/dashboard.css';
-import { useState } from "react";
+import { useCollection } from "../context/CollectionContext";
 
 export default function Dashboard() {
-    const [selectedCollection, setActiveCollection] = useState("");
+    const { currentCollection, setCollection } = useCollection();
     function showCollection(CollectionName) {
-        //console.log(` ${CollectionName} Collection clicked`);
-        setActiveCollection(CollectionName);
+        console.log(` ${CollectionName} Collection clicked`);
+        setCollection(CollectionName)
+
     }
     return (
         <div className="main">
-            <Sidebar onClick={showCollection} selectedCollection={selectedCollection} />
-            <Collection selectedCollection={selectedCollection} />
+            <Sidebar onClick={showCollection} />
+            <Collection selectedCollection={currentCollection} />
         </div>
     );
 }

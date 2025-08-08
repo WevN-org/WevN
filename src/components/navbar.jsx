@@ -1,9 +1,11 @@
 import GraphToggle from './graph_toggle';
 import '../styles/component_styles/navbar.css';
 import { Link, useLocation } from 'react-router-dom';
+import { useCollection } from '../context/CollectionContext';
 
 export default function Navbar() {
     const location = useLocation();
+    const { currentCollection } = useCollection();
 
     return (
         <nav className="navbar">
@@ -17,7 +19,7 @@ export default function Navbar() {
 
             <div className="navbar-right">
 
-                <h2>collection</h2>
+                <h2>{currentCollection === "" ? "" : currentCollection}</h2>
 
                 <div className="avatar">A</div>
             </div>
