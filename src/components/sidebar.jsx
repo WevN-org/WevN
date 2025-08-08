@@ -1,5 +1,5 @@
 import { ApiService } from '../services/apiservice';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import '../styles/component_styles/sidebar.css';
 import { FiSearch } from 'react-icons/fi'; // Feather Icons
 import { IoIosAddCircle } from "react-icons/io";
@@ -50,7 +50,7 @@ export default function Sidebar({ onClick, selectedCollection }) {
 
     // !--TEMP--
 
-    const fetchCollections = async () => {
+    const fetchCollections = useCallback(async () => {
         try {
             const res = await ApiService.getCollections();
             setCollections(res);
@@ -58,12 +58,12 @@ export default function Sidebar({ onClick, selectedCollection }) {
         } catch (e) {
             addLog(`❌ Failed to load collections: ${e.message || e}`);
         }
-    };
+    }, [setCollections, addLog]); // dependencies go here
 
     // Fetch once on mount
     useEffect(() => {
         fetchCollections();
-    }, []);
+    }, [fetchCollections]);
 
     const handleCollectionDelete = async () => {
         if (!collectionToDelete) return;

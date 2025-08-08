@@ -4,35 +4,18 @@ import { ApiService } from '../services/apiservice';
 import '../styles/page_styles/graphpage.css';
 import { colors } from '../constants/colors';
 import { useLog } from '../context/LogContext';
+import { useCollection } from '../context/CollectionContext';
 
 export default function GraphPage() {
     const fgRef = useRef();
     const containerRef = useRef();
     const { addLog } = useLog();
 
-    const [collections, setCollections] = useState([]);
-    const [collectionName, setCollectionName] = useState('');
+    // const [collections, setCollections] = useState([]);
+    // const [currentCollection, setCollectionName] = useState('');
     const [graphData, setGraphData] = useState({ nodes: [], links: [] });
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
-
-    // const colorByType = {
-    //   note: "#4f46e5",
-    //   tag: "#10b981",
-    //   semantic: "#f59e0b",
-    // };
-
-    // Update graph dimensions on window resize
-    // useEffect(() => {
-    //   const updateSize = () => {
-    //     if (containerRef.current) {
-    //       const { clientWidth, clientHeight } = containerRef.current;
-    //       setDimensions({ width: clientWidth, height: clientHeight });
-    //     }
-    //   };
-    //   updateSize(); // Initial sizing
-    //   window.addEventListener('resize', updateSize);
-    //   return () => window.removeEventListener('resize', updateSize);
-    // }, []);
+    const { currentCollection } = useCollection();
 
     useEffect(() => {
         const observer = new ResizeObserver(([entry]) => {
@@ -50,16 +33,16 @@ export default function GraphPage() {
 
 
     // Load collections on mount
-    useEffect(() => {
-        ApiService.getCollections()
-            .then((res) => {
-                setCollections(res);
-                addLog('📦 Loaded collections');
-            })
-            .catch((e) => {
-                addLog(`❌ Failed to load collections: ${e.message || e}`);
-            });
-    }, [addLog]);
+    // useEffect(() => {
+    //     ApiService.getCollections()
+    //         .then((res) => {
+    //             setCollections(res);
+    //             addLog('📦 Loaded collections');
+    //         })
+    //         .catch((e) => {
+    //             addLog(`❌ Failed to load collections: ${e.message || e}`);
+    //         });
+    // }, [addLog]);
 
     function getRandomBrightColor() {
         const hue = Math.floor(Math.random() * 360); // hue: 0–360
@@ -68,9 +51,9 @@ export default function GraphPage() {
 
     // Load nodes when collection is selected
     useEffect(() => {
-        if (!collectionName) return;
+        if (currentCollection==="") return;
 
-        ApiService.listNodes(collectionName)
+        ApiService.listNodes(currentCollection)
             .then((nodes) => {
                 const formattedNodes = nodes.map((n) => ({
                     id: n.id,
@@ -93,7 +76,7 @@ export default function GraphPage() {
 
                 setGraphData({ nodes: formattedNodes, links });
 
-                addLog(`🧠 Loaded ${nodes.length} nodes for "${collectionName}"`);
+                addLog(`🧠 Loaded ${nodes.length} nodes for "${currentCollection}"`);
 
                 setTimeout(() => {
                     if (fgRef.current) {
@@ -106,17 +89,17 @@ export default function GraphPage() {
             .catch((e) => {
                 addLog(`❌ Failed to load nodes: ${e.message || e}`);
             });
-    }, [collectionName, addLog]);
+    }, [currentCollection, addLog]);
 
 
     return (
         <div className="graph-container" ref={containerRef}>
-            <div className="graph-header">
+            {/* <div className="graph-header">
                 <select
                     id="collection-select"
                     className="collection-select"
-                    value={collectionName}
-                    onChange={(e) => setCollectionName(e.target.value)}
+                    value={currentCollection}
+                    onChange={(e) => setcurrentCollection(e.target.value)}
                 >
                     <option value="">select collection</option>
                     {collections.map((col) => (
@@ -125,7 +108,7 @@ export default function GraphPage() {
                         </option>
                     ))}
                 </select>
-            </div>
+            </div> */}
 
             <div className="graph-view">
                 <ForceGraph2D
