@@ -8,6 +8,7 @@ const App = () => {
         domains: [
             { id: 1, name: 'Personal Knowledge' },
             { id: 2, name: 'Project A Documentation' },
+            { id: 3, name: 'Fyndr Bot' },
         ],
         currentView: 'query', // can be 'query' or 'concept-management'
         sidebarCollapsed: false,
