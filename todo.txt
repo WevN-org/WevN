@@ -1,14 +1,1 @@
--> delete button should show cursor differently + colors + add archive button  -- done
--> add color to the site -- done
--> add a theme  -- done
--> add graphview  -- done
--> make collection table title dynamic  -- done
--> move link/semantic to graph
--> delete collection -- done
--> create modal to add :
-    -> new collection -- done
-    -> new node
--> add logger to dashboard/dashboard bottom. and move the details to nodes page
--> implement accounts page
--> search collection
--> archive collection
+-> create sidebar

@@ -1,26 +1,24 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from "./components/navbar";
-import Dashboard from './pages/dashboard';
-import Nodes from './pages/Nodes';
-import GraphPage from './pages/graphpage';
-import LogProvider from './context/LogProvider';
-import CollectionsProvider from './context/CollectionsProvider';
+import { useState } from 'react';
+import Sidebar from './components/sidebar';
 
-export default function App() {
+// This is the App component that orchestrates everything
+const App = () => {
+    // --- State Management for the App ---
+    const [state, setState] = useState({
+        domains: [
+            { id: 1, name: 'Personal Knowledge' },
+            { id: 2, name: 'Project A Documentation' },
+        ],
+        currentView: 'query', // can be 'query' or 'concept-management'
+        sidebarCollapsed: false,
+        selectedDomainId: null,
+    });
+
     return (
-        <>
-            <CollectionsProvider>
-                <LogProvider>
-                    <Router>
-                        <Navbar />
-                        <Routes>
-                            <Route path="/" element={<Dashboard />} />
-                            <Route path="/graph" element={<GraphPage />} />
-                            <Route path="/nodes" element={<Nodes />} />
-                        </Routes>
-                    </Router>
-                </LogProvider>
-            </CollectionsProvider>
-        </>
+        <div>
+            <Sidebar state={state} setState={setState} />
+        </div>
     );
-}
+};
+
+export default App;
