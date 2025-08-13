@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import Sidebar from './components/sidebar';
+import GraphViewToggle from './components/graph_toggle';
+
 
 // This is the App component that orchestrates everything
 const App = () => {
@@ -18,11 +20,7 @@ const App = () => {
     return (
         <div className='flex'>
             <Sidebar state={state} setState={setState} />
-            <main className='main-content'>
-
-
-            </main>
-        </div>
+        </div >
     );
 };
 

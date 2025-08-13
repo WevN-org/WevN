@@ -1,1 +1,3 @@
--> create sidebar
+-> create sidebar -- done
+-> hide sidebar on clicking menu icon -- done
+-> fix the query box to bottom

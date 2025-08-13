@@ -25,7 +25,6 @@ button {
   background-color: #ffffff;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
-  padding: 1rem;
 }
 
 .sidebar.collapsed {
@@ -33,6 +32,13 @@ button {
   padding: 1rem 8px;
 }
 
+.sidebar.hide {
+  width: 0;
+  transform: translateX(-80px);
+  padding: 0;
+}
+
+/*
 .main-content {
   flex-grow: 1;
   display: flex;
