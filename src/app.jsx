@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Sidebar from './components/sidebar';
-import GraphViewToggle from './components/graph_toggle';
+import QueryView from './components/query_view/query_view'
 
 
 // This is the App component that orchestrates everything
@@ -20,6 +20,7 @@ const App = () => {
     return (
         <div className='flex'>
             <Sidebar state={state} setState={setState} />
+            <QueryView state={state} setState={setState} />
         </div >
     );
 };

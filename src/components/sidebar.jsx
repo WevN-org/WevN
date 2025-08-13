@@ -12,7 +12,7 @@ const Sidebar = ({ state, setState }) => {
     const hasDomains = state.domains?.length > 0;
 
     return (
-        <div className="sidebar-wrapper relative">
+        <div className="sidebar-wrapper relative z-50">
             <aside
                 id="sidebar"
                 className={clsx(
@@ -114,7 +114,7 @@ const Sidebar = ({ state, setState }) => {
 
             </aside>
             <button id="mobile-sidebar-toggle"
-                className="absolute top-0 right-0 translate-x-20 p-4 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+                className="absolute top-5 right-0 translate-x-20 p-4 text-gray-500 hover:text-gray-700 transition-colors duration-200"
                 onClick={() => setSidebarVisibility(!sidebarVisibility)}>
                 {sidebarVisibility ? <PanelLeftOpen /> : <PanelLeftClose />}
             </button>
