@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import { Plus } from "lucide-react";
 
 const Sidebar = ({ state, setState }) => {
     const toggleSidebar = () => {
@@ -97,11 +98,19 @@ const Sidebar = ({ state, setState }) => {
             )}
 
             {/* New Domain Button */}
-            <div className="flex justify-center mt-auto p-3 border-t-2 border-gray-200">
-                <button className="text-blue-500 hover:text-blue-600 transition-colors duration-200 outline p-[var(--padding-card)] rounded-md text-sm font-medium">
-                    {isCollapsed ? "+" : "+ New Domain"}
+            <div className="flex justify-center mt-auto border-t-2 border-gray-200 p-3">
+                <button
+                    className={`flex items-center justify-center  text-blue-500 hover:text-blue-600 transition duration-200 outline outline-blue-500 rounded-md font-medium p-3 whitespace-nowrap ${isCollapsed ? "w-12" : "w-full gap-2"
+                        }`}
+                >   <Plus />
+                    <span className={` overflow-hidden transition-all duration-200 ease ${isCollapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-[200px]"}`}>New Domain</span>
                 </button>
             </div>
+
+
+
+
+
         </aside>
     );
 };

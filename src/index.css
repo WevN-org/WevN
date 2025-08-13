@@ -30,15 +30,13 @@ button {
 
 .sidebar.collapsed {
   width: 80px;
-  padding: 8px;
+  padding: 1rem 8px;
 }
 
-/* 
 .main-content {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .graph-container {
@@ -61,6 +59,7 @@ button {
   text-align: center;
 }
 
+/* 
 /* Modal styles *
 .modal {
   position: fixed;
