@@ -7,6 +7,13 @@ const Sidebar = ({ state, setState }) => {
     const toggleSidebar = () => {
         setState(prev => ({ ...prev, sidebarCollapsed: !prev.sidebarCollapsed }));
     };
+    const handleDomainClick = (domainId) => {
+        setState(prev => ({
+            ...prev,
+            selectedDomainId: domainId,
+            currentView: 'concept'
+        }));
+    };
 
     const isCollapsed = state.sidebarCollapsed;
     const hasDomains = state.domains?.length > 0;
@@ -72,6 +79,7 @@ const Sidebar = ({ state, setState }) => {
                                     <li
                                         key={domain.id}
                                         className="flex items-center justify-between p-3 rounded-lg transition-colors duration-200 cursor-pointer bg-gray-100"
+                                        onClick={() => handleDomainClick(domain.id)}
                                     >
                                         <span className="text-sm font-medium text-gray-700">{domain.name}</span>
                                         <div className="flex space-x-2">

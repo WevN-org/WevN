@@ -1,3 +1,20 @@
+DONE:
+
 -> create sidebar -- done
 -> hide sidebar on clicking menu icon -- done
--> fix the query box to bottom
+-> fix the query box to bottom -- done
+-> create concept ui and make it responsive -- done
+
+CURRENT:
+
+-> show sidebar toggle button on hover and make its z-index 10000
+-> change the new domain and graph toggle button to green 
+-> add a tooltip on account and sidebar toggle button, graph toggle button
+
+TODO:
+-> one small screens make the query box as flex-col
+-> create dialog boxes
+
+POST WORK:
+-> set a one click theme
+-> convert potential toggles to enums
