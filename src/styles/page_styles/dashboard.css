@@ -1,6 +1,0 @@
-.main {
-    display: flex;
-    /* total heigh - (nav height + nav-margin(up and down) + margin of main (up and down) */
-    height: calc(100vh - var(--navbar-height));
-    /*margin: var(--main-margin);*/
-}
