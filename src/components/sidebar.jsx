@@ -28,8 +28,6 @@ const Sidebar = ({ state, setState }) => {
                 </button>
             </div>
 
-
-
             {/*! don't remove - can be used to make toggle button visible on hover */}
             {/*<div
                 className={clsx("hover-box absolute top-0 left-0 h-full z-30 hover:bg-amber-100",
@@ -94,8 +92,9 @@ const Sidebar = ({ state, setState }) => {
                             <ul className="space-y-2 custom-scrollbar overflow-y-auto max-h-[300px]">
                                 {state.domains.map(domain => (
                                     <li
+                                        tabIndex={0}
                                         key={domain.id}
-                                        className="flex items-center justify-between p-3 rounded-lg transition-colors duration-200 cursor-pointer bg-gray-100"
+                                        className="flex items-center justify-between p-3 rounded-lg border-l-4 border-l-transparent transition-colors duration-200 cursor-pointer focus:bg-gray-200 focus:border-l-green-500"
                                         onClick={() => handleDomainClick(domain.id)}
                                     >
                                         <span className="text-sm font-medium text-gray-700">{domain.name}</span>
