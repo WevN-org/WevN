@@ -7,9 +7,11 @@ DONE:
 
 CURRENT:
 
--> show sidebar toggle button on hover and make its z-index 10000
--> change the new domain and graph toggle button to green 
+-> show sidebar toggle button on hover and make its z-index 10000 -- done
+-> change the new domain and graph toggle button to green -- done
 -> add a tooltip on account and sidebar toggle button, graph toggle button
+-> add a focus/active state for the domain button in sidebar
+-> maybe add border right to the sidebar for a modern look -- done
 
 TODO:
 -> one small screens make the query box as flex-col

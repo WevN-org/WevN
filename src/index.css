@@ -27,7 +27,8 @@ button {
   transition: all 0.3s ease;
 }
 
-.sidebar.collapsed {
+.sidebar.collapsed,
+.sidebar-wrapper.collapsed {
   width: 80px;
   padding: 1rem 8px;
 }
@@ -36,6 +37,30 @@ button {
   width: 0;
   transform: translateX(-80px);
   padding: 0;
+}
+
+.sidebar::after,
+.sidebar-wrapper::after {
+  content: '';
+  position: absolute;
+  width: 5px;
+  height: 100%;
+  background-color: #05df72;
+  top: 0;
+  right: 0;
+  transform: translateX(5px);
+}
+
+.hover-box {
+  width: calc(320px + 6rem);
+}
+
+.hover-box.collapsed {
+  width: calc(80px + 6rem);
+}
+
+.hover-box.hide {
+  width: 6rem;
 }
 
 /* 

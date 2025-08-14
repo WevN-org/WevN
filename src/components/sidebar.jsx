@@ -19,14 +19,31 @@ const Sidebar = ({ state, setState }) => {
     const hasDomains = state.domains?.length > 0;
 
     return (
-        <div className="sidebar-wrapper relative z-50">
+        <div className="sidebar-wrapper relative z-50 bg-green-500 transition-colors duration-500">
+            <div className="sidebar-toggle-button flex justify-end pr-3 absolute top-2/3 right-0  -translate-y-50 translate-x-12 transition-all duration-500 bg-green-400 w-20 h-15 rounded-full hover:ring-2 hover:ring-emerald-400 hover:ring-offset-2"
+                onClick={() => setSidebarVisibility(!sidebarVisibility)}
+            >
+                <button className=" text-white ">
+                    {sidebarVisibility ? <PanelLeftOpen size={28} /> : <PanelLeftClose size={28} />}
+                </button>
+            </div>
+
+
+
+            {/*! don't remove - can be used to make toggle button visible on hover */}
+            {/*<div
+                className={clsx("hover-box absolute top-0 left-0 h-full z-30 hover:bg-amber-100",
+                    { collapsed: isCollapsed || sidebarVisibility },
+                    { hide: sidebarVisibility },
+                )}
+            />*/}
+
             <aside
                 id="sidebar"
                 className={clsx(
-                    "sidebar  h-screen flex-col border-r border-gray-200 md:flex transition-all duration-300 p-4",
-                    { collapsed: isCollapsed },
+                    "sidebar relative  h-screen flex-col border-r border-gray-200 md:flex transition-all duration-500 p-4 z-40",
+                    { collapsed: isCollapsed || sidebarVisibility },
                     { hide: sidebarVisibility },
-                    { 'dock collapsed ': (sidebarVisibility && !isCollapsed) }
                 )}
             >
                 {/* Sidebar Header */}
@@ -60,7 +77,7 @@ const Sidebar = ({ state, setState }) => {
                 {/* Domain Management */}
                 {!isCollapsed && (
                     <div id="domain-management-container" className="p-4">
-                        {/* Search Bar */}
+                        {/* active Search Bar */}
                         <div className="relative mb-4">
                             <input
                                 type="text"
@@ -113,7 +130,7 @@ const Sidebar = ({ state, setState }) => {
                 {/* New Domain Button */}
                 <div className="flex justify-center mt-auto border-t-2 border-gray-200 p-3">
                     <button
-                        className={`flex items-center justify-center  text-blue-500 hover:text-blue-600 transition duration-200 outline outline-blue-500 rounded-md font-medium p-3 whitespace-nowrap ${isCollapsed ? "w-12" : "w-full gap-2"
+                        className={`flex items-center justify-center  text-green-500 hover:bg-green-100 hover:text-black transition-all duration-200 ease-in-out outline-2 outline-green-500 rounded-md font-medium p-3 whitespace-nowrap ${isCollapsed ? "w-12" : "w-full gap-2"
                             }`}
                     >   <Plus />
                         <span className={` overflow-hidden transition-all duration-200 ease ${isCollapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-[200px]"}`}>New Domain</span>
@@ -121,11 +138,6 @@ const Sidebar = ({ state, setState }) => {
                 </div>
 
             </aside>
-            <button id="mobile-sidebar-toggle"
-                className="absolute top-5 right-0 translate-x-20 p-4 text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                onClick={() => setSidebarVisibility(!sidebarVisibility)}>
-                {sidebarVisibility ? <PanelLeftOpen /> : <PanelLeftClose />}
-            </button>
         </div>
     );
 };
