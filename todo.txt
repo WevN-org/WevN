@@ -1,3 +1,5 @@
+--SHARON--
+
 DONE:
 
 -> create sidebar -- done
@@ -20,3 +22,30 @@ TODO:
 POST WORK:
 -> set a one click theme
 -> convert potential toggles to enums
+
+
+
+--ANSHUL--
+
+DONE:
+--> make a global error collection context  -- done
+
+CURRENT:
+
+--> create a context to access the domains
+
+
+TODO:
+
+
+--> connect the database with the sidebar to display domains
+--> connect delete delete with the database
+--> make domain searching from sidebar
+        --> make the feature available in server side
+        --> make the feature accessable through ApiService.js
+        --> connect it with the sidebar
+--> make the domain accessable from the chat interface
+--> make edit domain name from side bar 
+        --> make the feature available in server
+        --> make the feature accessable through the ApiService.js
+        --> connect it with the sidebar

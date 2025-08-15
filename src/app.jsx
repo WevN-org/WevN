@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Sidebar from './components/sidebar';
 import QueryView from './components/query_view/query_view'
 import ConceptView from './components/concept_view/concept_view';
+import LogProvider from './contexts/log-context/log_provider';
 
 
 // This is the App component that orchestrates everything
@@ -63,14 +64,18 @@ const App = () => {
     ]);
 
     return (
-        <div className='flex overflow-hidden'>
-            <Sidebar state={state} setState={setState} />
-            {state.currentView === 'query' ? (
-                <QueryView state={state} setState={setState} />
-            ) : (
-                <ConceptView concepts={concepts} activeTab={activeTab} setActiveTab={setActiveTab} setState={setState} />
-            )}
-        </div >
+        <>
+            <LogProvider>
+                <div className='flex overflow-hidden'>
+                    <Sidebar state={state} setState={setState} />
+                    {state.currentView === 'query' ? (
+                        <QueryView state={state} setState={setState} />
+                    ) : (
+                        <ConceptView concepts={concepts} activeTab={activeTab} setActiveTab={setActiveTab} setState={setState} />
+                    )}
+                </div >
+            </LogProvider>
+        </>
     );
 };
 
