@@ -83,7 +83,17 @@ def create_collection(payload : CollectionNameModel):
         client.create_collection(name=payload.name)
         return StatusModel(status="Created Domain Successfully.")
     except Exception as e:
-        return StatusModel(status=f"Domain Creation Failed with error: {str(e)}")
+        raise HTTPException(status_code=400,detail=f"Domain Creation Failed with error: {str(e)}")
+    
+
+@app.get("/collections/list", dependencies=[Depends(verify_api_key)])
+def list_collection():
+    try:
+        collections=client.list_collections()
+        content=[c.name for c in collections]
+        print(content)
+    except Exception as e :
+        raise HTTPException(status_code=400,detail=f"Domain Creation Failed with error: {str(e)}")
     
 
 

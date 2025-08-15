@@ -29,10 +29,17 @@ POST WORK:
 
 DONE:
 --> make a global error collection context  -- done
+--> create a context to access the domains  -- done
 
 CURRENT:
 
---> create a context to access the domains
+--> remake server 
+        --> make create collection
+                --> server side -- done
+                --> client side -- done
+        --> make load collections -- done
+                --> server side -- done
+                --> client side -- progress
 
 
 TODO:
