@@ -2,7 +2,7 @@ import { createContext,useContext } from "react";
 
 export const DomainContext = createContext(
     {
-        currentDomain: "",
+        currentDomain: null,
         setDomain:() => {}
     }
 )

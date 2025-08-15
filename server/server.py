@@ -90,10 +90,10 @@ def create_collection(payload : CollectionNameModel):
 def list_collection():
     try:
         collections=client.list_collections()
-        content=[c.name for c in collections]
-        print(content)
+        return JSONResponse(content=[{"name" : str(c.name) , "id" : str(c.id)} for c in collections])
+        
     except Exception as e :
-        raise HTTPException(status_code=400,detail=f"Domain Creation Failed with error: {str(e)}")
+        raise HTTPException(status_code=400,detail=f"Domain Listing Failed with error: {str(e)}")
     
 
 

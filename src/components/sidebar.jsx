@@ -1,21 +1,29 @@
 import clsx from "clsx";
 import { Plus, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState } from "react";
+import { changeDomain } from "../contexts/domain-context/domain_context";
 
 const Sidebar = ({ state, setState }) => {
+
+    // -- the currentDomain context --
+    const {currentDomain , setDomain} = changeDomain()
+
     const [sidebarVisibility, setSidebarVisibility] = useState(true)
     const toggleSidebar = () => {
         setState(prev => ({ ...prev, sidebarCollapsed: !prev.sidebarCollapsed }));
     };
-    const handleDomainClick = (domainId) => {
+    const handleDomainClick = (domainName) => {
+        setDomain(domainName)
+
+        // the following is to be changed later since the current domain corresponds to the the selectd concept 
+        // i kept it here since if no change occur to currentView upon click it wont be displayed this is temprorary 
         setState(prev => ({
             ...prev,
-            selectedDomainId: domainId,
             currentView: 'concept'
         }));
     };
 
-    const isCollapsed = state.sidebarCollapsed;
+    const isCollapsed = state.sidebarCollapsed; 
     const hasDomains = state.domains?.length > 0;
 
     return (
@@ -95,7 +103,7 @@ const Sidebar = ({ state, setState }) => {
                                         tabIndex={0}
                                         key={domain.id}
                                         className="flex items-center justify-between p-3 rounded-lg border-l-4 border-l-transparent transition-colors duration-200 cursor-pointer focus:bg-gray-200 focus:border-l-green-500"
-                                        onClick={() => handleDomainClick(domain.id)}
+                                        onClick={() => handleDomainClick(domain.name)}
                                     >
                                         <span className="text-sm font-medium text-gray-700">{domain.name}</span>
                                         <div className="flex space-x-2">

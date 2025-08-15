@@ -1,9 +1,9 @@
 import { useCallback,useEffect,useState } from "react";
 import { DomainContext } from "./domain_context";
-import { useLog } from "../logContext/log_context";
+import { useLog } from "../log-context/log_context";
 
 export default function DomainProvider({children}){
-    const [cDomain,sDomain] = useState("")
+    const [currentDomain,sDomain] = useState("")
     const {addLog} = useLog();
 
     const setDomain = useCallback(
@@ -23,7 +23,7 @@ export default function DomainProvider({children}){
         },[setDomain])
 
         return(
-            <DomainContext.Provider value={{cDomain,setDomain}}>
+            <DomainContext.Provider value={{currentDomain,setDomain}}>
                 {children}
             </DomainContext.Provider>
         )

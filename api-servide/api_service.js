@@ -20,10 +20,21 @@ export const ApiService={
             {
                 method: 'GET',
                 headers: Headers
+            });
 
-            }
-        )
+        const data= await handleResponse(response,'Failed to load collections');
+        return data.map(item => new Collections(item))
 
-        const data= await handleResponse(response,defaultMessage='Failed to load collections')
+    }
+}
+
+
+
+
+// -- object structure for response models --
+
+class Collections{
+    constructor(json){
+        Object.assign(this,json)
     }
 }
