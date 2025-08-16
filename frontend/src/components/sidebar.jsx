@@ -6,7 +6,7 @@ import { changeDomain } from "../contexts/domain-context/domain_context";
 const Sidebar = ({ state, setState }) => {
 
     // -- the currentDomain context --
-    const {currentDomain , setDomain} = changeDomain()
+    const { currentDomain, setDomain } = changeDomain()
 
     const [sidebarVisibility, setSidebarVisibility] = useState(true)
     const toggleSidebar = () => {
@@ -23,7 +23,7 @@ const Sidebar = ({ state, setState }) => {
         }));
     };
 
-    const isCollapsed = state.sidebarCollapsed; 
+    const isCollapsed = state.sidebarCollapsed;
     const hasDomains = state.domains?.length > 0;
 
     return (
@@ -59,7 +59,8 @@ const Sidebar = ({ state, setState }) => {
                         "flex items-center justify-between w-full cursor-pointer p-4 rounded-lg transition-colors duration-200 hover:bg-gray-100",
                         { collapsed: isCollapsed }
                     )}
-                    onClick={toggleSidebar}
+                    onDoubleClick={toggleSidebar}
+                    onClick={() => console.log("accounts page")} // ? TODO create AccountView
                 >
                     {!isCollapsed && !sidebarVisibility && (
                         <h1 className="text-3xl font-extrabold text-gray-800">WevN</h1>

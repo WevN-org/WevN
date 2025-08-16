@@ -43,12 +43,12 @@ button {
 .sidebar-wrapper::after {
   content: '';
   position: absolute;
-  width: 5px;
+  width: 3px;
   height: 100%;
   background-color: #05df72;
   top: 0;
   right: 0;
-  transform: translateX(5px);
+  transform: translateX(3px);
 }
 
 .hover-box {
