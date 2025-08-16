@@ -1,6 +1,8 @@
 import GraphViewToggle from "./graph__view_toggle";
+import { changeDomain } from "../../contexts/domain-context/domain_context";
 
 export default function PromptBox({ graphVisibility, toggleGraph, state, setState }) {
+    const {currentDomain,setDomain}=changeDomain();
     return (
         <div className="relative flex border items-center border-gray-300 rounded-xl shadow-sm focus-within:ring-4 focus-within:ring-blue-200 transition-all duration-200 overflow-hidden">
 
@@ -15,11 +17,11 @@ export default function PromptBox({ graphVisibility, toggleGraph, state, setStat
             <select
                 id="query-domain-select"
                 className="bg-white pl-4 pr-16 py-4 text-gray-700 font-medium focus:outline-none appearance-none"
-                value={state.selectedDomainId || ""}
-                onChange={(e) => setState({ ...state, selectedDomainId: Number(e.target.value) })}
+                value={currentDomain || ""}
+                onChange={(e) => setDomain(e.target.value)}
             >
                 {state.domains.map((domain) => (
-                    <option key={domain.id} value={domain.id}>
+                    <option key={domain.id} value={domain.name}>
                         {domain.name}
                     </option>
                 ))}
