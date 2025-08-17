@@ -5,7 +5,7 @@ import ConceptView from './components/concept_view/concept_view';
 import LogProvider from './contexts/log-context/log_provider';
 import { ApiService } from '../../backend/api-service/api_service.js';
 import DomainProvider from './contexts/domain-context/doamin_provider.jsx'
-import { useWebSocket } from './utils/use-websocket.jsx';
+import { useWebSocket } from './custom-hooks/use-websocket.jsx';
 
 
 
@@ -27,8 +27,6 @@ const App = () => {
 
 
     // -- function to fetch domains using ApiService --
-    // I have made it a separate function since this function needs to be called upon creating a new domain(may be a dependancy update ?)
-
 
     const fetchDomain = useCallback(
         async () => {
@@ -53,11 +51,12 @@ const App = () => {
         fetchDomain();
     }, [fetchDomain]);
 
-    const onMessage=useCallback((change) => {
+    // this is the helper function for ws connection and triggers a rerender after every get call currently only triggered when a domain changes
+    const onMessage = useCallback((change) => {
         if (change.type === "domain") {
             fetchDomain();
         }
-    },[fetchDomain])
+    }, [fetchDomain])
 
     // -- ws connection -- 
     const wsRef = useWebSocket(onMessage)

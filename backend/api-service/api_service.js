@@ -15,6 +15,19 @@ const Headers = {
 
 
 export const ApiService = {
+
+    async getHealth() {
+        const res = await fetch(
+            `${baseUrl}/health`,
+            {
+                method: 'GET',
+                headers: Headers
+            }
+        );
+        if (!res.ok) throw new Error("Server not ready");
+
+    },
+
     async getDomain() {
         const response = await fetch(
             `${baseUrl}/collections/list`,
@@ -28,17 +41,16 @@ export const ApiService = {
 
     },
 
-    async getHealth() {
-        const res = await fetch(
-            `${baseUrl}/health`,
+    async deleteDomain() {
+        const response = await fetch(
+            `${baseUrl}/collections/delete`,
             {
-                method: 'GET',
+                method: 'POST',
                 headers: Headers
             }
         );
-        if (!res.ok) throw new Error("Server not ready");
-
     }
+
 }
 
 

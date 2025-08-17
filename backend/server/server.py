@@ -123,12 +123,12 @@ def create_collection(payload : CollectionNameModel, background_tasks: Backgroun
     try :
         client.create_collection(name=payload.name)
         background_tasks.add_task(notify_clients,   "domain")
-        return StatusModel(status="Created Domain Successfully.")
+        return StatusModel(status=f"Created Domain {payload.name} Successfully.")
     except Exception as e:
         raise HTTPException(status_code=400,detail=f"Domain Creation Failed with error: {str(e)}")
 
 
-
+# -- list all collections --
 @app.get("/collections/list", dependencies=[Depends(verify_api_key)])
 def list_collection():
     try:
@@ -138,8 +138,15 @@ def list_collection():
     except Exception as e :
         raise HTTPException(status_code=400,detail=f"Domain Listing Failed with error: {str(e)}")
     
-
-
+# -- delete a collection -- 
+@app.post("/collections/delete",dependencies=[Depends(verify_api_key)])
+def delete_collection(payload:CollectionNameModel, background_tasks: BackgroundTasks):
+    try:
+        client.delete_collection(payload.name)
+        background_tasks.add_task(notify_clients,   "domain")
+        return StatusModel(status=f"Deleted Domain {payload.name} Successfully.")
+    except Exception as e:
+        raise HTTPException(status_code=400,detail=f"Domain Deletion Failed with error: {str(e)}")
 
 
 
