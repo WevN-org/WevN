@@ -30,28 +30,33 @@ POST WORK:
 DONE:
 --> make a global error collection context  -- done
 --> create a context to access the domains  -- done
-
-CURRENT:
-
 --> remake server 
         --> make create collection
                 --> server side -- done
                 --> client side -- done
         --> make load collections -- done
                 --> server side -- done
-                --> client side -- progress
+                --> client side -- done
+--> connect the database with the sidebar to display domains -- done
+--> make the domain accessable from the chat interface -- done
+--> make a ws connection with the server and the app.jsx page -- done
+        --> update collection list according to the message from ws connection -- done
+--> connect doamin delete with the database -- done
+
+
+CURRENT:
 
 
 TODO:
 
 
---> connect the database with the sidebar to display domains
---> connect delete delete with the database
+
+
 --> make domain searching from sidebar
         --> make the feature available in server side
         --> make the feature accessable through ApiService.js
         --> connect it with the sidebar
---> make the domain accessable from the chat interface
+
 --> make edit domain name from side bar 
         --> make the feature available in server
         --> make the feature accessable through the ApiService.js

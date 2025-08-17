@@ -3,8 +3,9 @@ import Sidebar from './components/sidebar';
 import QueryView from './components/query_view/query_view'
 import ConceptView from './components/concept_view/concept_view';
 import LogProvider from './contexts/log-context/log_provider';
-import { ApiService } from '../../backend/api-servide/api_service.js';
+import { ApiService } from '../../backend/api-service/api_service.js';
 import DomainProvider from './contexts/domain-context/doamin_provider.jsx'
+import { useWebSocket } from './custom-hooks/use-websocket.jsx';
 
 
 
@@ -14,8 +15,6 @@ import DomainProvider from './contexts/domain-context/doamin_provider.jsx'
 
 // This is the App component that orchestrates everything
 const App = () => {
-
-    // -- state for the selected domain -- (since every component uses it (every api request) and for the necessity of a local storage)
 
 
     // --- State Management for the App ---
@@ -46,8 +45,6 @@ const App = () => {
 
 
     // -- function to fetch domains using ApiService --
-    // I have made it a separate function since this function needs to be called upon creating a new domain(may be a dependancy update ?)
-
 
     const fetchDomain = useCallback(
         async () => {
@@ -71,6 +68,17 @@ const App = () => {
     useEffect(() => {
         fetchDomain();
     }, [fetchDomain]);
+
+    // this is the helper function for ws connection and triggers a rerender after every get call currently only triggered when a domain changes
+    const onMessage = useCallback((change) => {
+        if (change.type === "domain") {
+            fetchDomain();
+        }
+    }, [fetchDomain])
+
+    // -- ws connection -- 
+    const wsRef = useWebSocket(onMessage)
+
 
     const [activeTab, setActiveTab] = useState('All');
     const [concepts, setConcepts] = useState([
