@@ -38,9 +38,10 @@ def verify_api_key(request: Request):
     key = request.headers.get("X-API-Key")
     if key != API_KEY:
         raise HTTPException(status_code=403, detail="Forbidden: Invalid API Key")
+# -- token validate function --
 
 def validate_token(token: str) -> bool:
-    return token == API_KEY
+    return token == 'api-token'
     
 
 
@@ -109,16 +110,23 @@ def get_or_create_collection(name: str):
 
 # -- fastapi endpoints -- 
 
+
+# -- server helth inquiry
+@app.get("/health", dependencies=[Depends(verify_api_key)])
+def health():
+    return StatusModel(status='ok')
+
+
 # -- create  a new collection -- 
 @app.post("/collections/create" , dependencies=[Depends(verify_api_key)])
 def create_collection(payload : CollectionNameModel, background_tasks: BackgroundTasks):
     try :
         client.create_collection(name=payload.name)
-        background_tasks.add_task(notify_clients,   "Domain")
+        background_tasks.add_task(notify_clients,   "domain")
         return StatusModel(status="Created Domain Successfully.")
     except Exception as e:
         raise HTTPException(status_code=400,detail=f"Domain Creation Failed with error: {str(e)}")
-    
+
 
 
 @app.get("/collections/list", dependencies=[Depends(verify_api_key)])

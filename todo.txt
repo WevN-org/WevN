@@ -28,9 +28,6 @@ POST WORK:
 DONE:
 --> make a global error collection context  -- done
 --> create a context to access the domains  -- done
-
-CURRENT:
-
 --> remake server 
         --> make create collection
                 --> server side -- done
@@ -40,6 +37,11 @@ CURRENT:
                 --> client side -- done
 --> connect the database with the sidebar to display domains -- done
 --> make the domain accessable from the chat interface -- done
+
+
+CURRENT:
+--> make a ws connection with the server and the app.jsx page -- done
+        --> update collection list according to the message from ws connection 
 
 TODO:
 

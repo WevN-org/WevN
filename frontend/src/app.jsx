@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import Sidebar from './components/sidebar';
 import QueryView from './components/query_view/query_view'
 import ConceptView from './components/concept_view/concept_view';
 import LogProvider from './contexts/log-context/log_provider';
-import { ApiService } from '../../backend/api-servide/api_service.js';
+import { ApiService } from '../../backend/api-service/api_service.js';
 import DomainProvider from './contexts/domain-context/doamin_provider.jsx'
+import { token, wsUrl } from '../../backend/api-service/api_constants.js';
+import { useWebSocket } from './utils/use-websocket.jsx';
 
 
 
@@ -51,6 +53,14 @@ const App = () => {
     useEffect(() => {
         fetchDomain();
     }, [fetchDomain]);
+
+    // -- ws connection -- 
+    const wsRef = useWebSocket(useCallback((change) => {
+        if (change.type === "domain") {
+            fetchDomain();
+        }
+    }),[fetchDomain])
+
 
     const [activeTab, setActiveTab] = useState('All');
     const [concepts, setConcepts] = useState([
