@@ -87,20 +87,12 @@ class CollectionNameModel(BaseModel):
 
 
 
-
-
 # -- ChromaDB client -- 
 client = chromadb.PersistentClient(path="db")
 
 
 
 # -- Helper Functions --(boring stuff)
-
-
-# -- Creating Collection --
-def get_or_create_collection(name: str):
-    return client.get_or_create_collection(name=name)
-
 
 
 
@@ -110,22 +102,12 @@ def get_or_create_collection(name: str):
 
 # -- fastapi endpoints -- 
 
+# -- server GET requests --
 
-# -- server helth inquiry
+# -- helth inquiry
 @app.get("/health", dependencies=[Depends(verify_api_key)])
 def health():
     return StatusModel(status='ok')
-
-
-# -- create  a new collection -- 
-@app.post("/collections/create" , dependencies=[Depends(verify_api_key)])
-def create_collection(payload : CollectionNameModel, background_tasks: BackgroundTasks):
-    try :
-        client.create_collection(name=payload.name)
-        background_tasks.add_task(notify_clients,   "domain")
-        return StatusModel(status=f"Created Domain {payload.name} Successfully.")
-    except Exception as e:
-        raise HTTPException(status_code=400,detail=f"Domain Creation Failed with error: {str(e)}")
 
 
 # -- list all collections --
@@ -138,6 +120,22 @@ def list_collection():
     except Exception as e :
         raise HTTPException(status_code=400,detail=f"Domain Listing Failed with error: {str(e)}")
     
+
+
+# -- POST requests --
+
+# -- create  a new collection -- 
+@app.post("/collections/create" , dependencies=[Depends(verify_api_key)])
+def create_collection(payload : CollectionNameModel, background_tasks: BackgroundTasks):
+    try :
+        client.create_collection(name=payload.name)
+        background_tasks.add_task(notify_clients,   "domain")
+        return StatusModel(status=f"Created Domain {payload.name} Successfully.")
+    except Exception as e:
+        raise HTTPException(status_code=400,detail=f"Domain Creation Failed with error: {str(e)}")
+    
+
+
 # -- delete a collection -- 
 @app.post("/collections/delete",dependencies=[Depends(verify_api_key)])
 def delete_collection(payload:CollectionNameModel, background_tasks: BackgroundTasks):
@@ -147,7 +145,4 @@ def delete_collection(payload:CollectionNameModel, background_tasks: BackgroundT
         return StatusModel(status=f"Deleted Domain {payload.name} Successfully.")
     except Exception as e:
         raise HTTPException(status_code=400,detail=f"Domain Deletion Failed with error: {str(e)}")
-
-
-
 
