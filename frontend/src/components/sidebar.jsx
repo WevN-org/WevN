@@ -27,7 +27,7 @@ const Sidebar = ({ state, setState }) => {
     const hasDomains = state.domains?.length > 0;
 
     return (
-        <div className="sidebar-wrapper relative z-50 bg-green-500 transition-colors duration-500">
+        <div className="sidebar-wrapper relative z-50 bg-green-500 transition-colors duration-500 h-dvh">
             <div className="sidebar-toggle-button flex justify-end pr-3 absolute top-2/3 right-0  -translate-y-50 translate-x-12 transition-all duration-500 bg-green-400 w-20 h-15 rounded-full hover:ring-2 hover:ring-emerald-400 hover:ring-offset-2"
                 onClick={() => setSidebarVisibility(!sidebarVisibility)}
             >
@@ -47,7 +47,7 @@ const Sidebar = ({ state, setState }) => {
             <aside
                 id="sidebar"
                 className={clsx(
-                    "sidebar relative  h-screen flex-col border-r border-gray-200 md:flex transition-all duration-500 p-4 z-40",
+                    "sidebar relative  h-screen flex-col border-r border-gray-200 md:flex transition-all duration-500 p-2 z-40",
                     { collapsed: isCollapsed || sidebarVisibility },
                     { hide: sidebarVisibility },
                 )}
@@ -98,7 +98,7 @@ const Sidebar = ({ state, setState }) => {
 
                         {/* Domain List */}
                         {hasDomains ? (
-                            <ul className="space-y-2 custom-scrollbar overflow-y-auto max-h-[300px]">
+                            <ul className={clsx("domain-list space-y-2 overflow-y-scroll max-h-3/4", { hide: sidebarVisibility })}>
                                 {state.domains.map(domain => (
                                     <li
                                         tabIndex={0}
@@ -125,7 +125,7 @@ const Sidebar = ({ state, setState }) => {
                                 ))}
                             </ul>
                         ) : (
-                            <div className="flex flex-col items-center text-gray-400 opacity-60">
+                            <div className="flex flex-col items-center text-gray-400 opacity-60 z-50">
                                 <p className="text-center">No existing domains found!</p>
                                 <button className="text-blue-500 hover:text-blue-600 transition-colors text-sm font-medium mt-2">
                                     + create new ?
@@ -136,7 +136,7 @@ const Sidebar = ({ state, setState }) => {
                 )}
 
                 {/* New Domain Button */}
-                <div className="flex justify-center mt-auto border-t-2 border-gray-200 p-3">
+                <div className="bg-white flex absolute w-[calc(100%-1rem)] bottom-0 justify-center mt-auto border-t-2 border-gray-200 p-3">
                     <button
                         className={`flex items-center justify-center  text-green-500 hover:bg-green-100 hover:text-black transition-all duration-200 ease-in-out outline-2 outline-green-500 rounded-md font-medium p-3 whitespace-nowrap ${isCollapsed ? "w-12" : "w-full gap-2"
                             }`}
