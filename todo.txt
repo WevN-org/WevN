@@ -39,6 +39,7 @@ DONE:
 --> make the domain accessable from the chat interface -- done
 --> make a ws connection with the server and the app.jsx page -- done
         --> update collection list according to the message from ws connection -- done
+--> connect doamin delete with the database -- done
 
 
 CURRENT:
@@ -48,7 +49,7 @@ TODO:
 
 
 
---> connect doamin delete with the database
+
 --> make domain searching from sidebar
         --> make the feature available in server side
         --> make the feature accessable through ApiService.js
