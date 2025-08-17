@@ -4,7 +4,7 @@ export default function GraphViewToggle({ graphVisibility, onToggle }) {
     return (
         <button
             onClick={onToggle}
-            className={`ml-2 relative w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300
+            className={`relative w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300
         ${graphVisibility ? "bg-green-500 text-white" : "bg-gray-200 text-gray-400"}`}
         >
             <Network size={20} />

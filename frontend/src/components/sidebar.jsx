@@ -28,10 +28,10 @@ const Sidebar = ({ state, setState }) => {
 
     return (
         <div className="sidebar-wrapper relative z-50 bg-green-500 transition-colors duration-500 h-dvh">
-            <div className="sidebar-toggle-button flex justify-end pr-3 absolute top-2/3 right-0  -translate-y-50 translate-x-12 transition-all duration-500 bg-green-400 w-20 h-15 rounded-full hover:ring-2 hover:ring-emerald-400 hover:ring-offset-2"
+            <div className="sidebar-toggle-button flex justify-end pr-3 absolute top-3 -right-3 translate-x-12 transition-all duration-500 w-20 h-15 rounded-full"
                 onClick={() => setSidebarVisibility(!sidebarVisibility)}
             >
-                <button className=" text-white ">
+                <button className="text-gray-600">
                     {sidebarVisibility ? <PanelLeftOpen size={28} /> : <PanelLeftClose size={28} />}
                 </button>
             </div>

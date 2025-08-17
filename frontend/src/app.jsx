@@ -7,37 +7,13 @@ import { ApiService } from '../../backend/api-service/api_service.js';
 import DomainProvider from './contexts/domain-context/doamin_provider.jsx'
 import { useWebSocket } from './custom-hooks/use-websocket.jsx';
 
-
-
-
-
-
-
 // This is the App component that orchestrates everything
 const App = () => {
 
 
     // --- State Management for the App ---
     const [state, setState] = useState({
-        //domains: [
-        //    { "id": "impl-001", "name": "Introduction to RAG" },
-        //    { "id": "impl-002", "name": "Haystack Framework" },
-        //    { "id": "impl-003", "name": "Wikipedia Embeddings" },
-        //    { "id": "impl-004", "name": "Vector Databases Overview" },
-        //    { "id": "impl-005", "name": "LangChain Framework" },
-        //    { "id": "impl-006", "name": "Document Retrieval Pipeline" },
-        //    { "id": "impl-007", "name": "Semantic Search Module" },
-        //    { "id": "impl-008", "name": "QA System Template" },
-        //    { "id": "impl-009", "name": "Knowledge Graph Integration" },
-        //    { "id": "impl-010", "name": "Preprocessing Scripts" },
-        //    { "id": "impl-011", "name": "Chunking Strategies" },
-        //    { "id": "impl-012", "name": "Embedding Models" },
-        //    { "id": "impl-013", "name": "Vector Store Connectors" },
-        //    { "id": "impl-014", "name": "Re-ranking Mechanisms" },
-        //    { "id": "impl-015", "name": "Query Expansion" },
-        //    { "id": "impl-016", "name": "Context Window Management" },
-        //    { "id": "impl-017", "name": "Caching Layer" }
-        //],
+        domains: [],
         currentView: 'query', // can be 'query' or 'concept-management'
         sidebarCollapsed: false,
     });
@@ -128,7 +104,7 @@ const App = () => {
         <>
             <DomainProvider>
                 <LogProvider>
-                    <div className='flex overflow-hidden'>
+                    <div className='flex overflow-hidden h-screen'>
                         <Sidebar state={state} setState={setState} />
                         {state.currentView === 'query' ? (
                             <QueryView state={state} setState={setState} />

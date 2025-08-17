@@ -1,7 +1,8 @@
 import { useState } from "react";
 import GraphContainer from "./graph_container";
 import AnswerBox from "./answer_box";
-import PromptBox from "./prompt_box";
+import PromptContainer from "./prompt_container";
+import clsx from "clsx";
 
 export default function QueryView({ state, setState }) {
     const [graphVisibility, setGraphVisibility] = useState(true);
@@ -9,29 +10,46 @@ export default function QueryView({ state, setState }) {
     const toggleGraphView = () => setGraphVisibility((prev) => !prev);
 
     return (
-        <main id="query-view" className="main-content relative flex-1 h-screen flex flex-col p-3">
-
-            <div className={`flex flex-1 overflow-y-auto  pb-4 ${graphVisibility && 'gap-4'}`}>
-                <GraphContainer visible={graphVisibility}>
-                    <div className="d3-placeholder">
-                        Interactive D3.js Graph Visualization
-                        <p className="text-sm mt-3">
-                            Nodes and edges will be rendered here based on your query.
-                        </p>
-                    </div>
-                </GraphContainer>
-
+        <main
+            id="query-view"
+            className={clsx(
+                "main-content relative h-screen flex flex-col md:flex-row", // <-- vertical on small, horizontal on md+
+                {
+                    "gap-4 justify-center w-full": graphVisibility,
+                    "w-full": !graphVisibility,
+                }
+            )}
+        >
+            <div
+                className={clsx(
+                    "relative flex flex-col h-full items-center flex-1",
+                    { "flex-grow": !graphVisibility }
+                )}
+            >
                 <AnswerBox>
                     Your textual answer will appear here, providing a detailed summary of the retrieved information.
                 </AnswerBox>
+                <PromptContainer
+                    graphVisibility={graphVisibility}
+                    toggleGraph={toggleGraphView}
+                    state={state}
+                    setState={setState}
+                />
             </div>
 
-            <PromptBox
-                graphVisibility={graphVisibility}
-                toggleGraph={toggleGraphView}
-                state={state}
-                setState={setState}
-            />
+            {/* Graph goes below content on small, beside on md+ */}
+            <GraphContainer
+                visible={graphVisibility}
+                className="w-full md:w-[40%] h-64 md:h-auto" // 100% width on small, fixed width on desktop
+            >
+                <div className="d3-placeholder">
+                    Interactive D3.js Graph Visualization
+                    <p className="text-sm mt-3">
+                        Nodes and edges will be rendered here based on your query.
+                    </p>
+                </div>
+            </GraphContainer>
         </main>
+
     );
 }
