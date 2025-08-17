@@ -37,19 +37,20 @@ CURRENT:
                 --> client side -- done
         --> make load collections -- done
                 --> server side -- done
-                --> client side -- progress
-
+                --> client side -- done
+--> connect the database with the sidebar to display domains -- done
+--> make the domain accessable from the chat interface -- done
 
 TODO:
 
 
---> connect the database with the sidebar to display domains
+
 --> connect delete delete with the database
 --> make domain searching from sidebar
         --> make the feature available in server side
         --> make the feature accessable through ApiService.js
         --> connect it with the sidebar
---> make the domain accessable from the chat interface
+
 --> make edit domain name from side bar 
         --> make the feature available in server
         --> make the feature accessable through the ApiService.js

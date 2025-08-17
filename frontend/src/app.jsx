@@ -15,8 +15,6 @@ import DomainProvider from './contexts/domain-context/doamin_provider.jsx'
 // This is the App component that orchestrates everything
 const App = () => {
 
-    // -- state for the selected domain -- (since every component uses it (every api request) and for the necessity of a local storage)
-
 
     // --- State Management for the App ---
     const [state, setState] = useState({
