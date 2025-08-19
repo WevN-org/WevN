@@ -1,16 +1,24 @@
 import clsx from "clsx";
 import { Plus, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState } from "react";
+import { changeDomain } from "../contexts/domain-context/domain_context";
 
 const Sidebar = ({ state, setState }) => {
+
+    // -- the currentDomain context --
+    const { currentDomain, setDomain } = changeDomain()
+
     const [sidebarVisibility, setSidebarVisibility] = useState(true)
     const toggleSidebar = () => {
         setState(prev => ({ ...prev, sidebarCollapsed: !prev.sidebarCollapsed }));
     };
-    const handleDomainClick = (domainId) => {
+    const handleDomainClick = (domainName) => {
+        setDomain(domainName)
+
+        // the following is to be changed later since the current domain corresponds to the the selectd concept 
+        // i kept it here since if no change occur to currentView upon click it wont be displayed this is temprorary 
         setState(prev => ({
             ...prev,
-            selectedDomainId: domainId,
             currentView: 'concept'
         }));
     };
@@ -19,11 +27,11 @@ const Sidebar = ({ state, setState }) => {
     const hasDomains = state.domains?.length > 0;
 
     return (
-        <div className="sidebar-wrapper relative z-50 bg-green-500 transition-colors duration-500">
-            <div className="sidebar-toggle-button flex justify-end pr-3 absolute top-2/3 right-0  -translate-y-50 translate-x-12 transition-all duration-500 bg-green-400 w-20 h-15 rounded-full hover:ring-2 hover:ring-emerald-400 hover:ring-offset-2"
+        <div className="sidebar-wrapper relative z-50 bg-green-500 transition-colors duration-500 h-dvh">
+            <div className="sidebar-toggle-button flex justify-end pr-3 absolute top-3 -right-3 translate-x-12 transition-all duration-500 w-20 h-15 rounded-full"
                 onClick={() => setSidebarVisibility(!sidebarVisibility)}
             >
-                <button className=" text-white ">
+                <button className="text-gray-600">
                     {sidebarVisibility ? <PanelLeftOpen size={28} /> : <PanelLeftClose size={28} />}
                 </button>
             </div>
@@ -39,8 +47,9 @@ const Sidebar = ({ state, setState }) => {
             <aside
                 id="sidebar"
                 className={clsx(
-                    "sidebar relative  h-screen flex-col border-r border-gray-200 md:flex transition-all duration-500 p-4 z-40",
-                    { collapsed: isCollapsed || sidebarVisibility },
+                    "sidebar relative  h-screen flex-col border-r border-gray-200 md:flex transition-all duration-500 p-2 z-40",
+                    //{ collapsed: isCollapsed || sidebarVisibility },
+                    { collapsed: isCollapsed },
                     { hide: sidebarVisibility },
                 )}
             >
@@ -51,7 +60,8 @@ const Sidebar = ({ state, setState }) => {
                         "flex items-center justify-between w-full cursor-pointer p-4 rounded-lg transition-colors duration-200 hover:bg-gray-100",
                         { collapsed: isCollapsed }
                     )}
-                    onClick={toggleSidebar}
+                    onDoubleClick={toggleSidebar}
+                    onClick={() => console.log("accounts page")} // ? TODO create AccountView
                 >
                     {!isCollapsed && !sidebarVisibility && (
                         <h1 className="text-3xl font-extrabold text-gray-800">WevN</h1>
@@ -89,13 +99,13 @@ const Sidebar = ({ state, setState }) => {
 
                         {/* Domain List */}
                         {hasDomains ? (
-                            <ul className="space-y-2 custom-scrollbar overflow-y-auto max-h-[300px]">
+                            <ul className={clsx("domain-list space-y-2 overflow-y-scroll max-h-3/4", { hide: sidebarVisibility })}>
                                 {state.domains.map(domain => (
                                     <li
                                         tabIndex={0}
                                         key={domain.id}
                                         className="flex items-center justify-between p-3 rounded-lg border-l-4 border-l-transparent transition-colors duration-200 cursor-pointer focus:bg-gray-200 focus:border-l-green-500"
-                                        onClick={() => handleDomainClick(domain.id)}
+                                        onClick={() => handleDomainClick(domain.name)}
                                     >
                                         <span className="text-sm font-medium text-gray-700">{domain.name}</span>
                                         <div className="flex space-x-2">
@@ -116,7 +126,7 @@ const Sidebar = ({ state, setState }) => {
                                 ))}
                             </ul>
                         ) : (
-                            <div className="flex flex-col items-center text-gray-400 opacity-60">
+                            <div className="flex flex-col items-center text-gray-400 opacity-60 z-50">
                                 <p className="text-center">No existing domains found!</p>
                                 <button className="text-blue-500 hover:text-blue-600 transition-colors text-sm font-medium mt-2">
                                     + create new ?
@@ -127,7 +137,7 @@ const Sidebar = ({ state, setState }) => {
                 )}
 
                 {/* New Domain Button */}
-                <div className="flex justify-center mt-auto border-t-2 border-gray-200 p-3">
+                <div className="bg-white flex absolute w-[calc(100%-1rem)] bottom-0 justify-center mt-auto border-t-2 border-gray-200 p-3">
                     <button
                         className={`flex items-center justify-center  text-green-500 hover:bg-green-100 hover:text-black transition-all duration-200 ease-in-out outline-2 outline-green-500 rounded-md font-medium p-3 whitespace-nowrap ${isCollapsed ? "w-12" : "w-full gap-2"
                             }`}

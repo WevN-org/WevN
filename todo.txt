@@ -1,22 +1,63 @@
+--SHARON--
+
 DONE:
 
 -> create sidebar -- done
 -> hide sidebar on clicking menu icon -- done
 -> fix the query box to bottom -- done
--> create concept ui and make it responsive -- done
-
-CURRENT:
-
 -> show sidebar toggle button on hover and make its z-index 10000 -- done
 -> change the new domain and graph toggle button to green -- done
--> add a tooltip on account and sidebar toggle button, graph toggle button
 -> add a focus/active state for the domain button in sidebar -- done
 -> maybe add border right to the sidebar for a modern look -- done
+-> create concept ui and make it responsive -- done
+-> sidebar now scrolls domains perfectly -- done
+-> make chat window seperate from graph... merge chat window and promptbox to one. have the graph toggle button inside the promptbox like now, also keep the domain toggle button inside the promptbox -- done
+-> one small screens make the query box as flex-col -- major work needed. -- done
+
+CURRENT:
+-> create dialog boxes
 
 TODO:
--> one small screens make the query box as flex-col
--> create dialog boxes
+-> add a tooltip on account and sidebar toggle button, graph toggle button
 
 POST WORK:
 -> set a one click theme
 -> convert potential toggles to enums
+
+
+--ANSHUL--
+
+DONE:
+--> make a global error collection context  -- done
+--> create a context to access the domains  -- done
+--> remake server 
+        --> make create collection
+                --> server side -- done
+                --> client side -- done
+        --> make load collections -- done
+                --> server side -- done
+                --> client side -- done
+--> connect the database with the sidebar to display domains -- done
+--> make the domain accessable from the chat interface -- done
+--> make a ws connection with the server and the app.jsx page -- done
+        --> update collection list according to the message from ws connection -- done
+--> connect doamin delete with the database -- done
+
+
+CURRENT:
+
+
+TODO:
+
+
+
+
+--> make domain searching from sidebar
+        --> make the feature available in server side
+        --> make the feature accessable through ApiService.js
+        --> connect it with the sidebar
+
+--> make edit domain name from side bar 
+        --> make the feature available in server
+        --> make the feature accessable through the ApiService.js
+        --> connect it with the sidebar
