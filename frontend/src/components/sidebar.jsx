@@ -48,7 +48,8 @@ const Sidebar = ({ state, setState }) => {
                 id="sidebar"
                 className={clsx(
                     "sidebar relative  h-screen flex-col border-r border-gray-200 md:flex transition-all duration-500 p-2 z-40",
-                    { collapsed: isCollapsed || sidebarVisibility },
+                    //{ collapsed: isCollapsed || sidebarVisibility },
+                    { collapsed: isCollapsed },
                     { hide: sidebarVisibility },
                 )}
             >

@@ -72,7 +72,7 @@ function PromptContainer({ graphVisibility, toggleGraph, state, setState }) {
                                 ref={textareaRef}
                                 value={inputValue}
                                 onChange={handleInputChange}
-                                placeholder="Message ClaudeAI..."
+                                placeholder="Explore your knowledgebase..."
                                 rows={1}
                                 className="flex-1 resize-none overflow-hidden bg-transparent text-gray-800 text-base leading-relaxed p-2
                            focus:outline-none focus:ring-0 placeholder-gray-400 max-h-64"

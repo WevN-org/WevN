@@ -10,14 +10,14 @@ DONE:
 -> add a focus/active state for the domain button in sidebar -- done
 -> maybe add border right to the sidebar for a modern look -- done
 -> create concept ui and make it responsive -- done
+-> sidebar now scrolls domains perfectly -- done
+-> make chat window seperate from graph... merge chat window and promptbox to one. have the graph toggle button inside the promptbox like now, also keep the domain toggle button inside the promptbox -- done
+-> one small screens make the query box as flex-col -- major work needed. -- done
 
 CURRENT:
 -> create dialog boxes
--> make chat window seperate from graph... merge chat window and promptbox to one. have the graph toggle button inside the promptbox like now, also keep the domain toggle button inside the promptbox
--> one small screens make the query box as flex-col -- major work needed.
 
 TODO:
--> sidebar now scrolls domains perfectly -- done
 -> add a tooltip on account and sidebar toggle button, graph toggle button
 
 POST WORK:

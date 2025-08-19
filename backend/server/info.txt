@@ -16,4 +16,5 @@ delete
  Invoke-WebRequest -Uri "http://localhost:8000/collections/delete" `
    -Method POST `
    -Headers @{ "X-API-Key" = "mysecretkey"; "Content-Type" = "application/json" } `
-   -Body '{"name": "test56"}'
+   -Body '{"name": "test56"}
+   '

@@ -13,16 +13,29 @@ export default function QueryView({ state, setState }) {
         <main
             id="query-view"
             className={clsx(
-                "main-content relative h-screen flex flex-col md:flex-row", // <-- vertical on small, horizontal on md+
+                "main-content relative h-screen flex flex-col md:flex-row",
                 {
                     "gap-4 justify-center w-full": graphVisibility,
                     "w-full": !graphVisibility,
                 }
             )}
         >
+            {/* Graph goes on top on small screens, and is ordered last on md+ */}
+            <GraphContainer
+                visible={graphVisibility}
+                className="w-full md:w-[40%] h-64 md:h-auto md:order-last"
+            >
+                <div className="d3-placeholder">
+                    Interactive D3.js Graph Visualization
+                    <p className="text-sm mt-3">
+                        Nodes and edges will be rendered here based on your query.
+                    </p>
+                </div>
+            </GraphContainer>
+
             <div
                 className={clsx(
-                    "relative flex flex-col h-full items-center flex-1",
+                    "relative flex flex-col h-full items-center flex-1 order-last md:order-first",
                     { "flex-grow": !graphVisibility }
                 )}
             >
@@ -36,19 +49,6 @@ export default function QueryView({ state, setState }) {
                     setState={setState}
                 />
             </div>
-
-            {/* Graph goes below content on small, beside on md+ */}
-            <GraphContainer
-                visible={graphVisibility}
-                className="w-full md:w-[40%] h-64 md:h-auto" // 100% width on small, fixed width on desktop
-            >
-                <div className="d3-placeholder">
-                    Interactive D3.js Graph Visualization
-                    <p className="text-sm mt-3">
-                        Nodes and edges will be rendered here based on your query.
-                    </p>
-                </div>
-            </GraphContainer>
         </main>
 
     );
