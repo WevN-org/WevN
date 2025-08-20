@@ -139,7 +139,7 @@ const Sidebar = ({ state, setState }) => {
                 {/* New Domain Button */}
                 <div className="bg-white flex absolute w-[calc(100%-1rem)] bottom-0 justify-center mt-auto border-t-2 border-gray-200 p-3">
                     <button
-                        className={`flex items-center justify-center  text-green-500 hover:bg-green-100 hover:text-black transition-all duration-200 ease-in-out outline-2 outline-green-500 rounded-md font-medium p-3 whitespace-nowrap ${isCollapsed ? "w-12" : "w-full gap-2"
+                        className={`flex items-center justify-center hover:bg-green-100 transition-all duration-200 ease-in-out rounded-md font-medium p-3 whitespace-nowrap bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md ${isCollapsed ? "w-12" : "w-full gap-2"
                             }`}
                     >   <Plus />
                         <span className={` overflow-hidden transition-all duration-200 ease ${isCollapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-[200px]"}`}>New Domain</span>

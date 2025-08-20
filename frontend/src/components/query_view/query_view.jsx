@@ -22,7 +22,7 @@ export default function QueryView({ state, setState }) {
         >
             {/* Graph goes on top on small screens, and is ordered last on md+ */}
             <GraphContainer
-                visible={graphVisibility}
+                isVisible={graphVisibility}
                 className="w-full md:w-[40%] h-64 md:h-auto md:order-last"
             >
                 <div className="d3-placeholder">
