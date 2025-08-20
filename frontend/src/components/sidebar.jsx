@@ -104,10 +104,15 @@ const Sidebar = ({ state, setState }) => {
                                     <li
                                         tabIndex={0}
                                         key={domain.id}
-                                        className="flex items-center justify-between p-3 rounded-lg border-l-4 border-l-transparent transition-colors duration-200 cursor-pointer focus:bg-gray-200 focus:border-l-green-500"
+                                        className={clsx(
+                                            "flex items-center justify-between p-3 rounded-lg transition duration-200 cursor-pointer",
+                                            currentDomain === domain.name
+                                                ? "bg-indigo-50 text-indigo-700 font-medium shadow-inner relative before:absolute before:left-5 before:-translate-x-8 before:top-1/2 before:-translate-y-1/2 before:w-5 before:h-5 before:bg-indigo-500 before:rounded-full"
+                                                : "text-gray-700 hover:bg-gray-100"
+                                        )}
                                         onClick={() => handleDomainClick(domain.name)}
                                     >
-                                        <span className="text-sm font-medium text-gray-700">{domain.name}</span>
+                                        <span className={clsx("text-sm", { "pl-2": currentDomain == domain.name })}>{domain.name}</span>
                                         <div className="flex space-x-2">
                                             {/* Rename */}
                                             <button className="text-gray-400 hover:text-blue-500 transition-colors">
