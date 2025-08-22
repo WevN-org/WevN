@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-primary: #3b82f6;
+    --color-secondary: #1e293b;
+    --color-accent: #f3f4f6;
+
+    --padding-card: .75rem 1.25rem;
+  }
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--color-accent);
+}
+
+button {
+  cursor: pointer;
+}
+
+.sidebar {
+  width: 320px;
+  background-color: #ffffff;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.sidebar.collapsed,
+.sidebar-wrapper.collapsed {
+  width: 80px;
+  padding: 1rem 8px;
+}
+
+.sidebar.hide {
+  width: 0;
+  transform: translateX(-80px);
+  padding: 0;
+}
+
+.sidebar::after,
+.sidebar-wrapper::after {
+  content: '';
+  position: absolute;
+  width: 3px;
+  height: 100%;
+  /*background-color: #05df72; -- hidden */
+  top: 0;
+  right: 0;
+  transform: translateX(3px);
+}
+
+.domain-list.hide {
+  width: 0;
+}
+
+.hover-box {
+  width: calc(320px + 6rem);
+}
+
+.hover-box.collapsed {
+  width: calc(80px + 6rem);
+}
+
+.hover-box.hide {
+  width: 6rem;
+}
+
+
+/* Modal styles *
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #ffffff;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom scrollbar for concept list *
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+  border: 2px solid #f3f4f6;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+*/
