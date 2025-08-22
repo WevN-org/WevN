@@ -11,7 +11,10 @@ from sentence_transformers import SentenceTransformer
 
 # -- sentence - transformers  model
 
-model = SentenceTransformer('all-MiniLM-L6-v2')
+model = SentenceTransformer(
+    "intfloat/e5-large-v2",
+    cache_folder="../__models__/embedding-model"
+)
 
 # -- websocket  clients
 clients = []
@@ -83,6 +86,12 @@ class StatusModel(BaseModel):
 # For creating and Deleting Collections
 class CollectionNameModel(BaseModel):
     name: str
+
+
+# for renaming a collection
+class CollectionRenameModel(BaseModel):
+    d_old: str
+    d_new: str
     
 
 
@@ -146,3 +155,14 @@ def delete_collection(payload:CollectionNameModel, background_tasks: BackgroundT
     except Exception as e:
         raise HTTPException(status_code=400,detail=f"Domain Deletion Failed with error: {str(e)}")
 
+
+
+@app.post("/collections/rename",dependencies=[Depends(verify_api_key)])
+def delete_collection(payload:CollectionRenameModel, background_tasks: BackgroundTasks):
+    try:
+        collection = client.get_collection(payload.d_old)
+        collection.modify(name=payload.d_new)
+        background_tasks.add_task(notify_clients,   "domain")
+        return StatusModel(status=f"Renamed  Domain {payload.d_old} to {payload.d_new} Successfully.")
+    except Exception as e:
+        raise HTTPException(status_code=400,detail=f"Domain Deletion Failed with error: {str(e)}")

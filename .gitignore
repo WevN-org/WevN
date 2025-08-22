@@ -29,3 +29,4 @@ dist-ssr
 venv
 backend/server/db/
 __pycache__
+__models__/

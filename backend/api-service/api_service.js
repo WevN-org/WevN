@@ -68,6 +68,19 @@ export const ApiService = {
         return await handleResponse(response, "Failed to delete domain");
     },
 
+    async deleteDomain(d_old,d_new) {
+        const response = await fetch(
+            `${baseUrl}/collections/rename`,
+            {
+                method: 'POST',
+                headers: Headers,
+                body: JSON.stringify({ d_old,d_new }),
+            }
+        );
+
+        return await handleResponse(response, "Failed to rename domain");
+    },
+
 
 
 }

@@ -42,22 +42,23 @@ DONE:
 --> make a ws connection with the server and the app.jsx page -- done
         --> update collection list according to the message from ws connection -- done
 --> connect doamin delete with the database -- done
+--> auto reload upon connecting to server -- done
 
 
 CURRENT:
-
+--> make edit domain name from side bar 
+        --> make the feature available in server
+        --> make the feature accessable through the ApiService.js 
+        --> connect it with the sidebar
 
 TODO:
 
 
 
 
---> make domain searching from sidebar
-        --> make the feature available in server side
-        --> make the feature accessable through ApiService.js
-        --> connect it with the sidebar
+--> make domain searching from sidebar                         | > 
+        --> make the feature available in server side          | >          Dropping this for now  since i am providing a whole list       
+        --> make the feature accessable through ApiService.js  | >                        
+        --> connect it with the sidebar                        | >  
 
---> make edit domain name from side bar 
-        --> make the feature available in server
-        --> make the feature accessable through the ApiService.js
-        --> connect it with the sidebar
+--> Node CRUD operations 
