@@ -16,10 +16,11 @@ export function useWebSocket(onMessage) {
 
                 wsRef.current.onopen = () => {
                     console.log("✅ Connected to server");
+                    if (onMessage) onMessage("reload doamin")
                 };
                 wsRef.current.onmessage = (event) => {
                     const change = JSON.parse(event.data);
-                    if (onMessage) onMessage(change);
+                    if (onMessage) onMessage(change.type);
                 };
 
 
