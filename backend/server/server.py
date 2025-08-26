@@ -7,12 +7,14 @@ from pydantic import BaseModel
 import json
 import chromadb
 from sentence_transformers import SentenceTransformer
-
+import numpy as np
+import uuid
+from typing import List,Optional
 
 # -- sentence - transformers  model
 
 model = SentenceTransformer(
-    "intfloat/e5-large-v2",
+    "all-mpnet-base-v2",
     cache_folder="../__models__/embedding-model"
 )
 
@@ -80,6 +82,14 @@ async def notify_clients(change_type):
 # -- output models --
 class StatusModel(BaseModel):
     status: str
+class NodeOut(BaseModel):
+    ids : str
+    name : str
+    documents : str
+    user_links : Optional[List[str]]
+    s_links : Optional[List[str]]
+    
+
 
 # -- input models --
 
@@ -92,7 +102,15 @@ class CollectionNameModel(BaseModel):
 class CollectionRenameModel(BaseModel):
     d_old: str
     d_new: str
-    
+
+# For creating or updating a node
+class NodeInputModel(BaseModel):
+    collection: str
+    name:str
+    content: str
+    user_links: list[str]
+    distance_threshold: float
+    max_links: int
 
 
 
@@ -103,7 +121,13 @@ client = chromadb.PersistentClient(path="db")
 
 # -- Helper Functions --(boring stuff)
 
+# -- cosine similarity listing for creating semantic linking
+def distance_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
+# -- embedding --
+def model_embedding(text: str) -> list[float]:
+    return model.encode(text)
 
 
 
@@ -129,6 +153,35 @@ def list_collection():
     except Exception as e :
         raise HTTPException(status_code=400,detail=f"Domain Listing Failed with error: {str(e)}")
     
+# -- list all nodes for a given collection -- 
+@app.get("/nodes/list",dependencies=[Depends(verify_api_key)])
+def list_nodes(payload:CollectionNameModel):
+    try:
+        collection = client.get_collection(payload.name)
+        nodes = collection.get(
+            include=["documents","metadatas"]
+        )
+        documents = nodes.get("documents") or []
+        ids = nodes.get("ids") or []
+        metadatas = nodes.get("metadatas") or []
+        result = []
+        for node_id,doc,meta in zip( ids, documents, metadatas):
+            try:
+                user_links = json.loads(meta.get("user_link", "[]"))
+                s_links = json.loads(meta.get("s_link", "[]"))
+            except Exception:
+                user_links = []
+                s_links = []
+            result.append(NodeOut(
+                node_id=node_id,
+                name=meta.get("name", ""),
+                document=doc,
+                user_links=user_links,
+                s_links=s_links
+            ))
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to list nodes: {str(e)}")
 
 
 # -- POST requests --
@@ -156,7 +209,7 @@ def delete_collection(payload:CollectionNameModel, background_tasks: BackgroundT
         raise HTTPException(status_code=400,detail=f"Domain Deletion Failed with error: {str(e)}")
 
 
-
+# -- rename a collection --
 @app.post("/collections/rename",dependencies=[Depends(verify_api_key)])
 def delete_collection(payload:CollectionRenameModel, background_tasks: BackgroundTasks):
     try:
@@ -166,3 +219,37 @@ def delete_collection(payload:CollectionRenameModel, background_tasks: Backgroun
         return StatusModel(status=f"Renamed  Domain {payload.d_old} to {payload.d_new} Successfully.")
     except Exception as e:
         raise HTTPException(status_code=400,detail=f"Domain Deletion Failed with error: {str(e)}")
+
+# -- insert a node --
+@app.post("/nodes/insert", dependencies=[Depends(verify_api_key)])
+def createNode(payload:NodeInputModel, background_tasks: BackgroundTasks):
+    try:
+        collection = client.get_collection(payload.collection)
+        embedding=model_embedding(f"Definition for {payload.name}. {payload.content}")
+        node_id = str(uuid.uuid1())
+        q_result=collection.query(
+            query_embeddings = embedding,
+            n_results=payload.max_links,
+            include=["distances"]
+        )
+
+        s_links=[]
+        for i,id in enumerate(q_result["ids"][0]):
+            if q_result["distances"][0][i] <= payload.distance_threshold:
+                s_links.append(id)
+        metadata= {
+            "name" : payload.name,
+            "user_links" : json.dumps(payload.user_links),
+            "s_links" : json.dumps(s_links)
+        }
+        collection.add(
+            documents=[payload.content],
+            ids=[node_id],
+            embeddings=[embedding],
+            metadatas=[metadata]
+        )
+        background_tasks.add_task(notify_clients,   "node")
+        return StatusModel(status=f"Added Node {payload.name} Successfully.")
+
+    except Exception as e:
+        raise HTTPException(status_code=400,detail=f"Node insertion failed with error: {str(e)}")

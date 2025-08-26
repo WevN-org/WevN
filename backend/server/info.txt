@@ -17,4 +17,27 @@ delete
    -Method POST `
    -Headers @{ "X-API-Key" = "mysecretkey"; "Content-Type" = "application/json" } `
    -Body '{"name": "test56"}
-   '
+   
+
+add node(collection must be prepresent)
+
+$body = @{
+    name = "--nodename--"
+    content = "This is the content of the test node."
+    collection = "--collectionname--"
+    max_links = 5
+    distance_threshold = 0.7
+    user_links = @("link1", "link2")
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8000/collections/create" `
+    -Method POST `
+    -Headers @{
+        "X-API-Key" = "mysecretkey"
+        "Content-Type" = "application/json"
+    } `
+    -Body $body
+
+
+node structure 
+
