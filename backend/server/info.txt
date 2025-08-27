@@ -39,5 +39,8 @@ Invoke-WebRequest -Uri "http://localhost:8000/collections/create" `
     -Body $body
 
 
-node structure 
+Invoke-WebRequest -Uri "http://localhost:8000/nodes/list" `
+    -Method POST `
+    -Headers @{ "X-API-Key" = "mysecretkey"; "Content-Type" = "application/json" } `
+    -Body '{"name": "Anshul"}'
 

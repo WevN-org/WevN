@@ -82,10 +82,12 @@ async def notify_clients(change_type):
 # -- output models --
 class StatusModel(BaseModel):
     status: str
+
+# for a single node in list node
 class NodeOut(BaseModel):
-    ids : str
+    node_id : str
     name : str
-    documents : str
+    content : str
     user_links : Optional[List[str]]
     s_links : Optional[List[str]]
     
@@ -154,7 +156,7 @@ def list_collection():
         raise HTTPException(status_code=400,detail=f"Domain Listing Failed with error: {str(e)}")
     
 # -- list all nodes for a given collection -- 
-@app.get("/nodes/list",dependencies=[Depends(verify_api_key)])
+@app.post("/nodes/list",dependencies=[Depends(verify_api_key)])
 def list_nodes(payload:CollectionNameModel):
     try:
         collection = client.get_collection(payload.name)
@@ -175,7 +177,7 @@ def list_nodes(payload:CollectionNameModel):
             result.append(NodeOut(
                 node_id=node_id,
                 name=meta.get("name", ""),
-                document=doc,
+                content=doc,
                 user_links=user_links,
                 s_links=s_links
             ))
