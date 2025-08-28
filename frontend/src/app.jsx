@@ -41,14 +41,15 @@ const App = () => {
 
     // initial render of the fetchDomain function
 
-    useEffect(() => {
-        fetchDomain();
-    }, [fetchDomain]);
+    // useEffect(() => {
+    //     fetchDomain();
+    // }, [fetchDomain]);
 
     // this is the helper function for ws connection and triggers a rerender after every get call currently only triggered when a domain changes
     const onMessage = useCallback((change) => {
 
         if (change === "domain" || change === "reload doamin") {
+            console.log(change);
             fetchDomain();
         }
     }, [fetchDomain])

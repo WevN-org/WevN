@@ -13,7 +13,10 @@ const Sidebar = ({ state, setState }) => {
     const [deleteDomain, setDeleteDomain] = useState(null);
     const [showRenamePopup, setShowRenamePopup] = useState(false);
     const [renameDomain, setRenameDomain] = useState(null);   // the domain being renamed
-    const [renameValue, setRenameValue] = useState("");       // input value
+    const [renameValue, setRenameValue] = useState("");
+    const [showCreatePopup, setShowCreatePopup] = useState(false);
+    const [newDomain, setNewDomain] = useState("");
+    // input value
 
 
     const [sidebarVisibility, setSidebarVisibility] = useState(true)
@@ -31,12 +34,12 @@ const Sidebar = ({ state, setState }) => {
         }));
     };
     const handleDoaminRename = (oldName, newName) => {
-        try{
-        console.log(`Renaming ${oldName} → ${newName}`);
-        ApiService.renameDomain(oldName,newName);
-        setShowRenamePopup(false);
+        try {
+            console.log(`Renaming ${oldName} → ${newName}`);
+            ApiService.renameDomain(oldName, newName);
+            setShowRenamePopup(false);
         }
-        catch(err){
+        catch (err) {
             console.log(err)
         }
     };
@@ -51,6 +54,18 @@ const Sidebar = ({ state, setState }) => {
             console.log(err)
         }
     };
+    const handleCreateDomain = async (domainName) => {
+        try {
+            await ApiService.createDomain(domainName);
+            console.log(`Domain created: ${domainName}`);
+            setShowCreatePopup(false);
+            setNewDomain("");
+            // optionally refresh list here
+        } catch (error) {
+            console.error("Failed to create domain", error);
+        }
+    };
+
 
 
     const isCollapsed = state.sidebarCollapsed;
@@ -167,7 +182,7 @@ const Sidebar = ({ state, setState }) => {
                         ) : (
                             <div className="flex flex-col items-center text-gray-400 opacity-60 z-50">
                                 <p className="text-center">No existing domains found!</p>
-                                <button className="text-blue-500 hover:text-blue-600 transition-colors text-sm font-medium mt-2">
+                                <button className="text-blue-500 hover:text-blue-600 transition-colors text-sm font-medium mt-2" >
                                     + create new ?
                                 </button>
                             </div>
@@ -180,13 +195,14 @@ const Sidebar = ({ state, setState }) => {
                     <button
                         className={`flex items-center justify-center hover:bg-green-100 transition-all duration-200 ease-in-out rounded-md font-medium p-3 whitespace-nowrap bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md ${isCollapsed ? "w-12" : "w-full gap-2"
                             }`}
+                        onClick={() => setShowCreatePopup(true)}
                     >   <Plus />
                         <span className={` overflow-hidden transition-all duration-200 ease ${isCollapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-[200px]"}`}>New Domain</span>
                     </button>
                 </div>
                 {/* Popup */}
                 {showDeletePopup && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-white/30">
                         <div className="bg-white p-6 rounded shadow-md w-80">
                             <h2 className="text-lg font-semibold mb-4">Confirm Delete</h2>
                             <p className="mb-6">Are you sure you want to delete this item?</p>
@@ -237,6 +253,37 @@ const Sidebar = ({ state, setState }) => {
                         </div>
                     </div>
                 )}
+
+                {/* Create Domain Popup */}
+                {showCreatePopup && (
+                    <div className="fixed inset-0 flex items-center justify-center bg-white/30 bg-opacity-40 backdrop-blur-sm">
+                        <div className="bg-white p-6 rounded shadow-md w-96">
+                            <h2 className="text-lg font-semibold mb-4">Create New Domain</h2>
+                            <input
+                                type="text"
+                                className="w-full px-3 py-2 border rounded mb-6 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                placeholder="Enter domain name"
+                                value={newDomain}
+                                onChange={(e) => setNewDomain(e.target.value)}
+                            />
+                            <div className="flex justify-end gap-4">
+                                <button
+                                    className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                                    onClick={() => setShowCreatePopup(false)}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                                    onClick={() => handleCreateDomain(newDomain)}
+                                >
+                                    Create
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
 
 
             </aside>
