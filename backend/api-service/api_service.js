@@ -91,7 +91,7 @@ export const ApiService = {
  * @param {number} distance_threshold - Threshold for similarity
  * @returns {Promise<any>} - Response from the server
  */
-    async insertNode(collection,name,content,user_links,max_links,distance_threshold) {
+    async insertNode(collection, name, content, user_links, max_links, distance_threshold) {
         const response = await fetch(
             `${baseUrl}/nodes/insert`, {
             method: 'POST',
@@ -111,13 +111,28 @@ export const ApiService = {
         return await handleResponse(response, "Failed to create node")
     },
 
-    async listNode(name){
-        const response = await fetch (
+    /**
+     * 
+     * @param {String} name - Name of the collection
+     * @returns {Promise<any>} - A lsit of nodes (each node in class Node {
+    constructor(json) {
+        this.node_id = json.node_id;
+        this.name = json.name;
+        this.content = json.content;
+        this.user_links = json.user_links || [];
+        this.s_links = json.s_links || [];
+    }
+}
+    Format )
+     */
+
+    async listNode(name) {
+        const response = await fetch(
             `${baseUrl}/nodes/list`, {
-                method: 'POST',
-                headers: Headers,
-                body: JSON.stringify({ name }),
-            }
+            method: 'POST',
+            headers: Headers,
+            body: JSON.stringify({ name }),
+        }
         );
         const data = await handleResponse(response, "Failed to list nodes");
         return data.map(item => new Node(item));

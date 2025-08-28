@@ -1,5 +1,6 @@
 # python/main.py
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Request, HTTPException, Query, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,13 +11,26 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 import uuid
 from typing import List,Optional
+import asyncio
 
 # -- sentence - transformers  model
 
-model = SentenceTransformer(
-    "all-mpnet-base-v2",
-    cache_folder="../__models__/embedding-model"
-)
+model = None
+
+
+@asynccontextmanager
+async def lifespan(app : FastAPI):
+    global model
+    if model is None:
+        model = await asyncio.to_thread(
+            lambda: SentenceTransformer(
+                "all-mpnet-base-v2",
+                cache_folder="../__models__/embedding-model"
+            )
+        )
+        print("Model loaded!")
+    yield  # ⚠️ THIS is required! App runs after this
+    print("Server shutting down")
 
 # -- websocket  clients
 clients = []
@@ -26,7 +40,7 @@ clients = []
 
 
 # --- FastAPI app ---
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -63,6 +77,7 @@ async def websocket_endpoint(ws: WebSocket, token: str = Query(...)):
         return
     await ws.accept()
     clients.append(ws)
+    # await load_model()
     try:
         while True:
             await ws.receive_text()  # keep connection alive
@@ -128,8 +143,8 @@ def distance_similarity(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 # -- embedding --
-def model_embedding(text: str) -> list[float]:
-    return model.encode(text)
+async def model_embedding(text: str) -> list[float]:
+    return await asyncio.to_thread(lambda: model.encode(text))
 
 
 
@@ -224,10 +239,10 @@ def delete_collection(payload:CollectionRenameModel, background_tasks: Backgroun
 
 # -- insert a node --
 @app.post("/nodes/insert", dependencies=[Depends(verify_api_key)])
-def createNode(payload:NodeInputModel, background_tasks: BackgroundTasks):
+async def createNode(payload:NodeInputModel, background_tasks: BackgroundTasks):
     try:
         collection = client.get_collection(payload.collection)
-        embedding=model_embedding(f"Definition for {payload.name}. {payload.content}")
+        embedding=await model_embedding(f"Definition for {payload.name}. {payload.content}")
         node_id = str(uuid.uuid1())
         q_result=collection.query(
             query_embeddings = embedding,
