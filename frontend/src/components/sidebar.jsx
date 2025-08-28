@@ -2,11 +2,19 @@ import clsx from "clsx";
 import { Plus, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState } from "react";
 import { changeDomain } from "../contexts/domain-context/domain_context";
+import { ApiService } from "../../../backend/api-service/api_service";
+ApiService
 
 const Sidebar = ({ state, setState }) => {
 
     // -- the currentDomain context --
     const { currentDomain, setDomain } = changeDomain()
+    const [showDeletePopup, setShowDeletePopup] = useState(false);
+    const [deleteDomain, setDeleteDomain] = useState(null);
+    const [showRenamePopup, setShowRenamePopup] = useState(false);
+    const [renameDomain, setRenameDomain] = useState(null);   // the domain being renamed
+    const [renameValue, setRenameValue] = useState("");       // input value
+
 
     const [sidebarVisibility, setSidebarVisibility] = useState(true)
     const toggleSidebar = () => {
@@ -22,6 +30,28 @@ const Sidebar = ({ state, setState }) => {
             currentView: 'concept'
         }));
     };
+    const handleDoaminRename = (oldName, newName) => {
+        try{
+        console.log(`Renaming ${oldName} → ${newName}`);
+        ApiService.renameDomain(oldName,newName);
+        setShowRenamePopup(false);
+        }
+        catch(err){
+            console.log(err)
+        }
+    };
+    const handleDoaminDelete = (domainName) => {
+        try {
+            console.log(`domain Delete=> ${domainName}`)
+            ApiService.deleteDomain(domainName);
+            setDeleteDomain(null);
+            setShowDeletePopup(false);
+        }
+        catch (err) {
+            console.log(err)
+        }
+    };
+
 
     const isCollapsed = state.sidebarCollapsed;
     const hasDomains = state.domains?.length > 0;
@@ -115,13 +145,17 @@ const Sidebar = ({ state, setState }) => {
                                         <span className={clsx("text-sm", { "pl-2": currentDomain == domain.name })}>{domain.name}</span>
                                         <div className="flex space-x-2">
                                             {/* Rename */}
-                                            <button className="text-gray-400 hover:text-blue-500 transition-colors">
+                                            <button className="text-gray-400 hover:text-blue-500 transition-colors" onClick={() => {
+                                                setRenameDomain(domain.name);   // pass the domain to rename
+                                                setRenameValue(domain.name);    // prefill input with current name
+                                                setShowRenamePopup(true);
+                                            }}>
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                 </svg>
                                             </button>
                                             {/* Delete */}
-                                            <button className="text-gray-400 hover:text-red-500 transition-colors">
+                                            <button className="text-gray-400 hover:text-red-500 transition-colors" onClick={() => { setDeleteDomain(domain.name); setShowDeletePopup(true); }}>
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                 </svg>
@@ -150,6 +184,60 @@ const Sidebar = ({ state, setState }) => {
                         <span className={` overflow-hidden transition-all duration-200 ease ${isCollapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-[200px]"}`}>New Domain</span>
                     </button>
                 </div>
+                {/* Popup */}
+                {showDeletePopup && (
+                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                        <div className="bg-white p-6 rounded shadow-md w-80">
+                            <h2 className="text-lg font-semibold mb-4">Confirm Delete</h2>
+                            <p className="mb-6">Are you sure you want to delete this item?</p>
+                            <div className="flex justify-end gap-4">
+                                <button
+                                    className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                                    onClick={() => setShowDeletePopup(false)}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                                    onClick={() => handleDoaminDelete(deleteDomain)}
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Rename Popup */}
+                {showRenamePopup && (
+                    <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-white/30">
+                        <div className="bg-white p-6 rounded shadow-md w-80">
+                            <h2 className="text-lg font-semibold mb-4">Rename Item</h2>
+                            <input
+                                type="text"
+                                value={renameValue}
+                                onChange={(e) => setRenameValue(e.target.value)}
+                                className="w-full border border-gray-300 rounded px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Enter new name"
+                            />
+                            <div className="flex justify-end gap-4">
+                                <button
+                                    className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                                    onClick={() => setShowRenamePopup(false)}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    onClick={() => handleDoaminRename(renameDomain, renameValue)}
+                                >
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
 
             </aside>
         </div>
