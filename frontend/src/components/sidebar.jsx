@@ -31,9 +31,16 @@ const Sidebar = ({ state, setState }) => {
         // i kept it here since if no change occur to currentView upon click it wont be displayed this is temprorary 
         setState(prev => ({
             ...prev,
-            currentView: 'concept'
+            currentView: 'query'
         }));
     };
+
+    const handleDomainDblClick = () => {
+        setState(prev => ({
+            ...prev,
+            currentView: 'concept'
+        }));
+    }
     const handleDoaminRename = (oldName, newName) => {
         try {
             console.log(`Renaming ${oldName} → ${newName}`);
@@ -157,6 +164,7 @@ const Sidebar = ({ state, setState }) => {
                                                 : "text-gray-700 hover:bg-gray-100"
                                         )}
                                         onClick={() => handleDomainClick(domain.name)}
+                                        onDoubleClick={handleDomainDblClick}
                                     >
                                         <span className={clsx("text-sm", { "pl-2": currentDomain == domain.name })}>{domain.name}</span>
                                         <div className="flex space-x-2">
