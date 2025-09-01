@@ -3,6 +3,7 @@ import { Plus, PanelLeftClose, PanelLeftOpen, Search, FilePenLine, Trash2 } from
 import { useState, useMemo } from "react";
 import { changeDomain } from "../contexts/domain-context/domain_context";
 import { ApiService } from "../../../backend/api-service/api_service";
+import { toast } from "react-toastify";
 
 const Sidebar = ({ state, setState }) => {
     const { currentDomain, setDomain } = changeDomain();
@@ -48,33 +49,33 @@ const Sidebar = ({ state, setState }) => {
 
     const handleDomainRename = async (oldName, newName) => {
         try {
-            console.log(`Renaming ${oldName} → ${newName}`);
+            toast.success(`${oldName} renamed to ${newName} successfully.`);
             await ApiService.renameDomain(oldName, newName);
             setShowRenamePopup(false);
         } catch (err) {
-            console.error(err);
+            toast.error("Failed to rename domain. Please try again.");
         }
     };
 
     const handleDomainDelete = async (domainName) => {
         try {
-            console.log(`Domain Delete=> ${domainName}`);
+            toast.success(`${domainName} deleted successfully.`);
             await ApiService.deleteDomain(domainName);
             setDeleteDomain(null);
             setShowDeletePopup(false);
         } catch (err) {
-            console.error(err);
+            toast.error("Failed to delete domain. Please try again.");
         }
     };
 
     const handleCreateDomain = async (domainName) => {
         try {
             await ApiService.createDomain(domainName);
-            console.log(`Domain created: ${domainName}`);
+            toast.success(`${domainName} created successfully.`);
             setShowCreatePopup(false);
             setNewDomain("");
         } catch (error) {
-            console.error("Failed to create domain", error);
+            toast.error("Failed to create domain. Please try again.");
         }
     };
 

@@ -6,6 +6,8 @@ import LogProvider from './contexts/log-context/log_provider';
 import { ApiService } from '../../backend/api-service/api_service.js';
 import DomainProvider from './contexts/domain-context/doamin_provider.jsx'
 import { useWebSocket } from './custom-hooks/use-websocket.jsx';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // This is the App component that orchestrates everything
 const App = () => {
@@ -116,7 +118,7 @@ const App = () => {
                     </div >
                 </LogProvider>
             </DomainProvider>
-
+            <ToastContainer />
         </>
     );
 };
