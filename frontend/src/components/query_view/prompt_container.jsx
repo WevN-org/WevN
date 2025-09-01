@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, ChevronDown } from 'lucide-react';
 import GraphViewToggle from './graph_view_toggle';
 import { motion } from "framer-motion";
+import { changeDomain } from '../../contexts/domain-context/domain_context';
 
 
 /**
@@ -13,7 +14,7 @@ function PromptContainer({ graphVisibility, toggleGraph, state, setState }) {
 
     console.log(state.domains)
     const [inputValue, setInputValue] = useState('');
-    const [activeDomain, setActiveDomain] = useState('All Concepts');
+    const {currentDomain,setDomain} = changeDomain();
     const textareaRef = useRef(null);
     const domainRef = useRef(null);
     const [showDomains, setShowDomains] = useState(false);
@@ -52,7 +53,7 @@ function PromptContainer({ graphVisibility, toggleGraph, state, setState }) {
     };
 
     const handleDomainSelect = (domain) => {
-        setActiveDomain(domain);
+        setDomain(domain);
         setShowDomains(false);
     };
 
@@ -102,7 +103,7 @@ function PromptContainer({ graphVisibility, toggleGraph, state, setState }) {
                                     className="flex items-center space-x-1 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm hover:shadow-md bg-white"
                                 >
                                     <span className="truncate max-w-[100px] sm:max-w-none">
-                                        {activeDomain?.name || "Select domain"}
+                                        {currentDomain || "Select domain"}
                                     </span>
                                     <ChevronDown
                                         size={16}
@@ -121,7 +122,7 @@ function PromptContainer({ graphVisibility, toggleGraph, state, setState }) {
                                         {state.domains.map((domain) => (
                                             <div
                                                 key={domain.id}
-                                                onClick={() => handleDomainSelect(domain)}
+                                                onClick={() => handleDomainSelect(domain.name)}
                                                 className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 cursor-pointer transition-colors flex items-center space-x-2"
                                             >
                                                 <span className="w-2 h-2 bg-blue-500 rounded-full"></span>

@@ -9,6 +9,7 @@ const Sidebar = ({ state, setState }) => {
 
     // -- the currentDomain context --
     const { currentDomain, setDomain } = changeDomain()
+    console.log(`current: ${currentDomain}`)
     const [showDeletePopup, setShowDeletePopup] = useState(false);
     const [deleteDomain, setDeleteDomain] = useState(null);
     const [showRenamePopup, setShowRenamePopup] = useState(false);
