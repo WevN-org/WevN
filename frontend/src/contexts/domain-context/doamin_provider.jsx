@@ -11,6 +11,7 @@ export default function DomainProvider({children}){
             sDomain(domainName);
             localStorage.setItem("currentDomain",domainName)
             addLog(`Global Collection Changed to ${domainName}`)
+            
         },[addLog]);
 
     useEffect(
