@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import ForceGraph2D from 'react-force-graph-2d';
 
 export default function GraphContainer({ isVisible, children }) {
     return (

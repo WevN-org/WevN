@@ -12,7 +12,7 @@ import { changeDomain } from '../../contexts/domain-context/domain_context';
  */
 function PromptContainer({ graphVisibility, toggleGraph, state, setState }) {
 
-    console.log(state.domains)
+    // console.log(state.domains)
     const [inputValue, setInputValue] = useState('');
     const {currentDomain,setDomain} = changeDomain();
     const textareaRef = useRef(null);
