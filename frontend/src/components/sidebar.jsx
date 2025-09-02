@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 
 const Sidebar = ({ state, setState }) => {
     
-    console.log(`current: ${currentDomain}`);
+
     const { currentDomain, setDomain } = changeDomain();
     // -- the currentDomain context --
     // console.log(`current: ${currentDomain}`)
