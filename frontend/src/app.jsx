@@ -107,8 +107,9 @@ const App = () => {
 
     return (
         <>
-            <DomainProvider>
-                <NodesProvider>
+            <NodesProvider>
+                <DomainProvider>
+
                     <LogProvider>
                         <div className='flex overflow-hidden h-screen'>
                             <Sidebar state={state} setState={setState} />
@@ -119,8 +120,9 @@ const App = () => {
                             )}
                         </div >
                     </LogProvider>
-                </NodesProvider>
-            </DomainProvider>
+
+                </DomainProvider>
+            </NodesProvider>
             <ToastContainer />
         </>
     );

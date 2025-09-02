@@ -55,7 +55,7 @@ const Sidebar = ({ state, setState }) => {
             await ApiService.renameDomain(oldName, newName);
             setShowRenamePopup(false);
         } catch (err) {
-            toast.error("Failed to rename domain. Please try again.");
+            toast.error(`Failed to rename domain. Please try again.`);
         }
     };
 
