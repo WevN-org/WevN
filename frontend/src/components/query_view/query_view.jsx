@@ -6,24 +6,8 @@ import clsx from "clsx";
 
 export default function QueryView({ state, setState }) {
     const [graphVisibility, setGraphVisibility] = useState(true);
-    const [messages, setMessages] = useState([
-        { role: "assistant", content: "Hi! Ask me anything about your knowledgebase." },
-    ]);
 
     const toggleGraphView = () => setGraphVisibility((prev) => !prev);
-
-    const handleSend = (text) => {
-        // Add user message
-        setMessages((prev) => [...prev, { role: "user", content: text }]);
-
-        // Add dummy assistant response (replace with backend call)
-        setTimeout(() => {
-            setMessages((prev) => [
-                ...prev,
-                { role: "assistant", content: `You said: "${text}"` },
-            ]);
-        }, 800);
-    };
 
     return (
         <main
@@ -53,17 +37,15 @@ export default function QueryView({ state, setState }) {
             <div
                 id="chat-window"
                 className={clsx(
-                    "relative flex flex-col h-full flex-1 order-last md:order-first",
+                    "relative flex flex-col h-full flex-1 order-last md:order-first transition-all duration-500",
                     { "flex-grow": !graphVisibility }
                 )}
             >
-                <ChatMessages messages={messages} />
+                <ChatMessages messages={state.messages} graphVisibility={graphVisibility} />   {/* use state.messages */}
                 <PromptContainer
                     graphVisibility={graphVisibility}
                     toggleGraph={toggleGraphView}
-                    state={state}
-                    setState={setState}
-                    onSend={handleSend}   // pass callback
+                    setState={setState}   // no need to pass full state
                 />
             </div>
         </main>

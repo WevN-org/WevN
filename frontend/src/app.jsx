@@ -19,6 +19,9 @@ const App = () => {
         domains: [],
         currentView: 'query', // can be 'query' or 'concept-management'
         sidebarCollapsed: false,
+        messages: [
+            { role: "assistant", content: "Hi! Ask me anything about your knowledgebase." }
+        ],
     });
 
 
@@ -62,7 +65,7 @@ const App = () => {
 
 
     const [activeTab, setActiveTab] = useState('All');
-    const [concepts, setConcepts] = useState([
+    const [concepts, _] = useState([
         {
             id: 1,
             title: "What is a closure?",

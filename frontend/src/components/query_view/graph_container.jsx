@@ -9,7 +9,7 @@ export default function GraphContainer({ isVisible }) {
     const containerRef = useRef();
     const fgRef = useRef();
     const { nodesList } = useNodes();
-    const [loading, setLoading] = useState(false)
+    const [_, setLoading] = useState(false)
     const [dimensions, setDimensions] = useState({ width: 800, height: 800 });
     const [graphData, setGraphData] = useState({ nodes: [], links: [] });
 

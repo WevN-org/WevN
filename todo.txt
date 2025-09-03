@@ -13,14 +13,17 @@ DONE:
 -> sidebar now scrolls domains perfectly -- done
 -> make chat window seperate from graph... merge chat window and promptbox to one. have the graph toggle button inside the promptbox like now, also keep the domain toggle button inside the promptbox -- done
 -> one small screens make the query box as flex-col -- major work needed. -- done
+-> create dialog boxes -- done
 
 CURRENT:
--> create dialog boxes
+
 
 TODO:
--> add a tooltip on account and sidebar toggle button, graph toggle button
+-> create account page
+-> create a landing page
 
 POST WORK:
+-> add a tooltip on account and sidebar toggle button, graph toggle button
 -> set a one click theme
 -> convert potential toggles to enums
 
