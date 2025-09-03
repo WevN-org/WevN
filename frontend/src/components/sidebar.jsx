@@ -47,23 +47,25 @@ const Sidebar = ({ state, setState }) => {
         }));
     };
 
+    // The different errors are not handled. just a common catch block is used
+
     const handleDomainRename = async (oldName, newName) => {
         try {
             toast.success(`${oldName} renamed to ${newName} successfully.`);
             await ApiService.renameDomain(oldName, newName);
             setShowRenamePopup(false);
-        } catch (err) {
+        } catch {
             toast.error("Failed to rename domain. Please try again.");
         }
     };
 
     const handleDomainDelete = async (domainName) => {
         try {
-            toast.success(`${domainName} deleted successfully.`);
+            toast.info(`${domainName} deleted successfully.`);
             await ApiService.deleteDomain(domainName);
             setDeleteDomain(null);
             setShowDeletePopup(false);
-        } catch (err) {
+        } catch {
             toast.error("Failed to delete domain. Please try again.");
         }
     };
@@ -74,7 +76,7 @@ const Sidebar = ({ state, setState }) => {
             toast.success(`${domainName} created successfully.`);
             setShowCreatePopup(false);
             setNewDomain("");
-        } catch (error) {
+        } catch {
             toast.error("Failed to create domain. Please try again.");
         }
     };
