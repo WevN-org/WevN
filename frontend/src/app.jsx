@@ -8,6 +8,7 @@ import DomainProvider from './contexts/domain-context/doamin_provider.jsx'
 import { useWebSocket } from './custom-hooks/use-websocket.jsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import NodesProvider from './contexts/nodes-context/nodes_provider.jsx';
 
 // This is the App component that orchestrates everything
 const App = () => {
@@ -106,18 +107,22 @@ const App = () => {
 
     return (
         <>
-            <DomainProvider>
-                <LogProvider>
-                    <div className='flex overflow-hidden h-screen'>
-                        <Sidebar state={state} setState={setState} />
-                        {state.currentView === 'query' ? (
-                            <QueryView state={state} setState={setState} />
-                        ) : (
-                            <ConceptView concepts={concepts} activeTab={activeTab} setActiveTab={setActiveTab} setState={setState} />
-                        )}
-                    </div >
-                </LogProvider>
-            </DomainProvider>
+            <NodesProvider>
+                <DomainProvider>
+
+                    <LogProvider>
+                        <div className='flex overflow-hidden h-screen'>
+                            <Sidebar state={state} setState={setState} />
+                            {state.currentView === 'query' ? (
+                                <QueryView state={state} setState={setState} />
+                            ) : (
+                                <ConceptView concepts={concepts} activeTab={activeTab} setActiveTab={setActiveTab} setState={setState} />
+                            )}
+                        </div >
+                    </LogProvider>
+
+                </DomainProvider>
+            </NodesProvider>
             <ToastContainer />
         </>
     );

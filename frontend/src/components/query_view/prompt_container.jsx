@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, ChevronDown } from 'lucide-react';
 import GraphViewToggle from './graph_view_toggle';
 import { motion } from "framer-motion";
-import { changeDomain } from '../../contexts/domain-context/domain_context';
 
 
 /**
@@ -12,9 +11,9 @@ import { changeDomain } from '../../contexts/domain-context/domain_context';
  */
 function PromptContainer({ graphVisibility, toggleGraph, state, setState }) {
 
-    console.log(state.domains)
+    // console.log(state.domains)
     const [inputValue, setInputValue] = useState('');
-    const { currentDomain, setDomain } = changeDomain();
+
     const textareaRef = useRef(null);
     const domainRef = useRef(null);
     const [showDomains, setShowDomains] = useState(false);
@@ -52,10 +51,7 @@ function PromptContainer({ graphVisibility, toggleGraph, state, setState }) {
         }
     };
 
-    const handleDomainSelect = (domain) => {
-        setDomain(domain);
-        setShowDomains(false);
-    };
+   
 
 
     const isInputEmpty = inputValue.trim() === '';

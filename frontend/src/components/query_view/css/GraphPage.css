@@ -1,0 +1,51 @@
+/* Ensure the full screen is used */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: system-ui, sans-serif;
+}
+
+/* Main container */
+.graph-container {
+  display: flex;
+  flex-direction: column;
+  height: 92%;
+  background-color: #111827;
+  color: white;
+  box-sizing: border-box;
+  padding: 16px;
+  overflow: hidden;
+}
+
+/* Header layout */
+.graph-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.graph-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  flex-basis: 100%;
+}
+
+.graph-header label {
+  margin-right: 8px;
+}
+
+.graph-header select {
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: white;
+  color: black;
+  font-size: 1rem;
+}
+
+/* Graph container box */
+

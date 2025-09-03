@@ -6,9 +6,11 @@ import { ApiService } from "../../../backend/api-service/api_service";
 import { toast } from "react-toastify";
 
 const Sidebar = ({ state, setState }) => {
-    const { currentDomain, setDomain } = changeDomain();
-    console.log(`current: ${currentDomain}`);
 
+
+    const { currentDomain, setDomain } = changeDomain();
+    // -- the currentDomain context --
+    // console.log(`current: ${currentDomain}`)
     const [showDeletePopup, setShowDeletePopup] = useState(false);
     const [deleteDomain, setDeleteDomain] = useState(null);
     const [showRenamePopup, setShowRenamePopup] = useState(false);
