@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, ChevronDown } from 'lucide-react';
 import GraphViewToggle from './graph_view_toggle';
-import { motion } from "framer-motion";
+
 
 
 /**
@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
  * It features a dynamically resizing textarea, a domain selector,
  * an icon to toggle a graph, and a send button.
  */
-function PromptContainer({ graphVisibility, toggleGraph, state, setState }) {
+function PromptContainer({ graphVisibility, toggleGraph, state, setState, onSend }) {
 
     // console.log(state.domains)
     const [inputValue, setInputValue] = useState('');
@@ -45,13 +45,15 @@ function PromptContainer({ graphVisibility, toggleGraph, state, setState }) {
 
     const handleSendMessage = () => {
         if (inputValue.trim()) {
-            console.log('Sending message:', inputValue);
-            // Logic for sending message goes here
-            setInputValue(''); // Clear the input after sending
+            if (typeof onSend === "function") {
+                onSend(inputValue.trim());
+            }
+            setInputValue(""); // Clear input
         }
     };
 
-   
+
+
 
 
     const isInputEmpty = inputValue.trim() === '';

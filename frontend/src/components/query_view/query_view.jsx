@@ -1,13 +1,29 @@
 import { useState } from "react";
 import GraphContainer from "./graph_container";
-import AnswerBox from "./answer_box";
 import PromptContainer from "./prompt_container";
+import ChatMessages from "./chat_messages";
 import clsx from "clsx";
 
 export default function QueryView({ state, setState }) {
     const [graphVisibility, setGraphVisibility] = useState(true);
+    const [messages, setMessages] = useState([
+        { role: "assistant", content: "Hi! Ask me anything about your knowledgebase." },
+    ]);
 
     const toggleGraphView = () => setGraphVisibility((prev) => !prev);
+
+    const handleSend = (text) => {
+        // Add user message
+        setMessages((prev) => [...prev, { role: "user", content: text }]);
+
+        // Add dummy assistant response (replace with backend call)
+        setTimeout(() => {
+            setMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: `You said: "${text}"` },
+            ]);
+        }, 800);
+    };
 
     return (
         <main
@@ -20,7 +36,7 @@ export default function QueryView({ state, setState }) {
                 }
             )}
         >
-            {/* Graph goes on top on small screens, and is ordered last on md+ */}
+            {/* Graph */}
             <GraphContainer
                 isVisible={graphVisibility}
                 className="w-full md:w-[40%] h-64 md:h-auto md:order-last"
@@ -33,23 +49,23 @@ export default function QueryView({ state, setState }) {
                 </div>
             </GraphContainer>
 
+            {/* Chat */}
             <div
+                id="chat-window"
                 className={clsx(
-                    "relative flex flex-col h-full items-center flex-1 order-last md:order-first",
+                    "relative flex flex-col h-full flex-1 order-last md:order-first",
                     { "flex-grow": !graphVisibility }
                 )}
             >
-                <AnswerBox>
-                    Your textual answer will appear here, providing a detailed summary of the retrieved information.
-                </AnswerBox>
+                <ChatMessages messages={messages} />
                 <PromptContainer
                     graphVisibility={graphVisibility}
                     toggleGraph={toggleGraphView}
                     state={state}
                     setState={setState}
+                    onSend={handleSend}   // pass callback
                 />
             </div>
         </main>
-
     );
 }
