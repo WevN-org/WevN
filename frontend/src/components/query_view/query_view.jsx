@@ -15,7 +15,7 @@ export default function QueryView({ state, setState }) {
             className={clsx(
                 "main-content relative h-screen flex flex-col md:flex-row",
                 {
-                    "gap-4 justify-center w-full": graphVisibility,
+                    "justify-center w-full": graphVisibility,
                     "w-full": !graphVisibility,
                 }
             )}

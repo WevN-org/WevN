@@ -1,21 +1,13 @@
-/* Ensure the full screen is used */
-html, body, #root {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  font-family: system-ui, sans-serif;
-}
-
 /* Main container */
 .graph-container {
   display: flex;
   flex-direction: column;
-  height: 92%;
-  background-color: #111827;
+  height: 100%;
+  width: 100%;
+  background-color: #aaa;
   color: white;
   box-sizing: border-box;
-  padding: 16px;
+  padding: .25rem;
   overflow: hidden;
 }
 
@@ -48,4 +40,3 @@ html, body, #root {
 }
 
 /* Graph container box */
-

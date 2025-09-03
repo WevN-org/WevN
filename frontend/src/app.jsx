@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import Sidebar from './components/sidebar';
 import QueryView from './components/query_view/query_view'
 import ConceptView from './components/concept_view/concept_view';

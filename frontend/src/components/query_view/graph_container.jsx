@@ -5,12 +5,12 @@ import "./css/GraphPage.css"
 import { useNodes } from "../../contexts/nodes-context/nodes_context";
 import { toast } from "react-toastify";
 
-export default function GraphContainer({ isVisible, children }) {
+export default function GraphContainer({ isVisible }) {
     const containerRef = useRef();
     const fgRef = useRef();
     const { nodesList } = useNodes();
     const [loading, setLoading] = useState(false)
-    const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+    const [dimensions, setDimensions] = useState({ width: 800, height: 800 });
     const [graphData, setGraphData] = useState({ nodes: [], links: [] });
 
     // graph view resizer according to the change in app
@@ -78,7 +78,7 @@ export default function GraphContainer({ isVisible, children }) {
     return (
         <div
             className={clsx(
-                "overflow-hidden flex flex-col items-center justify-center rounded-xl transition-all duration-500 ease-in-out origin-top md:origin-right",
+                "overflow-hidden flex flex-col items-center justify-center transition-all duration-500 ease-in-out origin-top md:origin-right ",
                 isVisible
                     ? "w-full flex-1 md:w-3/5 opacity-100" // 100% on mobile, 60% on desktop
                     : "w-0 opacity-0 flex-0"             // collapsed
@@ -124,7 +124,7 @@ export default function GraphContainer({ isVisible, children }) {
 
 
                     linkColor={() => "#ccc"}
-                    backgroundColor="#111827"
+                    backgroundColor="#fff"
 
                     onNodeClick={(node) => {
 
