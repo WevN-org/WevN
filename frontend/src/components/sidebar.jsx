@@ -107,8 +107,9 @@ const Sidebar = ({ state, setState }) => {
                 <button
                     id="toggle-sidebar-btn"
                     className={clsx(
-                        "flex items-center justify-between w-full cursor-pointer p-4 rounded-lg transition-colors duration-200 hover:bg-gray-100",
-                        { collapsed: isCollapsed }
+                        "flex items-center  w-full cursor-pointer rounded-lg transition-colors duration-200 hover:bg-gray-100",
+                        { 'justify-between p-4': !isCollapsed },
+                        { 'collapsed p-0 justify-center': isCollapsed }
                     )}
                     onDoubleClick={toggleSidebar} // This double-click still controls the parent state
                     onClick={() => console.log("accounts page")}
@@ -116,7 +117,7 @@ const Sidebar = ({ state, setState }) => {
                     {!isCollapsed && !sidebarVisibility && (
                         <h1 className="text-3xl font-extrabold text-gray-800">WevN</h1>
                     )}
-                    <img src="/logo.png" alt="WevN Logo" className="h-8 mr-2" />
+                    <img src="https://randomuser.me/api/portraits/men/33.jpg" alt="WevN Logo" className={clsx('h-10 rounded-full', { 'mr-2 h-8': !isCollapsed })} />
                 </button>
 
                 {/* Collapsed Search Button */}

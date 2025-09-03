@@ -29,13 +29,13 @@ button {
 
 .sidebar.collapsed,
 .sidebar-wrapper.collapsed {
-  width: 80px;
+  width: 70px;
   padding: 1rem 8px;
 }
 
 .sidebar.hide {
   width: 0;
-  transform: translateX(-80px);
+  transform: translateX(-70px);
   padding: 0;
 }
 
@@ -60,7 +60,7 @@ button {
 }
 
 .hover-box.collapsed {
-  width: calc(80px + 6rem);
+  width: calc(70px + 6rem);
 }
 
 .hover-box.hide {
