@@ -62,6 +62,7 @@ export default function GraphContainer({ isVisible }) {
         // update graph data
         setGraphData({ nodes: formattedNodes, links });
         setLoading(false)
+        // for debugging remove when necessory
         toast.success(`🧠 Loaded ${nodesList.length} nodes`);
 
         // optional: auto-zoom the graph
@@ -111,7 +112,7 @@ export default function GraphContainer({ isVisible }) {
                         ctx.beginPath();
                         ctx.arc(node.x, node.y, 6, 0, 2 * Math.PI, false);
                         ctx.fill();
-                        ctx.fillStyle = "white";
+                        ctx.fillStyle = "black";
                         ctx.fillText(label, node.x + 8, node.y + 4);
                         fgRef.current.d3Force('charge').strength(-100); // increase repulsion
 
@@ -123,12 +124,12 @@ export default function GraphContainer({ isVisible }) {
                     linkDirectionalParticleSpeed={0.008}
 
 
-                    linkColor={() => "#ccc"}
+                    linkColor={() => "#ccccccff"}
                     backgroundColor="#fff"
 
                     onNodeClick={(node) => {
 
-                        fgRef.current.zoomToFit(500, 430, n => n.id === node.id);
+                        fgRef.current.zoomToFit(500, 400, n => n.id === node.id);
                     }}
                 />
 

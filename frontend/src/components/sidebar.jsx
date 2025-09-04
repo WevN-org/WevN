@@ -35,7 +35,10 @@ const Sidebar = ({ state, setState }) => {
     };
 
     const handleDomainClick = (domainName) => {
-        setDomain(domainName);
+        if (currentDomain !== domainName){
+            setDomain(domainName);
+        }
+        
         setState(prev => ({
             ...prev,
             currentView: 'query'
