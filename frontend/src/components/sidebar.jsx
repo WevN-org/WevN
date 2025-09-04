@@ -90,7 +90,7 @@ const Sidebar = ({ state, setState }) => {
         <div className="sidebar-wrapper relative z-50 bg-green-500 transition-colors duration-500 h-dvh">
             {/* Sidebar toggle button that controls local visibility state */}
             <div
-                className="sidebar-toggle-button flex justify-end pr-3 absolute top-3 -right-3 translate-x-12 transition-all duration-500 w-20 h-15 rounded-full"
+                className="sidebar-toggle-button flex justify-end pr-3 absolute top-0 -right-3 translate-x-8 transition-all duration-500 w-20 h-15 rounded-full"
                 onClick={() => setSidebarVisibility(!sidebarVisibility)}
             >
                 <button className="text-gray-600">

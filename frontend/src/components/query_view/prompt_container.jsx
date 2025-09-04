@@ -1,22 +1,18 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, ChevronDown } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Send } from 'lucide-react';
 import GraphViewToggle from './graph_view_toggle';
-import { motion } from "framer-motion";
-
+import { fetchStreamingResponse } from '../../utils/fetchStreamingResponse';
 
 /**
- * A React component that creates a UI for a Claude AI-style prompt box.
- * It features a dynamically resizing textarea, a domain selector,
- * an icon to toggle a graph, and a send button.
+ * A React component that creates a UI for a prompt box.
+ * It features a dynamically resizing textarea, an icon to toggle a graph, and a send button.
  */
-function PromptContainer({ graphVisibility, toggleGraph, state, setState }) {
+function PromptContainer({ graphVisibility, toggleGraph, setState }) {
 
     // console.log(state.domains)
     const [inputValue, setInputValue] = useState('');
 
     const textareaRef = useRef(null);
-    const domainRef = useRef(null);
-    const [showDomains, setShowDomains] = useState(false);
 
     // Auto-resize the textarea as the user types
     useEffect(() => {
@@ -26,32 +22,39 @@ function PromptContainer({ graphVisibility, toggleGraph, state, setState }) {
         }
     }, [inputValue]);
 
-    // Handle clicks outside the domain selector to close it
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (domainRef.current && !domainRef.current.contains(event.target)) {
-                setShowDomains(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, [domainRef]);
 
     const handleInputChange = (e) => {
         setInputValue(e.target.value);
     };
 
-    const handleSendMessage = () => {
+    const handleSendMessage = async () => {
         if (inputValue.trim()) {
-            console.log('Sending message:', inputValue);
-            // Logic for sending message goes here
-            setInputValue(''); // Clear the input after sending
+            const userMessage = inputValue;
+            setInputValue("");
+
+            let assistantIndex;
+            setState((prev) => {
+                const userMsg = { role: "user", content: userMessage };
+                const assistantMsg = { role: "assistant", content: "" };
+
+                assistantIndex = prev.messages.length + 1; // after user message
+                return {
+                    ...prev,
+                    messages: [...prev.messages, userMsg, assistantMsg],
+                };
+            });
+
+            // Stream response
+            await fetchStreamingResponse(userMessage, (partial) => {
+                setState((prev) => {
+                    const updated = [...prev.messages];
+                    const prevContent = updated[assistantIndex].content || "";
+                    updated[assistantIndex] = { role: "assistant", content: prevContent + partial };
+                    return { ...prev, messages: updated };
+                });
+            });
         }
     };
-
-   
 
 
     const isInputEmpty = inputValue.trim() === '';
@@ -71,10 +74,16 @@ function PromptContainer({ graphVisibility, toggleGraph, state, setState }) {
                     ref={textareaRef}
                     value={inputValue}
                     onChange={handleInputChange}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault(); // prevent new line
+                            handleSendMessage();
+                        }
+                    }}
                     placeholder="Explore your knowledgebase..."
                     rows={1}
                     className="flex-1 resize-none overflow-hidden bg-transparent text-gray-800 text-base p-2 leading-relaxed 
-                 focus:outline-none placeholder-gray-400 max-h-64"
+                    focus:outline-none placeholder-gray-400 max-h-64"
                 />
 
                 {/* Send button */}
@@ -89,7 +98,6 @@ function PromptContainer({ graphVisibility, toggleGraph, state, setState }) {
                 >
                     <Send size={24} />
                 </button>
-
             </div>
         </div>
 
