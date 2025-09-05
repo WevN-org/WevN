@@ -4,16 +4,18 @@ import QueryView from './components/query_view/query_view'
 import ConceptView from './components/concept_view/concept_view';
 import LogProvider from './contexts/log-context/log_provider';
 import { ApiService } from '../../backend/api-service/api_service.js';
-import DomainProvider from './contexts/domain-context/doamin_provider.jsx'
 import { useWebSocket } from './custom-hooks/use-websocket.jsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import NodesProvider from './contexts/nodes-context/nodes_provider.jsx';
+import { useNodes } from './contexts/nodes-context/nodes_context.jsx';
+import { changeDomain } from './contexts/domain-context/domain_context.jsx';
+
 
 // This is the App component that orchestrates everything
 const App = () => {
 
-
+    const { setNodes } = useNodes();
+    const { currentDomain } = changeDomain();
     // --- State Management for the App ---
     const [state, setState] = useState({
         domains: [],
@@ -43,6 +45,20 @@ const App = () => {
                 console.log(err)
             }
         }, []);
+    const fetchNodes = useCallback(
+        async () => {
+            console.log("fetchnode")
+            try {
+                if (currentDomain) {
+                    const nodes = await ApiService.listNode(currentDomain);
+                    setNodes(nodes);
+                }
+
+            }
+            catch (err) {
+                console.log(err)
+            }
+        }, [currentDomain]);
 
 
     // initial render of the fetchDomain function
@@ -54,11 +70,14 @@ const App = () => {
     // this is the helper function for ws connection and triggers a rerender after every get call currently only triggered when a domain changes
     const onMessage = useCallback((change) => {
 
-        if (change === "domain" || change === "reload doamin") {
+        if (change === "domain" || change === "reload") {
             console.log(change);
             fetchDomain();
         }
-    }, [fetchDomain])
+        if (change === "node" || change === "reload") {
+            fetchNodes()
+        }
+    }, [fetchDomain, fetchNodes])
 
     // -- ws connection -- 
     const wsRef = useWebSocket(onMessage)
@@ -110,23 +129,24 @@ const App = () => {
 
     return (
         <>
-            <NodesProvider>
-                <DomainProvider>
-
-                    <LogProvider>
-                        <div className='flex overflow-hidden h-screen'>
-                            <Sidebar state={state} setState={setState} />
-                            {state.currentView === 'query' ? (
-                                <QueryView state={state} setState={setState} />
-                            ) : (
-                                <ConceptView concepts={concepts} activeTab={activeTab} setActiveTab={setActiveTab} setState={setState} />
-                            )}
-                        </div >
-                    </LogProvider>
-
-                </DomainProvider>
-            </NodesProvider>
-            <ToastContainer />
+            <LogProvider>
+                <div className='flex overflow-hidden h-screen'>
+                    <Sidebar state={state} setState={setState} />
+                    {state.currentView === 'query' ? (
+                        <QueryView state={state} setState={setState} />
+                    ) : (
+                        <ConceptView concepts={concepts} activeTab={activeTab} setActiveTab={setActiveTab} setState={setState} />
+                    )}
+                </div >
+            </LogProvider>
+            <ToastContainer
+                position="bottom-right"                
+                autoClose={3000}         
+                newestOnTop={true}       
+                closeOnClick
+                pauseOnHover
+                draggable
+            />
         </>
     );
 };

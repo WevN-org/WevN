@@ -127,7 +127,7 @@ export default function GraphContainer({ isVisible }) {
 
                     onNodeClick={(node) => {
 
-                        fgRef.current.zoomToFit(500, 400, n => n.id === node.id);
+                        fgRef.current.zoomToFit(500, 350, n => n.id === node.id);
                     }}
                 />
 
