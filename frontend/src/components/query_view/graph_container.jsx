@@ -33,12 +33,10 @@ export default function GraphContainer({ isVisible }) {
 
     // graph loader
     useEffect(() => {
-        console.log("@ Graph Loader", nodesList);
         if (!nodesList) {
             setLoading(true);
             return
         };
-        console.log("@ Graph Loader2");
         // format nodes for the graph
         const formattedNodes = nodesList.map((n) => ({
             id: n.node_id,

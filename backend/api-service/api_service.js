@@ -1,5 +1,5 @@
 import handleResponse from "./response_handler";
-import { apiKey, baseUrl } from "./api_constants";
+import { apiKey, baseUrl,max_links,distance_threshold} from "./api_constants";
 
 
 
@@ -91,7 +91,17 @@ export const ApiService = {
  * @param {number} distance_threshold - Threshold for similarity
  * @returns {Promise<any>} - Response from the server
  */
-    async insertNode(collection, name, content, user_links, max_links, distance_threshold) {
+    async insertNode(collection, name, content, user_links) {
+         console.log(` Here ${JSON.stringify(
+                {
+                    collection,
+                    name,
+                    content,
+                    user_links,
+                    max_links,
+                    distance_threshold
+                }
+            )}`)
         const response = await fetch(
             `${baseUrl}/nodes/insert`, {
             method: 'POST',
@@ -108,6 +118,7 @@ export const ApiService = {
             )
         }
         );
+       
         return await handleResponse(response, "Failed to create node")
     },
 
