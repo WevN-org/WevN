@@ -1,6 +1,7 @@
 # python/main.py
 
 from contextlib import asynccontextmanager
+import os
 from fastapi import FastAPI, Depends, Request, HTTPException, Query, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,13 +23,21 @@ model = None
 async def lifespan(app : FastAPI):
     global model
     if model is None:
-        model = await asyncio.to_thread(
-            lambda: SentenceTransformer(
-                "all-mpnet-base-v2",
-                cache_folder="../__models__/embedding-model"
+        local_path = "../__models__/embedding-model\models--sentence-transformers--all-mpnet-base-v2/snapshots/e8c3b32edf5434bc2275fc9bab85f82640a19130"
+        if os.path.exists(local_path):
+            print("✅ Loading model from local cache...")
+            model = await asyncio.to_thread(
+                lambda: SentenceTransformer(local_path)
             )
-        )
-        print("Model loaded!")
+        else:
+            print("🌐 Downloading model from Hugging Face...")
+            model = await asyncio.to_thread(
+                lambda: SentenceTransformer(
+                    "all-mpnet-base-v2",
+                    cache_folder="../__models__/embedding-model"
+                )
+            )
+            print("Model loaded!")
     yield  # ⚠️ THIS is required! App runs after this
     print("Server shutting down")
 
@@ -178,14 +187,15 @@ def list_nodes(payload:CollectionNameModel):
         nodes = collection.get(
             include=["documents","metadatas"]
         )
+        print(nodes)
         documents = nodes.get("documents") or []
         ids = nodes.get("ids") or []
         metadatas = nodes.get("metadatas") or []
         result = []
         for node_id,doc,meta in zip( ids, documents, metadatas):
             try:
-                user_links = json.loads(meta.get("user_link", "[]"))
-                s_links = json.loads(meta.get("s_link", "[]"))
+                user_links = json.loads(meta.get("user_links", "[]"))
+                s_links = json.loads(meta.get("s_links", "[]"))
             except Exception:
                 user_links = []
                 s_links = []
