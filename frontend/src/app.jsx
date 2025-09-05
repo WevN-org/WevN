@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import Sidebar from './components/sidebar';
 import QueryView from './components/query_view/query_view'
 import ConceptView from './components/concept_view/concept_view';
@@ -9,6 +9,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNodes } from './contexts/nodes-context/nodes_context.jsx';
 import { useDomain } from './contexts/domain-context/domain_context.jsx';
+
 
 
 
@@ -46,11 +47,14 @@ const App = () => {
                 console.log(err)
             }
         }, []);
+
+
     const fetchNodes = useCallback(
         async () => {
             console.log("fetchnode")
             try {
                 if (currentDomain) {
+                    console.log("fetchnode2")
                     const nodes = await ApiService.listNode(currentDomain);
                     setNodes(nodes);
                 }
@@ -61,24 +65,29 @@ const App = () => {
             }
         }, [currentDomain, setNodes]);
 
-
     // initial render of the fetchDomain function
+    const fetchNodesRef = useRef(fetchNodes);
+    const fetchDomainRef = useRef(fetchDomain);
 
-    // useEffect(() => {
-    //     fetchDomain();
-    // }, [fetchDomain]);
+    useEffect(() => {
+        fetchNodesRef.current = fetchNodes
+        fetchDomainRef.current = fetchDomain
+    }, [fetchNodes,fetchDomain]);
 
+    useEffect(()=>{
+        fetchNodesRef.current()
+    },[fetchNodes])
     // this is the helper function for ws connection and triggers a rerender after every get call currently only triggered when a domain changes
     const onMessage = useCallback((change) => {
 
         if (change === "domain" || change === "reload") {
             console.log(change);
-            fetchDomain();
+            fetchDomainRef.current();
         }
         if (change === "node" || change === "reload") {
-            fetchNodes()
+            fetchNodesRef.current()
         }
-    }, [fetchDomain, fetchNodes])
+    }, [])
 
     // -- ws connection -- 
     const wsRef = useWebSocket(onMessage)

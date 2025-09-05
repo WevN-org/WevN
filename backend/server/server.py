@@ -187,7 +187,6 @@ def list_nodes(payload:CollectionNameModel):
         nodes = collection.get(
             include=["documents","metadatas"]
         )
-        print(nodes)
         documents = nodes.get("documents") or []
         ids = nodes.get("ids") or []
         metadatas = nodes.get("metadatas") or []
