@@ -1,14 +1,15 @@
 import clsx from "clsx";
 import { Plus, PanelLeftClose, PanelLeftOpen, Search, FilePenLine, Trash2 } from "lucide-react";
-import { useState, useMemo } from "react";
-import { changeDomain } from "../contexts/domain-context/domain_context";
+import { useState, useMemo, useEffect } from "react";
+
 import { ApiService } from "../../../backend/api-service/api_service";
 import { toast } from "react-toastify";
+import { useDomain } from "../contexts/domain-context/domain_context";
 
 const Sidebar = ({ state, setState }) => {
 
 
-    const { currentDomain, setDomain } = changeDomain();
+    const { currentDomain, setDomain } = useDomain();
     // -- the currentDomain context --
     // console.log(`current: ${currentDomain}`)
     const [showDeletePopup, setShowDeletePopup] = useState(false);
@@ -35,10 +36,10 @@ const Sidebar = ({ state, setState }) => {
     };
 
     const handleDomainClick = (domainName) => {
-        if (currentDomain !== domainName){
+        if (currentDomain !== domainName) {
             setDomain(domainName);
         }
-        
+
         setState(prev => ({
             ...prev,
             currentView: 'query'
@@ -84,6 +85,12 @@ const Sidebar = ({ state, setState }) => {
         } catch {
             toast.error("Failed to create domain. Please try again.");
         }
+    };
+
+    const ExpandSidbarAtStart = () => {
+        useEffect(() => {
+            setSidebarVisibility(false);
+        }, [])
     };
 
     return (

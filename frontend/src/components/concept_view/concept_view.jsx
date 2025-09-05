@@ -1,22 +1,22 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { ChevronDown, X, Plus } from 'lucide-react';
-import { motion } from "framer-motion";
 import ConceptList from "./concept_list";
 import ConceptTabNav from "./concept_tabnav";
 import ConceptSearchbar from "./concept_searchbar";
 import ConceptHeader from "./concept_header";
 import { ApiService } from '../../../../backend/api-service/api_service';
-import { changeDomain } from '../../contexts/domain-context/domain_context';
-import { useNodes } from '../../contexts/nodes-context/nodes_context';
 
-const ConceptView = ({ concepts, setConcepts, activeTab, setActiveTab, setState }) => {
+import { useNodes } from '../../contexts/nodes-context/nodes_context';
+import { useDomain } from '../../contexts/domain-context/domain_context';
+
+const ConceptView = ({ activeTab, setActiveTab, setState }) => {
     const [showCreateNodePopup, setShowNodeCreatePopup] = useState(false);
     const [node_Name, setnode_Name] = useState('');
     const [nodeContent, setNodeContent] = useState('');
     const [selectedNodes, setSelectedNodes] = useState([]);
     const [showDomainDropdown, setShowDomainDropdown] = useState(false);
     const nodeRef = useRef(null);
-    const { currentDomain } = changeDomain();
+    const { currentDomain } = useDomain();
     const { nodesList } = useNodes();
 
     // Filter out already selected domains
@@ -24,7 +24,7 @@ const ConceptView = ({ concepts, setConcepts, activeTab, setActiveTab, setState 
         node => !selectedNodes.some(selected => selected.node_id === node.node_id)
     ) || [];
 
- 
+
 
     const handleBackButton = () => {
         setState(prev => ({
@@ -43,10 +43,10 @@ const ConceptView = ({ concepts, setConcepts, activeTab, setActiveTab, setState 
         setSelectedNodes(selectedNodes.filter(node => node.node_id !== nodeId));
     };
 
-    const handleSubmit = async() => {
+    const handleSubmit = async () => {
         // Handle form submission here
         if (!currentDomain) return;
-        try{
+        try {
             const result = await ApiService.insertNode(
                 currentDomain,
                 node_Name,
@@ -55,7 +55,7 @@ const ConceptView = ({ concepts, setConcepts, activeTab, setActiveTab, setState 
             )
             console.log(result)
         }
-        catch(err){
+        catch (err) {
             console.log(err)
         }
         // console.log({
@@ -63,7 +63,7 @@ const ConceptView = ({ concepts, setConcepts, activeTab, setActiveTab, setState 
         //     content: nodeContent,
         //     nodes: selectedNodes,
         // });
-        
+
         // Reset form
         setnode_Name('');
         setNodeContent('');
@@ -79,7 +79,7 @@ const ConceptView = ({ concepts, setConcepts, activeTab, setActiveTab, setState 
         setShowNodeCreatePopup(false);
     };
 
-    
+
 
     return (
         <>
@@ -88,10 +88,10 @@ const ConceptView = ({ concepts, setConcepts, activeTab, setActiveTab, setState 
                     <ConceptHeader handleBackButton={handleBackButton} setShowNodeCreatePopup={setShowNodeCreatePopup} />
                     <ConceptSearchbar />
                     <ConceptTabNav activeTab={activeTab} setActiveTab={setActiveTab} />
-                    <ConceptList concepts={concepts} />
+                    <ConceptList />
                 </div>
             </div>
-            
+
             {/* Create Node Popup */}
             {showCreateNodePopup && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
@@ -129,7 +129,7 @@ const ConceptView = ({ concepts, setConcepts, activeTab, setActiveTab, setState 
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Linked Domains
                                 </label>
-                                
+
                                 {/* Selected Domains */}
                                 {selectedNodes.length > 0 && (
                                     <div className="flex flex-wrap gap-2 mb-3">
@@ -156,11 +156,10 @@ const ConceptView = ({ concepts, setConcepts, activeTab, setActiveTab, setState 
                                     <button
                                         onClick={() => setShowDomainDropdown(!showDomainDropdown)}
                                         disabled={availableNodes.length === 0}
-                                        className={`flex items-center justify-between w-full px-3 py-2 text-left border border-gray-300 rounded-lg transition-colors ${
-                                            availableNodes.length === 0
-                                                ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
-                                                : 'bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-                                        }`}
+                                        className={`flex items-center justify-between w-full px-3 py-2 text-left border border-gray-300 rounded-lg transition-colors ${availableNodes.length === 0
+                                            ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                                            : 'bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                                            }`}
                                     >
                                         <span className="flex items-center space-x-2">
                                             <Plus size={16} />
@@ -170,9 +169,8 @@ const ConceptView = ({ concepts, setConcepts, activeTab, setActiveTab, setState 
                                         </span>
                                         <ChevronDown
                                             size={16}
-                                            className={`transition-transform duration-200 ${
-                                                showDomainDropdown ? 'rotate-180' : ''
-                                            }`}
+                                            className={`transition-transform duration-200 ${showDomainDropdown ? 'rotate-180' : ''
+                                                }`}
                                         />
                                     </button>
 
@@ -226,11 +224,10 @@ const ConceptView = ({ concepts, setConcepts, activeTab, setActiveTab, setState 
                             <button
                                 onClick={handleSubmit}
                                 disabled={!node_Name.trim()}
-                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                                    node_Name.trim()
-                                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                }`}
+                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${node_Name.trim()
+                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    }`}
                             >
                                 Create Node
                             </button>

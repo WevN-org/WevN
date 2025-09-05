@@ -14,8 +14,11 @@ DONE:
 -> make chat window seperate from graph... merge chat window and promptbox to one. have the graph toggle button inside the promptbox like now, also keep the domain toggle button inside the promptbox -- done
 -> one small screens make the query box as flex-col -- major work needed. -- done
 -> create dialog boxes -- done
+-> add edit and delete modals in concept view -- done
 
 CURRENT:
+-> update the codes of doamin context and domain provider
+
 
 
 TODO:

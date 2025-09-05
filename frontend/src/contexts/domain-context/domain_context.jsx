@@ -1,12 +1,19 @@
-import { createContext,useContext } from "react";
+import { createContext, useContext } from "react";
 
-export const DomainContext = createContext(
-    {
-        currentDomain: null,
-        setDomain:() => {}
-    }
-)
+/**
+ * @typedef {Object} DomainContextType
+ * @property {string|null} currentDomain
+ * @property {(domain: string) => void} setDomain
+ */
+export const DomainContext = createContext({
+    currentDomain: null,
+    setDomain: () => { },
+});
 
-export function changeDomain(){
+/**
+ * Custom hook to consume the DomainContext
+ * @returns {DomainContextType}
+ */
+export function useDomain() {
     return useContext(DomainContext);
 }

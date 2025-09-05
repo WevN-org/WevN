@@ -4,7 +4,7 @@ import './index.css'
 // import  ReactDOM  from 'react-dom/client'
 import App from './app.jsx'
 import NodesProvider from './contexts/nodes-context/nodes_provider.jsx'
-import DomainProvider from './contexts/domain-context/doamin_provider.jsx'
+import DomainProvider from './contexts/domain-context/domain_provider.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

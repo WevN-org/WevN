@@ -8,14 +8,15 @@ import { useWebSocket } from './custom-hooks/use-websocket.jsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNodes } from './contexts/nodes-context/nodes_context.jsx';
-import { changeDomain } from './contexts/domain-context/domain_context.jsx';
+import { useDomain } from './contexts/domain-context/domain_context.jsx';
+
 
 
 // This is the App component that orchestrates everything
 const App = () => {
 
     const { setNodes } = useNodes();
-    const { currentDomain } = changeDomain();
+    const { currentDomain } = useDomain();
     // --- State Management for the App ---
     const [state, setState] = useState({
         domains: [],
@@ -58,7 +59,7 @@ const App = () => {
             catch (err) {
                 console.log(err)
             }
-        }, [currentDomain]);
+        }, [currentDomain, setNodes]);
 
 
     // initial render of the fetchDomain function
@@ -84,48 +85,6 @@ const App = () => {
 
 
     const [activeTab, setActiveTab] = useState('All');
-    const [concepts, _] = useState([
-        {
-            id: 1,
-            title: "What is a closure?",
-            description: "A closure is a function bundled together with references to its surrounding state.",
-        },
-        {
-            id: 2,
-            title: "React Hooks",
-            description: "Functional components can use state and other React features without writing a class.",
-        },
-        {
-            id: 3,
-            title: "What are promises?",
-            description: "A Promise is a proxy for a value not necessarily known when the promise is created.",
-        },
-        {
-            id: 4,
-            title: "Async/Await syntax",
-            description: "A modern way to handle asynchronous operations in JavaScript.",
-        },
-        {
-            id: 5,
-            title: "What is a closure?",
-            description: "A closure is a function bundled together with references to its surrounding state.",
-        },
-        {
-            id: 6,
-            title: "React Hooks",
-            description: "Functional components can use state and other React features without writing a class.",
-        },
-        {
-            id: 7,
-            title: "What are promises?",
-            description: "A Promise is a proxy for a value not necessarily known when the promise is created.",
-        },
-        {
-            id: 8,
-            title: "Async/Await syntax",
-            description: "A modern way to handle asynchronous operations in JavaScript.",
-        },
-    ]);
 
     return (
         <>
@@ -135,14 +94,14 @@ const App = () => {
                     {state.currentView === 'query' ? (
                         <QueryView state={state} setState={setState} />
                     ) : (
-                        <ConceptView concepts={concepts} activeTab={activeTab} setActiveTab={setActiveTab} setState={setState} />
+                        <ConceptView activeTab={activeTab} setActiveTab={setActiveTab} setState={setState} currentDomain={currentDomain} />
                     )}
                 </div >
             </LogProvider>
             <ToastContainer
-                position="bottom-right"                
-                autoClose={3000}         
-                newestOnTop={true}       
+                position="bottom-right"
+                autoClose={3000}
+                newestOnTop={true}
                 closeOnClick
                 pauseOnHover
                 draggable
