@@ -51,10 +51,9 @@ const App = () => {
 
     const fetchNodes = useCallback(
         async () => {
-            console.log("fetchnode")
             try {
                 if (currentDomain) {
-                    console.log("fetchnode2")
+                    console.log(currentDomain)
                     const nodes = await ApiService.listNode(currentDomain);
                     setNodes(nodes);
                 }
@@ -63,29 +62,32 @@ const App = () => {
             catch (err) {
                 console.log(err)
             }
-        }, [currentDomain, setNodes]);
+        }, [currentDomain]);
 
     // initial render of the fetchDomain function
     const fetchNodesRef = useRef(fetchNodes);
     const fetchDomainRef = useRef(fetchDomain);
+    const firstLoad = useRef(true);
 
     useEffect(() => {
-        fetchNodesRef.current = fetchNodes
         fetchDomainRef.current = fetchDomain
-    }, [fetchNodes,fetchDomain]);
+        fetchNodesRef.current = fetchNodes
+    }, [fetchNodes, fetchDomain]);
 
-    useEffect(()=>{
-        fetchNodesRef.current()
-    },[fetchNodes])
+    useEffect(() => {
+        if (!firstLoad.current) {
+            fetchNodesRef.current()
+        }
+    }, [fetchNodes])
     // this is the helper function for ws connection and triggers a rerender after every get call currently only triggered when a domain changes
     const onMessage = useCallback((change) => {
 
         if (change === "domain" || change === "reload") {
-            console.log(change);
             fetchDomainRef.current();
         }
         if (change === "node" || change === "reload") {
             fetchNodesRef.current()
+            firstLoad.current = false
         }
     }, [])
 
