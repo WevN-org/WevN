@@ -34,7 +34,7 @@ export default function GraphContainer({ isVisible }) {
 
     // graph loader
     useEffect(() => {
-        if (!nodesList) {
+        if (!nodesList ) {
             setLoading(true);
             return
         };
@@ -46,23 +46,13 @@ export default function GraphContainer({ isVisible }) {
             color: getRandomBrightColor(),
         }));
 
-        // prepare links
-        const validNodeIds = new Set(formattedNodes.map((n) => n.id));
-        const links = [];
-
-        for (const node of nodesList) {
-            for (const targetId of (dis_s_link ? node.s_links : node.user_links) || []) {
-                if (validNodeIds.has(node.node_id) && validNodeIds.has(targetId)) {
-                    links.push({ source: node.node_id, target: targetId });
-                }
-            }
-        }
 
         // update graph data
-        setGraphData((prev) => ({
-        ...prev,
-        nodes: formattedNodes,
-    }));
+        setGraphData(prev => ({
+            ...prev,
+            nodes: formattedNodes, // only nodes
+            links: prev.links || [], // keep previous links for now
+        }));
         setLoading(false)
         // for debugging remove when necessory
         toast.success(`🧠 Loaded ${nodesList.length} nodes`);
@@ -76,24 +66,24 @@ export default function GraphContainer({ isVisible }) {
     }, [nodesList]);
 
     useEffect(() => {
-    if (!nodesList || graphData.nodes.length === 0) return;
+        if (!nodesList || nodesList.length === 0) return;
 
-    const validNodeIds = new Set(graphData.nodes.map((n) => n.id));
-    const links = [];
+        const validNodeIds = new Set(nodesList.map((n) => n.node_id));
+        const links = [];
 
-    for (const node of nodesList) {
-        for (const targetId of (dis_s_link ? node.s_links : node.user_links) || []) {
-            if (validNodeIds.has(node.node_id) && validNodeIds.has(targetId)) {
-                links.push({ source: node.node_id, target: targetId });
+        for (const node of nodesList) {
+            for (const targetId of (dis_s_link ? node.s_links : node.user_links) || []) {
+                if (validNodeIds.has(node.node_id) && validNodeIds.has(targetId)) {
+                    links.push({ source: node.node_id, target: targetId });
+                }
             }
         }
-    }
 
-     setGraphData((prev) => ({
-        nodes: prev.nodes,   // same reference → nodes won’t re-render
-        links: links,
-    }));
-}, [nodesList, dis_s_link]); 
+        setGraphData((prev) => ({
+            nodes: prev.nodes,   // same reference → nodes won’t re-render
+            links: links,
+        }));
+    }, [nodesList, dis_s_link]);
 
 
 
@@ -136,7 +126,8 @@ export default function GraphContainer({ isVisible }) {
                         ctx.fill();
                         ctx.fillStyle = "black";
                         ctx.fillText(label, node.x + 8, node.y + 4);
-                        fgRef.current.d3Force('charge').strength(-100); // increase repulsion
+                        fgRef.current.d3Force('charge').strength(-50);
+                        fgRef.current.d3Force('link').distance(50); // increase repulsion
 
                     }}
 
@@ -168,7 +159,7 @@ export default function GraphContainer({ isVisible }) {
                             checked={dis_s_link}
                             onChange={() => setLinkMode(true)}
                             className="form-radio h-4 w-4"
-                            // aria-checked={linkMode === "text"}
+                        // aria-checked={linkMode === "text"}
                         />
                         <span className="text-sm select-none">Semantic links</span>
                     </label>
@@ -183,7 +174,7 @@ export default function GraphContainer({ isVisible }) {
                             checked={!dis_s_link}
                             onChange={() => setLinkMode(false)}
                             className="form-radio h-4 w-4"
-                            // aria-checked={linkMode === "user"}
+                        // aria-checked={linkMode === "user"}
                         />
                         <span className="text-sm select-none">User links</span>
                     </label>
