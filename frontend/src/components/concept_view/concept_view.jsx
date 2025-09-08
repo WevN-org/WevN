@@ -124,13 +124,13 @@ const ConceptView = ({ activeTab, setActiveTab, setState }) => {
                                 />
                             </div>
 
-                            {/* Links/Domains Selector */}
+                            {/* Linked Nodes */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Linked Domains
+                                    Linked Nodes
                                 </label>
 
-                                {/* Selected Domains */}
+                                {/* Selected Nodes */}
                                 {selectedNodes.length > 0 && (
                                     <div className="flex flex-wrap gap-2 mb-3">
                                         {selectedNodes.map((node) => (
@@ -151,7 +151,7 @@ const ConceptView = ({ activeTab, setActiveTab, setState }) => {
                                     </div>
                                 )}
 
-                                {/* Domain Selector Dropdown */}
+                                {/* Node Selector Dropdown */}
                                 <div className="relative" ref={nodeRef}>
                                     <button
                                         onClick={() => setShowDomainDropdown(!showDomainDropdown)}

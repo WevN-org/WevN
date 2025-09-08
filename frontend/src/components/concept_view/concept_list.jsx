@@ -3,10 +3,13 @@ import { useNodes } from "../../contexts/nodes-context/nodes_context";
 import ConceptCard from "./concept_card";
 import DeleteConceptModal from "./delete_concept_modal";
 import EditConceptModal from "./edit_concept_modal";
+import { ApiService } from "../../../../backend/api-service/api_service";
+import { useDomain } from "../../contexts/domain-context/domain_context";
+import { toast } from "react-toastify";
 
 const ConceptList = () => {
     const { nodesList } = useNodes();
-
+    const { currentDomain, setDomain } = useDomain();
     const [editConcept, setEditConcept] = useState(null);
     const [deleteConcept, setDeleteConcept] = useState(null);
 
@@ -16,10 +19,17 @@ const ConceptList = () => {
         // TODO: update via context/api
     };
 
-    const handleDeleteConfirm = (concept) => {
+    const handleDeleteConfirm = async(concept) => {
         console.log("Delete concept:", concept);
         setDeleteConcept(null);
         // TODO: remove via context/api
+        try{
+            await ApiService.deleteNode(currentDomain,concept.node_id);
+            toast.success(`Deleted Node ${concept.name}`)
+        }
+        catch(err){
+            toast.error(`Failed to delete concept ${err}. Please try again.`);
+        }
     };
 
     return (

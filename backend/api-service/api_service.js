@@ -205,8 +205,8 @@ export const ApiService = {
             }),
         }
         );
-        const data = await handleResponse(response, "Failed to list nodes");
-        return data.map(item => new Node(item));
+        return await handleResponse(response, "Failed to list nodes");
+    
     }
 
 

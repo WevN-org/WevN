@@ -23,7 +23,7 @@ model = None
 async def lifespan(app : FastAPI):
     global model
     if model is None:
-        local_path = "../__models__/embedding-model\models--sentence-transformers--all-mpnet-base-v2/snapshots/e8c3b32edf5434bc2275fc9bab85f82640a19130"
+        local_path = "../__models__/embedding-model/models--sentence-transformers--all-mpnet-base-v2/snapshots/e8c3b32edf5434bc2275fc9bab85f82640a19130"
         if os.path.exists(local_path):
             print("✅ Loading model from local cache...")
             model = await asyncio.to_thread(
@@ -198,6 +198,7 @@ def list_collection():
 def list_nodes(payload:CollectionNameModel):
     try:
         collection = client.get_collection(payload.name)
+        print(collection.metadata)
         nodes = collection.get(
             include=["documents","metadatas"]
         )
@@ -336,7 +337,7 @@ async def deleteNode(payload:NodeDeleteModel, background_tasks: BackgroundTasks)
             ids=[payload.node_id]
         )
         background_tasks.add_task(notify_clients,   "node")
-        return StatusModel(status=f"Deleted Node {payload.name} Successfully.")
+        return StatusModel(status=f"Deleted Node Successfully.")
 
     except Exception as e:
         raise HTTPException(status_code=400,detail=f"Node delete failed with error: {str(e)}")

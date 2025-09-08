@@ -50,7 +50,7 @@ export default function GraphContainer({ isVisible }) {
         const links = [];
 
         for (const node of nodesList) {
-            for (const targetId of node.user_links || []) {
+            for (const targetId of node.s_links || []) {
                 if (validNodeIds.has(node.node_id) && validNodeIds.has(targetId)) {
                     links.push({ source: node.node_id, target: targetId });
                 }
