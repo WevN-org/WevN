@@ -5,7 +5,7 @@ import ConceptTabNav from "./concept_tabnav";
 import ConceptSearchbar from "./concept_searchbar";
 import ConceptHeader from "./concept_header";
 import { ApiService } from '../../../../backend/api-service/api_service';
-
+import { motion } from "framer-motion";
 import { useNodes } from '../../contexts/nodes-context/nodes_context';
 import { useDomain } from '../../contexts/domain-context/domain_context';
 

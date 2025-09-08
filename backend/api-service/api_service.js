@@ -1,5 +1,5 @@
 import handleResponse from "./response_handler";
-import { apiKey, baseUrl,max_links,distance_threshold} from "./api_constants";
+import { apiKey, baseUrl, max_links, distance_threshold } from "./api_constants";
 
 
 
@@ -92,16 +92,16 @@ export const ApiService = {
  * @returns {Promise<any>} - Response from the server
  */
     async insertNode(collection, name, content, user_links) {
-         console.log(` Here ${JSON.stringify(
-                {
-                    collection,
-                    name,
-                    content,
-                    user_links,
-                    max_links,
-                    distance_threshold
-                }
-            )}`)
+        console.log(` Here ${JSON.stringify(
+            {
+                collection,
+                name,
+                content,
+                user_links,
+                max_links,
+                distance_threshold
+            }
+        )}`)
         const response = await fetch(
             `${baseUrl}/nodes/insert`, {
             method: 'POST',
@@ -118,8 +118,52 @@ export const ApiService = {
             )
         }
         );
-       
+
         return await handleResponse(response, "Failed to create node")
+    },
+
+    /**
+* Update a node in the collection
+* @param {string} collection - Name of the collection
+* @param {string} node_id - Id of the node to be updated
+* @param {string} name - Node name
+* @param {string} content - Node content
+* @param {string[]} user_links - Array of user-provided links
+* @param {number} max_links - Maximum number of similar links to retrieve
+* @param {number} distance_threshold - Threshold for similarity
+* @returns {Promise<any>} - Response from the server
+*/
+    async updateNode(collection,node_id, name, content, user_links) {
+        console.log(` Here ${JSON.stringify(
+            {
+                collection,
+                node_id,
+                name,
+                content,
+                user_links,
+                max_links,
+                distance_threshold
+            }
+        )}`)
+        const response = await fetch(
+            `${baseUrl}/nodes/update`, {
+            method: 'POST',
+            headers: Headers,
+            body: JSON.stringify(
+                {
+                    collection,
+                    node_id,
+                    name,
+                    content,
+                    user_links,
+                    max_links,
+                    distance_threshold
+                }
+            )
+        }
+        );
+
+        return await handleResponse(response, "Failed to update node")
     },
 
     /**
@@ -143,6 +187,22 @@ export const ApiService = {
             method: 'POST',
             headers: Headers,
             body: JSON.stringify({ name }),
+        }
+        );
+        const data = await handleResponse(response, "Failed to list nodes");
+        return data.map(item => new Node(item));
+    },
+
+    
+    async deleteNode(collection,node_id) {
+        const response = await fetch(
+            `${baseUrl}/nodes/delete`, {
+            method: 'POST',
+            headers: Headers,
+            body: JSON.stringify({
+                collection,
+                node_id
+            }),
         }
         );
         const data = await handleResponse(response, "Failed to list nodes");

@@ -132,11 +132,25 @@ class CollectionRenameModel(BaseModel):
 # For creating or updating a node
 class NodeInputModel(BaseModel):
     collection: str
-    name:str
+    name: str
     content: str
     user_links: list[str]
     distance_threshold: float
     max_links: int
+
+
+class NodeUpdateModel(BaseModel):
+    collection: str
+    node_id: str
+    name: str
+    content: str
+    user_links: list[str]
+    distance_threshold: float
+    max_links: int
+
+class NodeDeleteModel(BaseModel):
+    collection: str
+    node_id: str
 
 
 
@@ -251,7 +265,7 @@ def delete_collection(payload:CollectionRenameModel, background_tasks: Backgroun
 async def createNode(payload:NodeInputModel, background_tasks: BackgroundTasks):
     try:
         collection = client.get_collection(payload.collection)
-        embedding=await model_embedding(f"Definition for {payload.name}. {payload.content}")
+        embedding=await model_embedding(f"Name: {payload.name}, {payload.content}")
         node_id = str(uuid.uuid1())
         q_result=collection.query(
             query_embeddings = embedding,
@@ -279,3 +293,50 @@ async def createNode(payload:NodeInputModel, background_tasks: BackgroundTasks):
 
     except Exception as e:
         raise HTTPException(status_code=400,detail=f"Node insertion failed with error: {str(e)}")
+    
+
+@app.post("/nodes/update", dependencies=[Depends(verify_api_key)])
+async def updateNode(payload:NodeUpdateModel, background_tasks: BackgroundTasks):
+    try:
+        collection = client.get_collection(payload.collection)
+        embedding=await model_embedding(f"Name: {payload.name}. {payload.content}")
+        q_result=collection.query(
+            query_embeddings = embedding,
+            n_results=payload.max_links,
+            include=["distances"]
+        )
+
+        s_links=[]
+        for i,id in enumerate(q_result["ids"][0]):
+            if q_result["distances"][0][i] <= payload.distance_threshold:
+                s_links.append(id)
+        metadata= {
+            "name" : payload.name,
+            "user_links" : json.dumps(payload.user_links),
+            "s_links" : json.dumps(s_links)
+        }
+        collection.update(
+            documents=[payload.content],
+            ids=[payload.node_id],
+            embeddings=[embedding],
+            metadatas=[metadata]
+        )
+        background_tasks.add_task(notify_clients,   "node")
+        return StatusModel(status=f"Updated Node {payload.name} Successfully.")
+
+    except Exception as e:
+        raise HTTPException(status_code=400,detail=f"Node Update failed with error: {str(e)}")
+    
+
+@app.post("/nodes/delete", dependencies=[Depends(verify_api_key)])
+async def deleteNode(payload:NodeDeleteModel, background_tasks: BackgroundTasks):
+    try:
+        collection = client.get_collection(payload.collection)
+        collection.delete(
+            ids=[payload.node_id]
+        )
+        background_tasks.add_task(notify_clients,   "node")
+        return StatusModel(status=f"Deleted Node {payload.name} Successfully.")
+
+    except Exception as e:
+        raise HTTPException(status_code=400,detail=f"Node delete failed with error: {str(e)}")
