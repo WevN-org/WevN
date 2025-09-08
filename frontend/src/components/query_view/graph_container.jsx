@@ -12,6 +12,7 @@ export default function GraphContainer({ isVisible }) {
     const [_, setLoading] = useState(false)
     const [dimensions, setDimensions] = useState({ width: 800, height: 800 });
     const [graphData, setGraphData] = useState({ nodes: [], links: [] });
+    const [dis_s_link, setLinkMode] = useState(false);
 
     // graph view resizer according to the change in app
     useEffect(() => {
@@ -50,7 +51,7 @@ export default function GraphContainer({ isVisible }) {
         const links = [];
 
         for (const node of nodesList) {
-            for (const targetId of node.s_links || []) {
+            for (const targetId of (dis_s_link ? node.s_links : node.user_links) || []) {
                 if (validNodeIds.has(node.node_id) && validNodeIds.has(targetId)) {
                     links.push({ source: node.node_id, target: targetId });
                 }
@@ -58,7 +59,10 @@ export default function GraphContainer({ isVisible }) {
         }
 
         // update graph data
-        setGraphData({ nodes: formattedNodes, links });
+        setGraphData((prev) => ({
+        ...prev,
+        nodes: formattedNodes,
+    }));
         setLoading(false)
         // for debugging remove when necessory
         toast.success(`🧠 Loaded ${nodesList.length} nodes`);
@@ -70,6 +74,26 @@ export default function GraphContainer({ isVisible }) {
             }
         }, 100);
     }, [nodesList]);
+
+    useEffect(() => {
+    if (!nodesList || graphData.nodes.length === 0) return;
+
+    const validNodeIds = new Set(graphData.nodes.map((n) => n.id));
+    const links = [];
+
+    for (const node of nodesList) {
+        for (const targetId of (dis_s_link ? node.s_links : node.user_links) || []) {
+            if (validNodeIds.has(node.node_id) && validNodeIds.has(targetId)) {
+                links.push({ source: node.node_id, target: targetId });
+            }
+        }
+    }
+
+     setGraphData((prev) => ({
+        nodes: prev.nodes,   // same reference → nodes won’t re-render
+        links: links,
+    }));
+}, [nodesList, dis_s_link]); 
 
 
 
@@ -131,6 +155,39 @@ export default function GraphContainer({ isVisible }) {
                     }}
                 />
 
+            </div>
+            <div className="fixed bottom-4 left-240 z-60">
+                <fieldset className="flex items-center space-x-2 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full px-3 py-2 shadow-sm">
+                    <legend className="sr-only">Link mode</legend>
+
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                            type="radio"
+                            name="linkMode"
+                            value="Semantic"
+                            checked={dis_s_link}
+                            onChange={() => setLinkMode(true)}
+                            className="form-radio h-4 w-4"
+                            // aria-checked={linkMode === "text"}
+                        />
+                        <span className="text-sm select-none">Semantic links</span>
+                    </label>
+
+                    <span className="w-px h-5 bg-gray-200" aria-hidden />
+
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                            type="radio"
+                            name="linkMode"
+                            value="User"
+                            checked={!dis_s_link}
+                            onChange={() => setLinkMode(false)}
+                            className="form-radio h-4 w-4"
+                            // aria-checked={linkMode === "user"}
+                        />
+                        <span className="text-sm select-none">User links</span>
+                    </label>
+                </fieldset>
             </div>
         </div>
     );
