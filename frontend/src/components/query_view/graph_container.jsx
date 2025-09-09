@@ -137,7 +137,7 @@ export default function GraphContainer({ isVisible }) {
     // Forces
     useEffect(() => {
         if (fgRef.current) {
-            fgRef.current.d3Force("charge").strength(-50);
+            fgRef.current.d3Force("charge").strength(-30);
             fgRef.current.d3Force("link").distance(50);
         }
     }, [graphData]);
@@ -177,7 +177,7 @@ export default function GraphContainer({ isVisible }) {
                     }}
                     linkDirectionalParticles={2}
                     linkDirectionalParticleColor={(link) => link.source.color}
-                    linkDirectionalParticleSpeed={0.008}
+                    linkDirectionalParticleSpeed={0.007}
                     linkColor={() => "#ccccccff"}
                     backgroundColor="#fff"
                     onNodeClick={(node) => {
@@ -197,7 +197,8 @@ export default function GraphContainer({ isVisible }) {
             </div>
 
             {/* Graph Controls */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-60 w-full max-w-3xl">
+            {!editConcept &&(
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-60 w-full max-w-3xl">
                 <div className="flex items-center justify-between gap-6 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl px-6 py-3 shadow-lg">
 
                     {/* Toggle */}
@@ -263,7 +264,7 @@ export default function GraphContainer({ isVisible }) {
 
                 </div>
             </div>
-
+    )}
 
             {editConcept && (
                 <EditConceptModal
