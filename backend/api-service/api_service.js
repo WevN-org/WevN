@@ -92,16 +92,16 @@ export const ApiService = {
  * @returns {Promise<any>} - Response from the server
  */
     async insertNode(collection, name, content, user_links) {
-        console.log(` Here ${JSON.stringify(
-            {
-                collection,
-                name,
-                content,
-                user_links,
-                max_links,
-                distance_threshold
-            }
-        )}`)
+        // console.log(` Here ${JSON.stringify(
+        //     {
+        //         collection,
+        //         name,
+        //         content,
+        //         user_links,
+        //         max_links,
+        //         distance_threshold
+        //     }
+        // )}`)
         const response = await fetch(
             `${baseUrl}/nodes/insert`, {
             method: 'POST',
@@ -134,17 +134,17 @@ export const ApiService = {
 * @returns {Promise<any>} - Response from the server
 */
     async updateNode(collection,node_id, name, content, user_links) {
-        console.log(` Here ${JSON.stringify(
-            {
-                collection,
-                node_id,
-                name,
-                content,
-                user_links,
-                max_links,
-                distance_threshold
-            }
-        )}`)
+        // console.log(` Here ${JSON.stringify(
+        //     {
+        //         collection,
+        //         node_id,
+        //         name,
+        //         content,
+        //         user_links,
+        //         max_links,
+        //         distance_threshold
+        //     }
+        // )}`)
         const response = await fetch(
             `${baseUrl}/nodes/update`, {
             method: 'POST',

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { cache, useState } from "react";
 import { useNodes } from "../../contexts/nodes-context/nodes_context";
 import ConceptCard from "./concept_card";
 import DeleteConceptModal from "./delete_concept_modal";
@@ -13,10 +13,24 @@ const ConceptList = () => {
     const [editConcept, setEditConcept] = useState(null);
     const [deleteConcept, setDeleteConcept] = useState(null);
 
-    const handleEditSave = (updated) => {
-        console.log("Save concept:", updated);
+    const handleEditSave = async(updated) => {
+        // console.log("Save concept:", updated);
         setEditConcept(null);
-        // TODO: update via context/api
+
+        try{
+            await ApiService.updateNode(
+                currentDomain, 
+                updated.node_id,
+                updated.name,
+                updated.content,
+                updated.user_links
+
+            )
+            toast.success(`updated nodes - ${updated.name}`)
+        }
+        catch(err){
+            toast.error(`Failed to update concept ${err}. Please try again.`);
+        }
     };
 
     const handleDeleteConfirm = async(concept) => {

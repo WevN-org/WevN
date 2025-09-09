@@ -34,11 +34,12 @@ const EditConceptModal = ({ concept, onSave, onCancel }) => {
   };
 
   const handleSave = () => {
+    const selectedLinks = selectedNodes.map(node => node.node_id)
     onSave({
       ...concept,
       name: nodeName,
       content: nodeContent,
-      links: selectedNodes,
+      user_links: selectedLinks,
     });
   };
 
