@@ -134,7 +134,7 @@ export default function GraphContainer({ isVisible }) {
 
                     linkDirectionalParticles={2}
                     linkDirectionalParticleColor={(link) => link.source.color}
-                    linkDirectionalParticleSpeed={0.008}
+                    linkDirectionalParticleSpeed={0.004}
 
 
                     linkColor={() => "#ccccccff"}

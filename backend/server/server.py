@@ -225,7 +225,13 @@ def list_nodes(payload:CollectionNameModel):
         raise HTTPException(status_code=400, detail=f"Failed to list nodes: {str(e)}")
 
 
+
+
 # -- POST requests --
+
+# TODO : create reafactor for semantic links.
+# we have a max link and dist thereshold value. on insertion of a node :
+# - check 
 
 # -- create  a new collection -- 
 @app.post("/collections/create" , dependencies=[Depends(verify_api_key)])
