@@ -28,6 +28,19 @@ const App = () => {
         ],
     });
 
+    // Preventing the default browser menus (like: the rightclick browser default menu)
+    useEffect(() => {
+        const handleContextMenu = (event) => {
+            event.preventDefault(); // block default menu
+        };
+
+        document.addEventListener("contextmenu", handleContextMenu);
+
+        return () => {
+            document.removeEventListener("contextmenu", handleContextMenu);
+        };
+    }, []);
+
 
 
     // -- function to fetch domains using ApiService --

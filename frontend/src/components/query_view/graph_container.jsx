@@ -4,6 +4,9 @@ import ForceGraph2D from "react-force-graph-2d";
 import "./css/GraphPage.css";
 import { useNodes } from "../../contexts/nodes-context/nodes_context";
 import { toast } from "react-toastify";
+import EditConceptModal from "../concept_view/edit_concept_modal";
+import { ApiService } from "../../../../backend/api-service/api_service";
+import { useDomain } from "../../contexts/domain-context/domain_context";
 
 export default function GraphContainer({ isVisible }) {
     const containerRef = useRef();
@@ -17,6 +20,30 @@ export default function GraphContainer({ isVisible }) {
     const [maxSemanticLinks, setMaxSemanticLinks] = useState(10);
     const [threshold, setThreshold] = useState(0.5);
     const [savedSettings, setSavedSettings] = useState(null);
+    const {currentDomain} = useDomain();
+    const [editConcept, setEditConcept] = useState(null);
+
+
+    // edit node functions
+    const handleEditSave = async (updated) => {
+        // console.log("Save concept:", updated);
+        setEditConcept(null);
+
+        try {
+            await ApiService.updateNode(
+                currentDomain,
+                updated.node_id,
+                updated.name,
+                updated.content,
+                updated.user_links
+
+            )
+            toast.success(`updated nodes - ${updated.name}`)
+        }
+        catch (err) {
+            toast.error(`Failed to update concept ${err}. Please try again.`);
+        }
+    };
 
     useEffect(() => {
         const saved = localStorage.getItem("graphSettings");
@@ -156,11 +183,13 @@ export default function GraphContainer({ isVisible }) {
                     onNodeClick={(node) => {
                         if (!fgRef.current) return;
 
-                        const distance = 150; // how "zoomed in" you want (smaller = closer)
-                        const distRatio = 1 + distance / Math.hypot(node.x, node.y);
-
+                        // fgRef.current.zoomToFit(500, 350, n => n.id === node.id);
                         fgRef.current.centerAt(node.x, node.y, 1000); // smoothly center on node
-                        fgRef.current.zoom(distRatio, 1000);          // smoothly zoom to ratio
+                        fgRef.current.zoom(3, 1000);
+                    }}
+
+                    onNodeRightClick={(node) => {
+                        setEditConcept(nodesList.find((n)=>n.node_id===node.id))
                     }}
 
 
@@ -236,6 +265,13 @@ export default function GraphContainer({ isVisible }) {
             </div>
 
 
+            {editConcept && (
+                <EditConceptModal
+                    concept={editConcept}
+                    onSave={handleEditSave}
+                    onCancel={() => setEditConcept(null)}
+                />
+            )}
         </div>
     );
 }

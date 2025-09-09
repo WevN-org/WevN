@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 
 const ConceptList = () => {
     const { nodesList } = useNodes();
-    const { currentDomain, setDomain } = useDomain();
+    const { currentDomain } = useDomain();
     const [editConcept, setEditConcept] = useState(null);
     const [deleteConcept, setDeleteConcept] = useState(null);
 
