@@ -83,8 +83,8 @@ const ConceptView = ({ activeTab, setActiveTab, setState }) => {
 
     return (
         <>
-            <div className="w-full bg-gray-50 min-h-screen p-4 sm:p-8 font-sans antialiased ">
-                <div className="max-w-4xl mx-auto space-y-6">
+            <div className="w-full bg-gray-50 h-screen p-4 sm:p-8 font-sans antialiased ">
+                <div className="h-screen max-w-4xl mx-auto space-y-6">
                     <ConceptHeader handleBackButton={handleBackButton} setShowNodeCreatePopup={setShowNodeCreatePopup} />
                     <ConceptSearchbar />
                     <ConceptTabNav activeTab={activeTab} setActiveTab={setActiveTab} />
