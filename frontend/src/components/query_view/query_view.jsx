@@ -21,17 +21,7 @@ export default function QueryView({ state, setState }) {
             )}
         >
             {/* Graph */}
-            <GraphContainer
-                isVisible={graphVisibility}
-                className="w-full md:w-[40%] h-64 md:h-auto md:order-last"
-            >
-                <div className="d3-placeholder">
-                    Interactive D3.js Graph Visualization
-                    <p className="text-sm mt-3">
-                        Nodes and edges will be rendered here based on your query.
-                    </p>
-                </div>
-            </GraphContainer>
+            <GraphContainer isVisible={graphVisibility} className="w-full md:w-[40%] h-64 md:h-auto md:order-last" />
 
             {/* Chat */}
             <div

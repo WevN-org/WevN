@@ -162,7 +162,7 @@ const Sidebar = ({ state, setState }) => {
                                 <p className="text-center">No domains found!</p>
                                 <button
                                     className="text-blue-500 hover:text-blue-600 transition-colors text-sm font-medium mt-2"
-                                    onClick={() => setShowCreatePopup(true)}
+                                    onClick={() => handleCreateDomain(query)}
                                 >
                                     + create new ?
                                 </button>
