@@ -17,27 +17,34 @@ import asyncio
 # -- sentence - transformers  model
 
 model = None
+model_ready = asyncio.Event()
 
 
 @asynccontextmanager
 async def lifespan(app : FastAPI):
     global model
-    if model is None:
-        local_path = "../__models__/embedding-model/models--sentence-transformers--all-mpnet-base-v2/snapshots/e8c3b32edf5434bc2275fc9bab85f82640a19130"
-        if os.path.exists(local_path):
-            print("✅ Loading model from local cache...")
-            model = await asyncio.to_thread(
-                lambda: SentenceTransformer(local_path)
-            )
-        else:
-            print("🌐 Downloading model from Hugging Face...")
-            model = await asyncio.to_thread(
-                lambda: SentenceTransformer(
-                    "all-mpnet-base-v2",
-                    cache_folder="../__models__/embedding-model"
+    async def load_model():
+        global model
+        if model is None:
+            local_path = "../__models__/embedding-model/models--sentence-transformers--all-mpnet-base-v2/snapshots/e8c3b32edf5434bc2275fc9bab85f82640a19130"
+            if os.path.exists(local_path):
+                print("✅ Loading model from local cache...")
+                model = await asyncio.to_thread(
+                    lambda: SentenceTransformer(local_path)
                 )
-            )
-            print("Model loaded!")
+                print("Model loaded!")
+                model_ready.set()
+            else:
+                print("🌐 Downloading model from Hugging Face...")
+                model = await asyncio.to_thread(
+                    lambda: SentenceTransformer(
+                        "all-mpnet-base-v2",
+                        cache_folder="../__models__/embedding-model"
+                    )
+                )
+                print("Model loaded!")
+                model_ready.set()
+    asyncio.create_task(load_model())
     yield  # ⚠️ THIS is required! App runs after this
     print("Server shutting down")
 
@@ -138,6 +145,12 @@ class NodeInputModel(BaseModel):
     distance_threshold: float
     max_links: int
 
+# For refactoring semantic links
+class NodeSemanticRefactorModel(BaseModel):
+    collection: str
+    distance_threshold: float
+    max_links: int
+
 
 class NodeUpdateModel(BaseModel):
     collection: str
@@ -163,6 +176,7 @@ client = chromadb.PersistentClient(path="db")
 
 # -- embedding --
 async def model_embedding(text: str) -> list[float]:
+    await model_ready.wait()
     return await asyncio.to_thread(lambda: model.encode(text))
 
 
@@ -194,7 +208,6 @@ def list_collection():
 def list_nodes(payload:CollectionNameModel):
     try:
         collection = client.get_collection(payload.name)
-        print(collection.metadata)
         nodes = collection.get(
             include=["documents","metadatas"]
         )
@@ -222,6 +235,41 @@ def list_nodes(payload:CollectionNameModel):
 
 
 
+@app.post("/nodes/refactor",dependencies=[Depends(verify_api_key)])
+def refactor_nodes(payload:NodeSemanticRefactorModel):
+    try:
+        collection = client.get_collection(payload.collection)
+        nodes = collection.get(
+            include=["metadatas","embeddings"]
+        )
+        ids = nodes.get("ids") or []
+        metadatas = nodes.get("metadatas") or []
+        embeddings=nodes.get("embeddings") or []
+        meta_result = []
+        id_result = []
+        for node_id,meta,embedding in zip( ids, metadatas,embeddings):
+            q_result= collection.query(
+                query_embeddings = embedding,
+                n_results=payload.max_links,
+                include=["distances"]
+            )
+            s_links=[]
+            for i,id in enumerate(q_result["ids"][0]):
+                if id != node_id and q_result["distances"][0][i] <= payload.distance_threshold:
+                    s_links.append(id)
+            meta["s_links"] = json.dumps(s_links)
+            meta_result.append(meta)
+            id_result.append(node_id)
+
+        collection.update(
+            ids=id_result,
+            metadatas=meta_result
+        )
+        return StatusModel(status=f"Refactored semantic links for nodes in {payload.collection} Successfully.")
+
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to refactored semantic links for nodes in  {payload.collection} - {str(e)}")
 
 # -- POST requests --
 
@@ -254,21 +302,21 @@ def delete_collection(payload:CollectionNameModel, background_tasks: BackgroundT
 
 # -- rename a collection --
 @app.post("/collections/rename",dependencies=[Depends(verify_api_key)])
-def delete_collection(payload:CollectionRenameModel, background_tasks: BackgroundTasks):
+def rename_collection(payload:CollectionRenameModel, background_tasks: BackgroundTasks):
     try:
         collection = client.get_collection(payload.d_old)
         collection.modify(name=payload.d_new)
         background_tasks.add_task(notify_clients,   "domain")
         return StatusModel(status=f"Renamed  Domain {payload.d_old} to {payload.d_new} Successfully.")
     except Exception as e:
-        raise HTTPException(status_code=400,detail=f"Domain Deletion Failed with error: {str(e)}")
+        raise HTTPException(status_code=400,detail=f"Domain Rename Failed with error: {str(e)}")
 
 # -- insert a node --
 @app.post("/nodes/insert", dependencies=[Depends(verify_api_key)])
 async def createNode(payload:NodeInputModel, background_tasks: BackgroundTasks):
     try:
         collection = client.get_collection(payload.collection)
-        embedding=await model_embedding(f"Name: {payload.name}, {payload.content}")
+        embedding=await model_embedding(f"Name: {payload.name}. {payload.content}")
         node_id = str(uuid.uuid1())
         q_result=collection.query(
             query_embeddings = embedding,
