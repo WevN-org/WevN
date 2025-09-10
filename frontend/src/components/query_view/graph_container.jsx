@@ -19,7 +19,11 @@ export default function GraphContainer({ isVisible }) {
     const [useSemanticLinks, setUseSemanticLinks] = useState(false);
     const [maxSemanticLinks, setMaxSemanticLinks] = useState(10);
     const [threshold, setThreshold] = useState(0.5);
-    const [savedSettings, setSavedSettings] = useState(null);
+    const [savedSettings, setSavedSettings] = useState({
+        useSemanticLinks: false,
+        maxSemanticLinks: 20,
+        threshold: 1.4,
+    });
     const { currentDomain } = useDomain();
     const [editConcept, setEditConcept] = useState(null);
 
@@ -48,10 +52,11 @@ export default function GraphContainer({ isVisible }) {
     useEffect(() => {
         const saved = localStorage.getItem("graphSettings");
         if (saved) {
+            console.log(saved)
             const parsed = JSON.parse(saved);
             setUseSemanticLinks(parsed.useSemanticLinks ?? false);
-            setMaxSemanticLinks(parsed.maxSemanticLinks ?? 10);
-            setThreshold(parsed.threshold ?? 0.5);
+            setMaxSemanticLinks(parsed.maxSemanticLinks ?? 20);
+            setThreshold(parsed.threshold ?? 1.3);
             setSavedSettings(parsed);
         }
     }, []);
@@ -153,8 +158,6 @@ export default function GraphContainer({ isVisible }) {
                     graphData={graphData}
                     nodeLabel={(node) => node.label}
                     nodeCanvasObject={(node, ctx, globalScale) => {
-                        const label = node.label;
-                        const fontSize = 12 / globalScale;
 
                         // node circle
                         ctx.fillStyle = node.color;
@@ -193,7 +196,7 @@ export default function GraphContainer({ isVisible }) {
 
             {/* Graph Controls */}
             {!editConcept && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-60 w-full max-w-3xl">
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-3xl">
                     <div className="flex items-center justify-between gap-6 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl px-6 py-3 shadow-lg">
 
                         {/* Toggle */}
@@ -235,12 +238,12 @@ export default function GraphContainer({ isVisible }) {
                         {/* Threshold */}
                         <div className="flex items-center gap-3 flex-1 max-w-sm">
                             <label className="text-sm text-gray-600 whitespace-nowrap">
-                                Threshold ({(threshold * 100).toFixed(0)}%)
+                                Threshold ({(threshold).toFixed(2)})
                             </label>
                             <input
                                 type="range"
                                 min="0"
-                                max="1"
+                                max="2"
                                 step="0.01"
                                 value={threshold}
                                 onChange={(e) => setThreshold(Number(e.target.value))}

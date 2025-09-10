@@ -161,10 +161,6 @@ client = chromadb.PersistentClient(path="db")
 
 # -- Helper Functions --(boring stuff)
 
-# -- cosine similarity listing for creating semantic linking
-def distance_similarity(a, b):
-    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
-
 # -- embedding --
 async def model_embedding(text: str) -> list[float]:
     return await asyncio.to_thread(lambda: model.encode(text))
