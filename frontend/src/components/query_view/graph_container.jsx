@@ -195,74 +195,76 @@ export default function GraphContainer({ isVisible }) {
             </div>
 
             {/* Graph Controls */}
-            {!editConcept && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-3xl">
-                    <div className="flex items-center justify-between gap-6 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl px-6 py-3 shadow-lg">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-4xl">
+                <div className="flex items-center justify-between gap-6 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl px-6 py-3 shadow-lg">
 
-                        {/* Toggle */}
-                        <div className="flex items-center gap-3">
-                            <span className="text-sm font-medium select-none">
-                                {useSemanticLinks ? "Semantic Links" : "User Links"}
-                            </span>
-                            <button
-                                type="button"
-                                onClick={() => setUseSemanticLinks((prev) => !prev)}
-                                className={clsx(
-                                    "relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-200",
-                                    useSemanticLinks ? "bg-blue-600" : "bg-gray-300"
-                                )}
-                            >
-                                <span
-                                    className={clsx(
-                                        "inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200",
-                                        useSemanticLinks ? "translate-x-6" : "translate-x-1"
-                                    )}
-                                />
-                            </button>
-                        </div>
-
-                        {/* Max Semantic Links */}
-                        <div className="flex items-center gap-2">
-                            <label className="text-sm text-gray-600 whitespace-nowrap">
-                                Max Links
-                            </label>
-                            <input
-                                type="number"
-                                value={maxSemanticLinks}
-                                onChange={(e) => setMaxSemanticLinks(Number(e.target.value))}
-                                min={1}
-                                className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-                            />
-                        </div>
-
-                        {/* Threshold */}
-                        <div className="flex items-center gap-3 flex-1 max-w-sm">
-                            <label className="text-sm text-gray-600 whitespace-nowrap">
-                                Threshold ({(threshold).toFixed(2)})
-                            </label>
-                            <input
-                                type="range"
-                                min="0"
-                                max="2"
-                                step="0.01"
-                                value={threshold}
-                                onChange={(e) => setThreshold(Number(e.target.value))}
-                                className="w-full accent-blue-600"
-                            />
-                        </div>
-                        {/* Save button only active when changes exist */}
+                    {/* Toggle */}
+                    <div className="flex items-center gap-3">
+                        <span className="text-sm text-gray-700 select-none min-w-[110px] text-right">
+                            {useSemanticLinks ? "Semantic Links" : "User Links"}
+                        </span>
                         <button
-                            onClick={handleSave}
-                            disabled={!hasChanges}
-                            className={`px-3 py-1 rounded ${hasChanges ? "bg-green-600 text-white" : "bg-gray-300 text-gray-500"
-                                }`}
+                            type="button"
+                            onClick={() => setUseSemanticLinks((prev) => !prev)}
+                            className={clsx(
+                                "relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-200",
+                                useSemanticLinks ? "bg-blue-600" : "bg-gray-300"
+                            )}
                         >
-                            Save
+                            <span
+                                className={clsx(
+                                    "inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200",
+                                    useSemanticLinks ? "translate-x-6" : "translate-x-1"
+                                )}
+                            />
                         </button>
-
                     </div>
+
+                    {/* Max Semantic Links */}
+                    <div className="flex items-center gap-2">
+                        <label className="text-sm text-gray-600 whitespace-nowrap">
+                            Max Links
+                        </label>
+                        <input
+                            type="number"
+                            value={maxSemanticLinks}
+                            onChange={(e) => setMaxSemanticLinks(Number(e.target.value))}
+                            min={1}
+                            className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                        />
+                    </div>
+
+                    {/* Threshold */}
+                    <div className="flex items-center gap-3 flex-1">
+                        <span className="text-sm text-gray-800 whitespace-nowrap min-w-[110px] font-medium text-right font-mono">
+                            Threshold ({threshold.toFixed(2)})
+                        </span>
+                        <input
+                            type="range"
+                            min="0"
+                            max="2"
+                            step="0.01"
+                            value={threshold}
+                            onInput={(e) => setThreshold(Number(e.target.value))}
+                            className="flex-1 accent-blue-600"
+                        />
+                    </div>
+
+                    {/* Save button */}
+                    <button
+                        onClick={handleSave}
+                        disabled={!hasChanges}
+                        className={`px-3 py-1 rounded ${hasChanges
+                            ? "bg-green-600 text-white"
+                            : "bg-gray-300 text-gray-500"
+                            }`}
+                    >
+                        Save
+                    </button>
+
                 </div>
-            )}
+            </div>
+
 
             {editConcept && (
                 <EditConceptModal
