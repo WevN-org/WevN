@@ -20,7 +20,7 @@ export default function GraphContainer({ isVisible }) {
     const [maxSemanticLinks, setMaxSemanticLinks] = useState(10);
     const [threshold, setThreshold] = useState(0.5);
     const [savedSettings, setSavedSettings] = useState(null);
-    const {currentDomain} = useDomain();
+    const { currentDomain } = useDomain();
     const [editConcept, setEditConcept] = useState(null);
 
 
@@ -100,9 +100,9 @@ export default function GraphContainer({ isVisible }) {
         }));
 
         setGraphData((prev) => ({
-            ...prev,
             nodes: formattedNodes,
-            links: prev.links || [],
+            links: []
+
         }));
 
         setLoading(false);
@@ -134,13 +134,6 @@ export default function GraphContainer({ isVisible }) {
         }));
     }, [nodesList, useSemanticLinks]);
 
-    // Forces
-    useEffect(() => {
-        if (fgRef.current) {
-            fgRef.current.d3Force("charge").strength(-30);
-            fgRef.current.d3Force("link").distance(50);
-        }
-    }, [graphData]);
 
     return (
         <div
@@ -174,6 +167,8 @@ export default function GraphContainer({ isVisible }) {
                         ctx.textBaseline = "middle";
                         ctx.fillStyle = "black";
                         ctx.fillText(node.label, node.x, node.y + 15);
+                        fgRef.current.d3Force("charge").strength(-30);
+                        fgRef.current.d3Force("link").distance(50);
                     }}
                     linkDirectionalParticles={2}
                     linkDirectionalParticleColor={(link) => link.source.color}
@@ -189,7 +184,7 @@ export default function GraphContainer({ isVisible }) {
                     }}
 
                     onNodeRightClick={(node) => {
-                        setEditConcept(nodesList.find((n)=>n.node_id===node.id))
+                        setEditConcept(nodesList.find((n) => n.node_id === node.id))
                     }}
 
 
@@ -197,74 +192,74 @@ export default function GraphContainer({ isVisible }) {
             </div>
 
             {/* Graph Controls */}
-            {!editConcept &&(
+            {!editConcept && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-60 w-full max-w-3xl">
-                <div className="flex items-center justify-between gap-6 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl px-6 py-3 shadow-lg">
+                    <div className="flex items-center justify-between gap-6 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl px-6 py-3 shadow-lg">
 
-                    {/* Toggle */}
-                    <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium select-none">
-                            {useSemanticLinks ? "Semantic Links" : "User Links"}
-                        </span>
-                        <button
-                            type="button"
-                            onClick={() => setUseSemanticLinks((prev) => !prev)}
-                            className={clsx(
-                                "relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-200",
-                                useSemanticLinks ? "bg-blue-600" : "bg-gray-300"
-                            )}
-                        >
-                            <span
+                        {/* Toggle */}
+                        <div className="flex items-center gap-3">
+                            <span className="text-sm font-medium select-none">
+                                {useSemanticLinks ? "Semantic Links" : "User Links"}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setUseSemanticLinks((prev) => !prev)}
                                 className={clsx(
-                                    "inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200",
-                                    useSemanticLinks ? "translate-x-6" : "translate-x-1"
+                                    "relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-200",
+                                    useSemanticLinks ? "bg-blue-600" : "bg-gray-300"
                                 )}
+                            >
+                                <span
+                                    className={clsx(
+                                        "inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200",
+                                        useSemanticLinks ? "translate-x-6" : "translate-x-1"
+                                    )}
+                                />
+                            </button>
+                        </div>
+
+                        {/* Max Semantic Links */}
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm text-gray-600 whitespace-nowrap">
+                                Max Links
+                            </label>
+                            <input
+                                type="number"
+                                value={maxSemanticLinks}
+                                onChange={(e) => setMaxSemanticLinks(Number(e.target.value))}
+                                min={1}
+                                className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                             />
+                        </div>
+
+                        {/* Threshold */}
+                        <div className="flex items-center gap-3 flex-1 max-w-sm">
+                            <label className="text-sm text-gray-600 whitespace-nowrap">
+                                Threshold ({(threshold * 100).toFixed(0)}%)
+                            </label>
+                            <input
+                                type="range"
+                                min="0"
+                                max="1"
+                                step="0.01"
+                                value={threshold}
+                                onChange={(e) => setThreshold(Number(e.target.value))}
+                                className="w-full accent-blue-600"
+                            />
+                        </div>
+                        {/* Save button only active when changes exist */}
+                        <button
+                            onClick={handleSave}
+                            disabled={!hasChanges}
+                            className={`px-3 py-1 rounded ${hasChanges ? "bg-green-600 text-white" : "bg-gray-300 text-gray-500"
+                                }`}
+                        >
+                            Save
                         </button>
-                    </div>
 
-                    {/* Max Semantic Links */}
-                    <div className="flex items-center gap-2">
-                        <label className="text-sm text-gray-600 whitespace-nowrap">
-                            Max Links
-                        </label>
-                        <input
-                            type="number"
-                            value={maxSemanticLinks}
-                            onChange={(e) => setMaxSemanticLinks(Number(e.target.value))}
-                            min={1}
-                            className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-                        />
                     </div>
-
-                    {/* Threshold */}
-                    <div className="flex items-center gap-3 flex-1 max-w-sm">
-                        <label className="text-sm text-gray-600 whitespace-nowrap">
-                            Threshold ({(threshold * 100).toFixed(0)}%)
-                        </label>
-                        <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            value={threshold}
-                            onChange={(e) => setThreshold(Number(e.target.value))}
-                            className="w-full accent-blue-600"
-                        />
-                    </div>
-                    {/* Save button only active when changes exist */}
-                    <button
-                        onClick={handleSave}
-                        disabled={!hasChanges}
-                        className={`px-3 py-1 rounded ${hasChanges ? "bg-green-600 text-white" : "bg-gray-300 text-gray-500"
-                            }`}
-                    >
-                        Save
-                    </button>
-
                 </div>
-            </div>
-    )}
+            )}
 
             {editConcept && (
                 <EditConceptModal
