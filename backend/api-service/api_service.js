@@ -1,17 +1,27 @@
 import handleResponse from "./response_handler";
-import { apiKey, baseUrl, max_links, distance_threshold } from "./api_constants";
+import { apiKey, baseUrl } from "./api_constants";
 
 
 
 
 
-
+var max_links,distance_threshold;
 // -- Headers -- 
 
 const Headers = {
     'Content-Type': 'application/json; charset=UTF-8',
     'X-API-Key': apiKey,
 };
+
+function getGraphSettings() {
+    const saved = localStorage.getItem("graphSettings");
+    if (saved) {
+        console.log(saved)
+        const parsed = JSON.parse(saved);
+        return parsed
+    }
+    return null
+}
 
 
 export const ApiService = {
@@ -102,6 +112,11 @@ export const ApiService = {
         //         distance_threshold
         //     }
         // )}`)
+        const parsed = getGraphSettings();
+        if (parsed){
+            distance_threshold = parsed.threshold ?? 1.3;
+            max_links = parsed.maxSemanticLinks ?? 20
+        }
         const response = await fetch(
             `${baseUrl}/nodes/insert`, {
             method: 'POST',
@@ -133,7 +148,7 @@ export const ApiService = {
 * @param {number} distance_threshold - Threshold for similarity
 * @returns {Promise<any>} - Response from the server
 */
-    async updateNode(collection,node_id, name, content, user_links) {
+    async updateNode(collection, node_id, name, content, user_links) {
         // console.log(` Here ${JSON.stringify(
         //     {
         //         collection,
@@ -145,6 +160,11 @@ export const ApiService = {
         //         distance_threshold
         //     }
         // )}`)
+        const parsed = getGraphSettings();
+        if (parsed){
+            distance_threshold = parsed.threshold ?? 1.3;
+            max_links = parsed.maxSemanticLinks ?? 20
+        }
         const response = await fetch(
             `${baseUrl}/nodes/update`, {
             method: 'POST',
@@ -165,6 +185,41 @@ export const ApiService = {
 
         return await handleResponse(response, "Failed to update node")
     },
+
+
+    async refactorNode(collection) {
+        // console.log(` Here ${JSON.stringify(
+        //     {
+        //         collection,
+        //         name,
+        //         content,
+        //         user_links,
+        //         max_links,
+        //         distance_threshold
+        //     }
+        // )}`)
+        const parsed = getGraphSettings();
+        if (parsed){
+            distance_threshold = parsed.threshold ?? 1.3;
+            max_links = parsed.maxSemanticLinks ?? 20
+        }
+        const response = await fetch(
+            `${baseUrl}/nodes/refactor`, {
+            method: 'POST',
+            headers: Headers,
+            body: JSON.stringify(
+                {
+                    collection,
+                    max_links,
+                    distance_threshold
+                }
+            )
+        }
+        );
+        return await handleResponse(response, "Failed to create node")
+    },
+
+
 
     /**
      * 
@@ -193,8 +248,8 @@ export const ApiService = {
         return data.map(item => new Node(item));
     },
 
-    
-    async deleteNode(collection,node_id) {
+
+    async deleteNode(collection, node_id) {
         const response = await fetch(
             `${baseUrl}/nodes/delete`, {
             method: 'POST',
@@ -206,7 +261,7 @@ export const ApiService = {
         }
         );
         return await handleResponse(response, "Failed to list nodes");
-    
+
     }
 
 

@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import "./css/GraphPage.css";
 import { useNodes } from "../../contexts/nodes-context/nodes_context";
@@ -20,7 +20,6 @@ export default function GraphContainer({ isVisible }) {
     const [maxSemanticLinks, setMaxSemanticLinks] = useState(10);
     const [threshold, setThreshold] = useState(0.5);
     const [savedSettings, setSavedSettings] = useState({
-        useSemanticLinks: false,
         maxSemanticLinks: 20,
         threshold: 1.4,
     });
@@ -54,24 +53,44 @@ export default function GraphContainer({ isVisible }) {
         if (saved) {
             console.log(saved)
             const parsed = JSON.parse(saved);
-            setUseSemanticLinks(parsed.useSemanticLinks ?? false);
             setMaxSemanticLinks(parsed.maxSemanticLinks ?? 20);
             setThreshold(parsed.threshold ?? 1.3);
             setSavedSettings(parsed);
         }
     }, []);
 
+    useEffect(() => {
+        const saved = localStorage.getItem("graphSemanticView");
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            setUseSemanticLinks(parsed.useSemanticLinks ?? false);
+        }
+    }, [])
+
+    const toggleSemanticLinks = () => {
+        setUseSemanticLinks(prev => {
+            const next = !prev;
+            localStorage.setItem("graphSemanticView", JSON.stringify({ useSemanticLinks: next }));
+            return next;
+        });
+    };
+
     const hasChanges =
         savedSettings &&
-        (savedSettings.useSemanticLinks !== useSemanticLinks ||
-            savedSettings.maxSemanticLinks !== maxSemanticLinks ||
+        (savedSettings.maxSemanticLinks !== maxSemanticLinks ||
             savedSettings.threshold !== threshold);
 
-    function handleSave() {
-        const settings = { useSemanticLinks, maxSemanticLinks, threshold };
-        localStorage.setItem("graphSettings", JSON.stringify(settings));
-        setSavedSettings(settings); // update baseline
-        alert("Settings saved ✅");
+    const handleSave = async()=> {
+        try {
+            await ApiService.refactorNode(currentDomain)
+            const settings = { maxSemanticLinks, threshold };
+            localStorage.setItem("graphSettings", JSON.stringify(settings));
+            setSavedSettings(settings); // update baseline
+            toast.success("refactored semantic links")
+        }
+        catch (err) {
+            toast.error(`failed to refactor links - ${err}`);
+        }
     }
 
     // Resize observer
@@ -93,7 +112,6 @@ export default function GraphContainer({ isVisible }) {
     // Load nodes
     useEffect(() => {
         if (!nodesList) {
-            setLoading(true);
             return;
         }
 
@@ -109,13 +127,7 @@ export default function GraphContainer({ isVisible }) {
             links: []
 
         }));
-
-        setLoading(false);
         toast.success(`🧠 Loaded ${nodesList.length} nodes`);
-
-        setTimeout(() => {
-            fgRef.current?.zoomToFit(700, 200);
-        }, 100);
     }, [nodesList]);
 
     // Build links
@@ -138,6 +150,14 @@ export default function GraphContainer({ isVisible }) {
             links,
         }));
     }, [nodesList, useSemanticLinks]);
+
+    useEffect(() => {
+        if (fgRef.current) {
+            fgRef.current.d3Force("charge").strength(-30);
+            fgRef.current.d3Force("link").distance(50);
+        }
+    }, []);
+
 
 
     return (
@@ -170,8 +190,6 @@ export default function GraphContainer({ isVisible }) {
                         ctx.textBaseline = "middle";
                         ctx.fillStyle = "black";
                         ctx.fillText(node.label, node.x, node.y + 15);
-                        fgRef.current.d3Force("charge").strength(-30);
-                        fgRef.current.d3Force("link").distance(50);
                     }}
                     linkDirectionalParticles={2}
                     linkDirectionalParticleColor={(link) => link.source.color}
@@ -205,7 +223,7 @@ export default function GraphContainer({ isVisible }) {
                         </span>
                         <button
                             type="button"
-                            onClick={() => setUseSemanticLinks((prev) => !prev)}
+                            onClick={() => toggleSemanticLinks()}
                             className={clsx(
                                 "relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-200",
                                 useSemanticLinks ? "bg-blue-600" : "bg-gray-300"

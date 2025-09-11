@@ -236,7 +236,7 @@ def list_nodes(payload:CollectionNameModel):
 
 
 @app.post("/nodes/refactor",dependencies=[Depends(verify_api_key)])
-def refactor_nodes(payload:NodeSemanticRefactorModel):
+def refactor_nodes(payload:NodeSemanticRefactorModel, background_tasks: BackgroundTasks):
     try:
         collection = client.get_collection(payload.collection)
         nodes = collection.get(
@@ -265,6 +265,7 @@ def refactor_nodes(payload:NodeSemanticRefactorModel):
             ids=id_result,
             metadatas=meta_result
         )
+        background_tasks.add_task(notify_clients,"node")
         return StatusModel(status=f"Refactored semantic links for nodes in {payload.collection} Successfully.")
 
         
