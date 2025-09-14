@@ -233,8 +233,6 @@ def list_nodes(payload:CollectionNameModel):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to list nodes: {str(e)}")
 
-
-
 @app.post("/nodes/refactor",dependencies=[Depends(verify_api_key)])
 def refactor_nodes(payload:NodeSemanticRefactorModel, background_tasks: BackgroundTasks):
     try:
@@ -244,7 +242,9 @@ def refactor_nodes(payload:NodeSemanticRefactorModel, background_tasks: Backgrou
         )
         ids = nodes.get("ids") or []
         metadatas = nodes.get("metadatas") or []
-        embeddings=nodes.get("embeddings") or []
+        embeddings=nodes.get("embeddings")
+        if embeddings is None:
+            embeddings = []
         meta_result = []
         id_result = []
         for node_id,meta,embedding in zip( ids, metadatas,embeddings):

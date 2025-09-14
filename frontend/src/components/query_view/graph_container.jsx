@@ -82,7 +82,7 @@ export default function GraphContainer({ isVisible }) {
 
     const handleSave = async()=> {
         try {
-            await ApiService.refactorNode(currentDomain)
+            await ApiService.refactorNode(currentDomain,maxSemanticLinks,threshold)
             const settings = { maxSemanticLinks, threshold };
             localStorage.setItem("graphSettings", JSON.stringify(settings));
             setSavedSettings(settings); // update baseline
@@ -191,9 +191,9 @@ export default function GraphContainer({ isVisible }) {
                         ctx.fillStyle = "black";
                         ctx.fillText(node.label, node.x, node.y + 15);
                     }}
-                    linkDirectionalParticles={2}
+                    linkDirectionalParticles={1}
                     linkDirectionalParticleColor={(link) => link.source.color}
-                    linkDirectionalParticleSpeed={0.007}
+                    linkDirectionalParticleSpeed={0.004}
                     linkColor={() => "#ccccccff"}
                     backgroundColor="#fff"
                     onNodeClick={(node) => {

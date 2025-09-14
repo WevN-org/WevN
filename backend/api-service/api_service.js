@@ -187,7 +187,7 @@ export const ApiService = {
     },
 
 
-    async refactorNode(collection) {
+    async refactorNode(collection,max_links,distance_threshold) {
         // console.log(` Here ${JSON.stringify(
         //     {
         //         collection,
@@ -198,11 +198,6 @@ export const ApiService = {
         //         distance_threshold
         //     }
         // )}`)
-        const parsed = getGraphSettings();
-        if (parsed){
-            distance_threshold = parsed.threshold ?? 1.3;
-            max_links = parsed.maxSemanticLinks ?? 20
-        }
         const response = await fetch(
             `${baseUrl}/nodes/refactor`, {
             method: 'POST',

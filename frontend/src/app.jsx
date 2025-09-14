@@ -123,7 +123,7 @@ const App = () => {
                 </div >
             </LogProvider>
             <ToastContainer
-                position="bottom-right"
+                position="top-right"
                 autoClose={2500}
                 newestOnTop={true}
                 closeOnClick
