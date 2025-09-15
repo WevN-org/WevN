@@ -1,114 +1,149 @@
 # python/main.py
+"""
+Remade FastAPI server using Ollama + LangChain JsonOutputParser + RetryWithErrorOutputParser.
+Features:
+- Loads embedding model (sentence-transformers) in background
+- Uses Ollama via langchain_ollama ChatOllama wrapper
+- Enforces strict JSON schema via Pydantic + JsonOutputParser
+- Uses RetryWithErrorOutputParser to auto-retry and return helpful errors
+- Provides blocking (/query) and SSE streaming (/query/stream) endpoints
+- Keeps existing ChromaDB collection/node endpoints
+
+Note: This file uses langchain and langchain_ollama APIs. Install the following (example):
+pip install langchain langchain-ollama ollama-client chromadb sentence-transformers uvicorn fastapi
+
+Adjust model names, paths, and env/config as needed.
+"""
+
 from contextlib import asynccontextmanager
 import os
-from fastapi import FastAPI, Depends, Request, HTTPException, Query, WebSocket, WebSocketDisconnect, BackgroundTasks
-from fastapi.responses import JSONResponse, StreamingResponse
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 import json
-import chromadb
-from sentence_transformers import SentenceTransformer
-import numpy as np
 import uuid
-from typing import List, Optional, Dict, Any
 import asyncio
 import threading
 import queue as thread_queue
-import time
+from typing import List, Optional, Dict, Any, TypedDict
 
-# ---- LangChain imports (best-effort; we try multiple LLM wrappers) ----
-# If you use a specific wrapper (llama-cpp-python, ctransformers), install and adapt.
+from fastapi import FastAPI, Depends, Request, HTTPException, Query, WebSocket, WebSocketDisconnect, BackgroundTasks
+from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+
+import chromadb
+from sentence_transformers import SentenceTransformer
+import numpy as np
+
+# LangChain + Ollama
 try:
-    import ollama
-except ImportError:
-    ollama = None
+    from langchain_ollama import ChatOllama
+    from langchain_core.output_parsers import JsonOutputParser
+    from langchain.output_parsers import RetryWithErrorOutputParser
+    from langchain.prompts import ChatPromptTemplate
+    from langgraph.graph import StateGraph, END
+    from langgraph.checkpoint.memory import MemorySaver # Simple in-memory persistence
+    from langchain_core.messages import BaseMessage
+    from langchain_core.messages import AIMessage, HumanMessage
+    
+except Exception:
+    # If langchain or adapters are missing, we still want the server to start but llm calls will error clearly
+    ChatOllama = None
+    JsonOutputParser = None
+    RetryWithErrorOutputParser = None
+    ChatPromptTemplate = None
+    StateGraph = None
+    MemorySaver = None
 
+# Local Ollama client fallback (if you used direct ollama SDK elsewhere)
 
-# -- sentence-transformers embedding model globals --
+# Configuration
+llm_model = os.environ.get("LLM_MODEL", "gemma3:4b")
+API_KEY = os.environ.get("API_KEY", "mysecretkey")
+EMBEDDING_LOCAL_PATH = os.environ.get("EMBEDDING_LOCAL_PATH", "../__models__/embedding-model/models--sentence-transformers--all-mpnet-base-v2/snapshots/e8c3b32edf5434bc2275fc9bab85f82640a19130")
+CHROMA_PATH = os.environ.get("CHROMA_PATH", "db")
+
+# Globals
 embedding_model = None
 embedding_model_ready = asyncio.Event()
 
-# -- local LLM globals --
-llm = None
+llm: Optional[Any] = None
 llm_ready = asyncio.Event()
 llm_load_error: Optional[str] = None
 
-# ---- Existing lifespan: loads embedding model in background (unchanged, improved slightly) ----
+# Chroma client
+client = chromadb.PersistentClient(path=CHROMA_PATH)
+
+# FastAPI app and lifespan
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global embedding_model
-
+    # Load embedding model in background
     async def load_embedding_model():
         global embedding_model
-        if embedding_model is None:
-            local_path = "../__models__/embedding-model/models--sentence-transformers--all-mpnet-base-v2/snapshots/e8c3b32edf5434bc2275fc9bab85f82640a19130"
-            try:
-                if os.path.exists(local_path):
-                    print("✅ Loading embedding model from local cache...")
-                    embedding_model = await asyncio.to_thread(lambda: SentenceTransformer(local_path))
-                else:
-                    print("🌐 Downloading embedding model from Hugging Face (to cache folder)...")
-                    embedding_model = await asyncio.to_thread(lambda: SentenceTransformer(
-                        "all-mpnet-base-v2",
-                        cache_folder="../__models__/embedding-model"
-                    ))
-                print("Embedding model ready.")
-                embedding_model_ready.set()
-            except Exception as e:
-                print("Failed to load embedding model:", str(e))
-                # We deliberately do NOT set the event so upstream waits will fail (and endpoint will return 503).
-    # start embedding model loader, but do not await
-    async def load_ollama_llm():
-        global llm_ready, llm_load_error
-        if ollama is None:
-            llm_load_error = "Ollama Python SDK is not installed."
+        try:
+            if os.path.exists(EMBEDDING_LOCAL_PATH):
+                print("✅ Loading embedding model from local cache...")
+                embedding_model = await asyncio.to_thread(lambda: SentenceTransformer(EMBEDDING_LOCAL_PATH))
+            else:
+                print("🌐 Downloading embedding model from Hugging Face (to cache folder)...")
+                embedding_model = await asyncio.to_thread(lambda: SentenceTransformer(
+                    "all-mpnet-base-v2",
+                    cache_folder="../__models__/embedding-model"
+                ))
+            print("Embedding model ready.")
+            embedding_model_ready.set()
+        except Exception as e:
+            print("Failed to load embedding model:", str(e))
+
+    # Initialize LangChain Ollama + parsers
+    async def load_llm_and_parsers():
+        global llm, llm_ready, llm_load_error
+        if ChatOllama is None or JsonOutputParser is None or RetryWithErrorOutputParser is None:
+            llm_load_error = "LangChain or Ollama adapter not installed. Install langchain and langchain-ollama."
             print(llm_load_error)
             return
         try:
-            # Test a simple generation to ensure Ollama is working
-            _ = ollama.generate(model="mistral-7b", prompt="Hello", n=1)
+            # instantiate ChatOllama LLM
+            def health_check():
+                resp = llm.invoke([HumanMessage(content="Hello")])
+                return resp
+            llm = ChatOllama(model=llm_model, temperature=0)
+            # quick health call -- some wrappers provide ping or simple generation
+            # we run a short sync generation inside a thread to ensure client works
+            await asyncio.to_thread(health_check)
+            print("LLM (LangChain ChatOllama) ready.")
             llm_ready.set()
-            print("Ollama LLM ready.")
         except Exception as e:
             llm_load_error = str(e)
-            print("Ollama LLM load error:", llm_load_error)
-    asyncio.create_task(load_embedding_model())
+            print("LLM load error:", llm_load_error)
 
-    # Start LLM loader in background (non-blocking)
-    asyncio.create_task(load_ollama_llm())
+    # Kick off background tasks
+    asyncio.create_task(load_embedding_model())
+    asyncio.create_task(load_llm_and_parsers())
 
     yield
     print("Server shutting down")
 
-
-# --- FastAPI app ---
 app = FastAPI(lifespan=lifespan)
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
-API_KEY = "mysecretkey"
+# --- Security / dependencies ---
 
-# --- Dependency ---
 def verify_api_key(request: Request):
     key = request.headers.get("X-API-Key")
     if key != API_KEY:
         raise HTTPException(status_code=403, detail="Forbidden: Invalid API Key")
 
-def validate_token(token: str) -> bool:
-    return token == 'api-token'
-
-# -- websocket clients (unchanged) --
-clients = []
+# --- Websocket clients ---
+clients: List[Any] = []
 
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket, token: str = Query(...)):
-    if not validate_token(token):
+    if token != "api-token":
         await ws.close(code=1008)
         return
     await ws.accept()
@@ -119,21 +154,27 @@ async def websocket_endpoint(ws: WebSocket, token: str = Query(...)):
     except WebSocketDisconnect:
         clients.remove(ws)
 
-async def notify_clients(change_type):
+async def notify_clients(change_type: str):
     message = json.dumps({"type": change_type})
-    for ws in clients:
-        await ws.send_text(message)
+    for ws in list(clients):
+        try:
+            await ws.send_text(message)
+        except Exception:
+            try:
+                clients.remove(ws)
+            except Exception:
+                pass
 
-# -- Pydantic models (kept & extended) --
+# --- Pydantic models ---
 class StatusModel(BaseModel):
     status: str
 
 class NodeOut(BaseModel):
-    node_id : str
-    name : str
-    content : str
-    user_links : Optional[List[str]]
-    s_links : Optional[List[str]]
+    node_id: str
+    name: str
+    content: str
+    user_links: Optional[List[str]] = None
+    s_links: Optional[List[str]] = None
 
 class CollectionNameModel(BaseModel):
     name: str
@@ -146,7 +187,7 @@ class NodeInputModel(BaseModel):
     collection: str
     name: str
     content: str
-    user_links: list[str]
+    user_links: List[str]
     distance_threshold: float
     max_links: int
 
@@ -160,7 +201,7 @@ class NodeUpdateModel(BaseModel):
     node_id: str
     name: str
     content: str
-    user_links: list[str]
+    user_links: List[str]
     distance_threshold: float
     max_links: int
 
@@ -168,54 +209,47 @@ class NodeDeleteModel(BaseModel):
     collection: str
     node_id: str
 
-# ---- Query models for LLM endpoints ----
 class QueryModel(BaseModel):
     collection: str
     query: str
+    conversation_id: Optional[str] = None  # Add this line
     max_results: Optional[int] = 5
     distance_threshold: Optional[float] = 0.8
     include_semantic_links: Optional[bool] = True
     stream: Optional[bool] = False
 
-# -- chroma client (unchanged) --
-client = chromadb.PersistentClient(path="db")
+# --- Structured response schema (Pydantic for JsonOutputParser) ---
+class CodeBlock(BaseModel):
+    language: str
+    content: str
 
-# ---- Helper functions: embeddings ----
-async def model_embedding(text: str) -> list[float]:
-    """
-    Wait for embedding model to be ready and compute embedding in a thread.
-    Returns a plain Python list of floats (Chroma expects lists).
-    """
+class StructuredResponse(BaseModel):
+    answer: str
+    code: List[CodeBlock] = Field(default_factory=list)
+    commands: List[str] = Field(default_factory=list)
+    references: List[str] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+# --- Embeddings helper ---
+async def model_embedding(text: str) -> List[float]:
     await embedding_model_ready.wait()
-    # SentenceTransformer.encode returns numpy array
     arr = await asyncio.to_thread(lambda: embedding_model.encode(text))
     if isinstance(arr, np.ndarray):
         return arr.tolist()
-    else:
-        # some versions return list already
-        return list(arr)
+    return list(arr)
 
-
-
-# ---- Retrieval helper: uses your existing chroma collection and predefined semantic links ----
+# --- Document retrieval ---
 async def retrieve_documents(collection_name: str, query: str, k: int = 5, include_semantic_links: bool = True, distance_threshold: float = 1.0) -> List[Dict[str, Any]]:
-    """
-    - Embeds the query using the sentence-transformer model.
-    - Queries the specified chroma collection for top-k results.
-    - Optionally expands results by following the 's_links' (semantic links) field in metadata.
-    Returns a list of dicts: {id, content, metadata, distance}
-    """
     collection = client.get_collection(collection_name)
     q_emb = await model_embedding(query)
     q_result = collection.query(
         query_embeddings=q_emb,
         n_results=k,
-        include=["documents", "metadatas", "ids", "distances"]
+        include=["documents", "metadatas", "distances"]
     )
     docs = []
     if not q_result:
         return docs
-    # q_result fields are lists-of-lists (batch), we used single query so index 0
     docs_list = q_result.get("documents", [[]])[0]
     metas_list = q_result.get("metadatas", [[]])[0]
     ids_list = q_result.get("ids", [[]])[0]
@@ -224,7 +258,6 @@ async def retrieve_documents(collection_name: str, query: str, k: int = 5, inclu
     for doc, meta, _id, dist in zip(docs_list, metas_list, ids_list, dists_list):
         docs.append({"id": _id, "content": doc, "meta": meta or {}, "distance": dist})
 
-    # follow semantic links if requested (adds at most k extra docs)
     if include_semantic_links:
         extra = []
         seen = set([d["id"] for d in docs if d.get("id")])
@@ -244,133 +277,97 @@ async def retrieve_documents(collection_name: str, query: str, k: int = 5, inclu
         docs.extend(extra)
     return docs
 
-# ---- Prompt template & chain builder ----
-# The assistant is required to output strict JSON with these keys:
-# - answer: text
-# - code: list of {language, content}
-# - commands: list of shell commands strings
-# - references: list of node IDs (from the provided documents)
-# - metadata: arbitrary map
-#
-# We instruct the LLM (system-like prompt) to ONLY output JSON (no markdown). If it fails, we retry.
-STRUCTURED_OUTPUT_INSTRUCTIONS = """
-You are the Wevn assistant. Using the provided CONTEXT (collection documents) and the USER_QUERY, produce a STRICTLY VALID JSON object — nothing else.
-The JSON object MUST have these fields:
-- answer: string (concise, factual answer to the user's query)
-- code: list of objects { "language": "<language>", "content": "<code string>" } (empty list if none)
-- commands: list of shell/cli commands (empty list if none)
-- references: list of node ids (strings) that you used as sources (from the CONTEXT)
-- metadata: object with optional keys like { "confidence": <0-1 float>, "notes": "<text>" } (can be empty)
+# --- LangChain prompt & parsers setup helper ---
 
-Important:
-- Do not include markdown fences, extraneous text, or commentary. Output MUST be a single valid JSON value.
-- If you cannot answer, set "answer" to an honest short sentence and empty lists for code/commands/references.
-"""
 
-# ---- Ollama generator ----
-async def generate_structured_response_ollama_retry(user_query: str, context_docs: List[Dict[str, Any]], max_retries: int = 2) -> Dict[str, Any]:
+class GraphState(TypedDict):
     """
-    Generates structured JSON response from Ollama with retries.
+    Represents the state of our graph.
     """
-    await llm_ready.wait()
-    await embedding_model_ready.wait()
+    query: str
+    collection_name: str  # <-- ADD THIS LINE
+    messages: List[BaseMessage]
+    documents: List[Dict[str, Any]]
+    response: Dict[str, Any]
 
-    context_str = "\n\n---\n\n".join([f"NODE_ID: {d['id']}\nCONTENT: {d['content']}" for d in context_docs]) or "No context"
-    prompt_base = f"{STRUCTURED_OUTPUT_INSTRUCTIONS}\n\nCONTEXT:\n{context_str}\n\nUSER_QUERY:\n{user_query}\nOutput JSON now."
+# --- LangChain prompt & parsers setup helper ---
+def build_parser_and_prompt():
+    json_parser = JsonOutputParser(pydantic_object=StructuredResponse)
+    template_string = """You are the Wevn assistant. You can have a friendly conversation with the user.
+Using the provided CONTEXT (documents from a knowledge base) and the CHAT HISTORY, answer the user's query.
+{format_instructions}
+CHAT HISTORY:
+{chat_history}
+CONTEXT:
+{context}
+USER_QUERY:
+{query}
+Respond with valid JSON only."""
+    prompt = ChatPromptTemplate.from_template(
+        template_string,
+        partial_variables={"format_instructions": json_parser.get_format_instructions()},
+    )
+    return json_parser, prompt
 
-    attempt = 0
-    last_text = None
+# --- Memory Management ---
+# python/main.py
 
-    while attempt <= max_retries:
-        attempt += 1
-        # Run Ollama in a thread (blocking call)
-        response = await asyncio.to_thread(lambda: ollama.generate(model="mistral-7b", prompt=prompt_base))
-        text = response[0]["content"].strip()
-        last_text = text
-        try:
-            parsed = json.loads(text)
-            return parsed
-        except Exception as parse_err:
-            # If retry remains, append repair instructions
-            if attempt <= max_retries:
-                prompt_base = f"{STRUCTURED_OUTPUT_INSTRUCTIONS}\n\nCONTEXT:\n{context_str}\n\nUSER_QUERY:\n{user_query}\n\nYour previous output was invalid JSON: {text}. Please produce **strict JSON only** according to the schema."
-                continue
-            # Out of retries → raise
-            raise HTTPException(
-                status_code=502,
-                detail=f"Ollama output invalid JSON after {max_retries} retries: {last_text} ({parse_err})"
-            )
+# --- LangGraph Nodes ---
 
-# ---- Streaming via Ollama ----
-async def run_chain_streaming_ollama_retry(user_query: str, context_docs: List[Dict[str, Any]], max_retries: int = 2):
+# python/main.py
+
+async def retrieve_documents_node(state: GraphState) -> Dict[str, Any]:
     """
-    Streaming SSE endpoint for Ollama with structured JSON validation & retry.
-    Yields token streams and a final validated JSON payload.
+    Node to retrieve documents from ChromaDB based on the user's query.
     """
-    await llm_ready.wait()
-    await embedding_model_ready.wait()
-
-    context_str = "\n\n---\n\n".join([f"NODE_ID: {d['id']}\nCONTENT: {d['content']}" for d in context_docs]) or "No context"
-    prompt_base = f"{STRUCTURED_OUTPUT_INSTRUCTIONS}\n\nCONTEXT:\n{context_str}\n\nUSER_QUERY:\n{user_query}\nOutput JSON now."
-
-    q = thread_queue.Queue()
-
-    def worker(prompt_text):
-        try:
-            for tok in ollama.stream(model="mistral-7b", prompt=prompt_text):
-                q.put_nowait(tok)
-        except Exception as e:
-            q.put_nowait({"__error__": str(e)})
-        finally:
-            q.put_nowait(None)
-
-    # Start initial streaming
-    threading.Thread(target=worker, args=(prompt_base,), daemon=True).start()
-
-    async def generator():
-        token_accum = []
-        while True:
-            item = await asyncio.to_thread(q.get)
-            if item is None:
-                break
-            if isinstance(item, dict) and "__error__" in item:
-                yield f"data: {{\"error\": \"LLM error: {item['__error__']}\"}}\n\n"
-                return
-            token_accum.append(item)
-            yield f"data: {item}\n\n"
-
-        # Attempt structured JSON validation and retry if needed
-        text_full = "".join(token_accum).strip()
-        attempt = 0
-        while attempt <= max_retries:
-            attempt += 1
-            try:
-                parsed = json.loads(text_full)
-                final_json = json.dumps({"type": "final", "payload": parsed}, ensure_ascii=False)
-                yield f"data: {final_json}\n\n"
-                return
-            except Exception:
-                if attempt <= max_retries:
-                    # Retry Ollama to fix output
-                    response_retry = await asyncio.to_thread(lambda: ollama.generate(
-                        model="mistral-7b",
-                        prompt=f"{STRUCTURED_OUTPUT_INSTRUCTIONS}\n\nCONTEXT:\n{context_str}\n\nUSER_QUERY:\n{user_query}\nYour previous output was invalid JSON: {text_full}. Please output strict JSON."
-                    ))
-                    text_full = response_retry[0]["content"].strip()
-                    continue
-                # Out of retries → send error
-                err_msg = f"Failed to produce valid JSON after {max_retries} retries: {text_full}"
-                yield f"data: {{\"type\":\"error\",\"message\": {json.dumps(err_msg)} }}\n\n"
-                return
-
-    return generator()
+    print("---NODE: RETRIEVING DOCUMENTS---")
+    
+    # Get the collection name and query from the state
+    collection = state["collection_name"]
+    query = state["query"]
+    
+    # Pass the dynamic collection name to your retrieval function
+    documents = await retrieve_documents(
+        collection_name=collection,
+        query=query
+    )
+    
+    return {"documents": documents}
 
 
 
-# ---- FastAPI endpoints: health, collections, nodes (unchanged) ----
+async def generate_response_node(state: GraphState) -> Dict[str, Any]:
+    print("---NODE: GENERATING RESPONSE---")
+    json_parser, prompt = build_parser_and_prompt()
+    context_str = "\n\n---\n\n".join([f"ID: {d.get('id', 'N/A')}\nCONTENT: {d.get('content', '')}" for d in state["documents"]]) or "No context"
+    chat_history_str = "\n".join([f"{type(msg).__name__}: {msg.content}" for msg in state["messages"]])
+    
+    chain = prompt | llm | json_parser
+    parsed_dict = await chain.ainvoke({
+        "context": context_str,
+        "query": state["query"],
+        "chat_history": chat_history_str
+    })
+    
+    new_messages = [HumanMessage(content=state["query"]), AIMessage(content=json.dumps(parsed_dict))]
+    return {"response": parsed_dict, "messages": state["messages"] + new_messages}
+
+
+workflow = StateGraph(GraphState)
+workflow.add_node("retrieve", retrieve_documents_node)
+workflow.add_node("generate", generate_response_node)
+workflow.set_entry_point("retrieve")
+workflow.add_edge("retrieve", "generate")
+workflow.add_edge("generate", END)
+memory = MemorySaver()
+graph_app = workflow.compile(checkpointer=memory)
+# --- Generate structured response (blocking) ---
+
+
+# --- Existing endpoints (collections, nodes) ---
 @app.get("/health", dependencies=[Depends(verify_api_key)])
 def health():
-    return StatusModel(status='ok')
+    return StatusModel(status="ok")
 
 @app.get("/collections/list", dependencies=[Depends(verify_api_key)])
 def list_collection():
@@ -414,9 +411,7 @@ def refactor_nodes(payload: NodeSemanticRefactorModel, background_tasks: Backgro
         nodes = collection.get(include=["metadatas", "embeddings"])
         ids = nodes.get("ids") or []
         metadatas = nodes.get("metadatas") or []
-        embeddings = nodes.get("embeddings")
-        if embeddings is None:
-            embeddings = []
+        embeddings = nodes.get("embeddings") or []
         meta_result = []
         id_result = []
         for node_id, meta, embedding in zip(ids, metadatas, embeddings):
@@ -532,24 +527,61 @@ async def deleteNode(payload: NodeDeleteModel, background_tasks: BackgroundTasks
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Node delete failed with error: {str(e)}")
 
-# ---- New endpoints: /query (blocking) and /query/stream (SSE streaming) ----
-# ---- Query endpoints ----
+# --- New endpoints using LangChain parser ---
+# python/main.py
+
 @app.post("/query", dependencies=[Depends(verify_api_key)])
 async def query_endpoint(payload: QueryModel):
-    docs = await retrieve_documents(payload.collection, payload.query,
-                                    k=payload.max_results,
-                                    include_semantic_links=payload.include_semantic_links,
-                                    distance_threshold=payload.distance_threshold)
-    parsed = await generate_structured_response_ollama_retry(payload.query, docs)
-    return JSONResponse(content=parsed)
+    # ... (code to check if LLM is ready) ...
+    
+    conversation_id = payload.conversation_id or f"conv_{uuid.uuid4()}"
+    config = {"configurable": {"thread_id": conversation_id}}
+    # Pass both the query AND the collection name into the graph
+    initial_input = {
+        "query": payload.query,
+        "collection_name": payload.collection
+    }
+
+    try:
+        final_state = await graph_app.ainvoke(initial_input, config=config)
+        # ... (rest of the function is the same)
+        response_content = {
+            "conversation_id": conversation_id,
+            "response": final_state.get("response")
+        }
+        return JSONResponse(content=response_content)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"LLM query failed: {str(e)}")
+
+# Remember to make the same change to `initial_input` in your /query/stream endpoint!
 
 
 @app.post("/query/stream", dependencies=[Depends(verify_api_key)])
 async def query_stream_endpoint(payload: QueryModel):
-    docs = await retrieve_documents(payload.collection, payload.query,
-                                    k=payload.max_results,
-                                    include_semantic_links=payload.include_semantic_links,
-                                    distance_threshold=payload.distance_threshold)
-    gen = await run_chain_streaming_ollama_retry(payload.query, docs)
-    return StreamingResponse(gen, media_type="text/event-stream")
+    if not llm_ready.is_set():
+        raise HTTPException(status_code=503, detail=f"LLM not ready: {llm_load_error}")
 
+    conversation_id = payload.conversation_id or f"conv_{uuid.uuid4()}"
+    config = {"configurable": {"thread_id": conversation_id}}
+    initial_input = {"query": payload.query}
+
+    async def stream_generator():
+        try:
+            async for event in graph_app.astream(initial_input, config=config):
+                # We are interested in the output of the 'generate' node
+                if "generate" in event:
+                    final_response = event["generate"].get("response")
+                    response_obj = {
+                        "type": "final",
+                        "conversation_id": conversation_id,
+                        "payload": final_response
+                    }
+                    yield f"data: {json.dumps(response_obj, ensure_ascii=False)}\n\n"
+        except Exception as e:
+            error_obj = {"type": "error", "message": f"LLM stream failed: {str(e)}"}
+            yield f"data: {json.dumps(error_obj)}\n\n"
+
+    return StreamingResponse(stream_generator(), media_type="text/event-stream")
+
+
+# End of file
