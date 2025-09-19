@@ -100,3 +100,36 @@ async def ask_stream(question: str):
 
     # Signal end of stream
     yield json.dumps({"type": "done"}) + "\n"
+
+    async def ask_stream(question: str):
+    await llm_ready.wait()
+
+    history_vars = summary_memory.load_memory_variables({})
+    history = history_vars.get("history", "")
+
+    # Collect raw text for later validation
+    full_response = ""
+
+    async for chunk in raw_chain.astream({"input": question, "history": history}):
+        if chunk.content:
+            token = chunk.content
+            full_response += token
+            yield token  # stream to client
+
+    # After streaming finishes → validate with parser
+    try:
+    # Extract first JSON block from full_response
+        json_match = re.search(r"\{.*\}", full_response, re.DOTALL)
+        if json_match:
+            json_text = json_match.group(0)
+            parsed = parser.parse(json_text)  # OutputFixingParser or Pydantic parser
+            summary_memory.save_context({"input": question}, {"output": parsed.Answer})
+            print("✅ Parsed:", parsed)
+            yield f"\n\n{json.dumps({'Answer': parsed.Answer, 'Command': parsed.Command})}"
+        else:
+            yield "\n\n[ERROR]: No JSON found in response"
+    except Exception as e:
+        print("⚠️ Validation failed:", e)
+        yield f"\n\n[ERROR]: Validation failed - {str(e)}"
+        yield "\n\n[STREAM_END]"
+    return
