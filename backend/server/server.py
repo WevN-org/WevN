@@ -15,9 +15,47 @@ from typing import List,Optional
 import asyncio
 
 # -- sentence - transformers  model
+llmImport=True
 
+try:
+
+    from langchain_ollama import ChatOllama
+    from langchain.chains import LLMChain
+    from langchain.prompts import PromptTemplate
+    from langchain.memory import ConversationSummaryMemory
+    from langchain.output_parsers import PydanticOutputParser
+    from pydantic import BaseModel, Field
+    from typing import Optional
+    from langchain.output_parsers import OutputFixingParser
+except Exception as e:
+    llmImport=False
+    print("Error: " , e)
+    raise
+
+
+# llm model
+llm_model="deepseek-r1:7b"
+# some important global parameters 
 model = None
 model_ready = asyncio.Event()
+
+llm = None
+llm_ready= asyncio.Event()
+llm_error: Optional[str] = None
+
+parser= None
+summary_memory = None
+
+prompt = None
+structured_chain = None
+
+# llm structured response
+class StructuredResponse(BaseModel):
+    Answer: str = Field(description="Main answer text, can include explanation or code")
+    Command: Optional[str] = Field(default="", description="Custom command for tools, if any")
+
+
+
 
 
 @asynccontextmanager
@@ -44,9 +82,61 @@ async def lifespan(app : FastAPI):
                 )
                 print("Model loaded!")
                 model_ready.set()
+    async def load_llm_and_parser():
+        global llm ,parser,summary_memory,llm_error,prompt,structured_chain
+        if llm is None:
+            try: 
+                base_parser = PydanticOutputParser(pydantic_object=StructuredResponse)
+
+
+                # ---------------------------
+                # 2. LLM + Memory
+                # ---------------------------
+                llm = ChatOllama(model=llm_model, temperature=0)
+                def health_check():
+                        resp = llm.invoke("hello")
+                        return resp
+                parser = OutputFixingParser.from_llm(parser=base_parser, llm=llm)
+                summary_memory = ConversationSummaryMemory(llm=llm)
+                await asyncio.to_thread(health_check)
+                print("LLM (LangChain ChatOllama) ready.")
+                llm_ready.set()
+                print("Ollama LLM ready.") 
+                                
+                # llm Prompt template 
+                prompt = PromptTemplate(
+                    template="""
+                You are a helpful assistant.
+
+                Conversation so far:
+                {history}
+
+                User input: {input}
+
+                Respond strictly in JSON format.
+                Always return both fields: "Answer" and "Command".
+                If no command, set "Command": "".
+
+                {format_instructions}
+                """,
+                    input_variables=["input", "history"],
+                    partial_variables={"format_instructions": parser.get_format_instructions()}
+                )
+
+                # llm structured chain
+                structured_chain = prompt | llm | parser
+            except Exception as e :
+                llm_error = e
+                print("llm error : " , e)
     asyncio.create_task(load_model())
+    asyncio.create_task(load_llm_and_parser())
+
     yield  # ⚠️ THIS is required! App runs after this
+
     print("Server shutting down")
+
+
+
 
 # -- websocket  clients
 clients = []
@@ -110,6 +200,7 @@ async def notify_clients(change_type):
 # -- Pydantic Models -- this is the structure for each http request start with a Model suffix for each class
 
 
+
 # -- output models --
 class StatusModel(BaseModel):
     status: str
@@ -165,6 +256,14 @@ class NodeDeleteModel(BaseModel):
     collection: str
     node_id: str
 
+class QueryModel(BaseModel):
+    collection: str
+    query: str
+    conversation_id: Optional[str] = None  # Add this line
+    max_results: Optional[int] = 10
+    distance_threshold: Optional[float] = 1.4
+    include_semantic_links: Optional[bool] = True
+    brainstorm_mode: Optional[bool] = False
 
 
 # -- ChromaDB client -- 
@@ -174,10 +273,45 @@ client = chromadb.PersistentClient(path="db")
 
 # -- Helper Functions --(boring stuff)
 
+
+
+
+
+
 # -- embedding --
 async def model_embedding(text: str) -> list[float]:
     await model_ready.wait()
     return await asyncio.to_thread(lambda: model.encode(text))
+
+async def ask(question: str) -> StructuredResponse:
+    try:
+    # Wait until LLM and parser are ready
+        await llm_ready.wait()
+
+        # Load history from memory
+        history_vars = summary_memory.load_memory_variables({})
+        history = history_vars.get("history", "")
+        
+        # Run chain (LangChain already uses parser, so output is StructuredResponse)
+        raw_result = structured_chain.invoke({"input": question, "history": history})
+        print("result -->", raw_result)
+        
+        # LLMChain returns a dict with key "text" holding our parsed object
+        # result: StructuredResponse = raw_result["text"]
+        result= raw_result
+
+        # Save only Answer back into memory (not full JSON)
+        summary_memory.save_context(
+            {"input": question},
+            {"output": result.Answer}
+        )
+        print(result)
+        return result
+    except Exception as e:
+        print(f"\n \n error --> {e}")
+        raise 
+
+
 
 
 
@@ -392,3 +526,14 @@ async def deleteNode(payload:NodeDeleteModel, background_tasks: BackgroundTasks)
 
     except Exception as e:
         raise HTTPException(status_code=400,detail=f"Node delete failed with error: {str(e)}")
+    
+@app.post("/query", dependencies=[Depends(verify_api_key)])
+async def query_endpoint(payload: QueryModel):
+    try:
+        response = await ask(payload.query)
+        print("Structured:", response)
+        print("Summary memory:", summary_memory.load_memory_variables({}))
+        return response
+    except Exception as e :
+        raise HTTPException(status_code=400,detail=f"Query to llm failed with error: {str(e)}")
+    
