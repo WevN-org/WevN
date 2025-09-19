@@ -3,7 +3,7 @@
 from contextlib import asynccontextmanager
 import os
 from fastapi import FastAPI, Depends, Request, HTTPException, Query, WebSocket, WebSocketDisconnect, BackgroundTasks
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse , StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import json
@@ -27,6 +27,7 @@ try:
     from pydantic import BaseModel, Field
     from typing import Optional
     from langchain.output_parsers import OutputFixingParser
+    import re   
 except Exception as e:
     llmImport=False
     print("Error: " , e)
@@ -48,6 +49,7 @@ summary_memory = None
 
 prompt = None
 structured_chain = None
+raw_chain = None
 
 # llm structured response
 class StructuredResponse(BaseModel):
@@ -83,7 +85,7 @@ async def lifespan(app : FastAPI):
                 print("Model loaded!")
                 model_ready.set()
     async def load_llm_and_parser():
-        global llm ,parser,summary_memory,llm_error,prompt,structured_chain
+        global llm ,parser,summary_memory,llm_error,prompt,structured_chain,raw_chain
         if llm is None:
             try: 
                 base_parser = PydanticOutputParser(pydantic_object=StructuredResponse)
@@ -92,7 +94,7 @@ async def lifespan(app : FastAPI):
                 # ---------------------------
                 # 2. LLM + Memory
                 # ---------------------------
-                llm = ChatOllama(model=llm_model, temperature=0)
+                llm = ChatOllama(model=llm_model, temperature=0,disable_streaming=False)
                 def health_check():
                         resp = llm.invoke("hello")
                         return resp
@@ -125,6 +127,7 @@ async def lifespan(app : FastAPI):
 
                 # llm structured chain
                 structured_chain = prompt | llm | parser
+                raw_chain = prompt | llm
             except Exception as e :
                 llm_error = e
                 print("llm error : " , e)
@@ -310,6 +313,58 @@ async def ask(question: str) -> StructuredResponse:
     except Exception as e:
         print(f"\n \n error --> {e}")
         raise 
+
+
+async def ask_stream(question: str):
+    await llm_ready.wait()
+    history_vars = summary_memory.load_memory_variables({})
+    history = history_vars.get("history", "")
+
+    buffer = ""
+    json_started = False
+    json_braces = 0
+
+    async for chunk in raw_chain.astream({"input": question, "history": history}):
+        if chunk.content:
+            token = chunk.content
+            buffer += token
+
+            # Track JSON block
+            for char in token:
+                if char == "{":
+                    if not json_started:
+                        json_started = True
+                    json_braces += 1
+                elif char == "}":
+                    json_braces -= 1
+
+            # Yield partial stream for UI (optional)
+            yield json.dumps({"type": "partial", "content": token}) + "\n"
+
+            # If we detect a complete JSON object, parse it immediately
+            if json_started and json_braces == 0:
+                try:
+                    json_text = re.search(r"\{.*?\}", buffer, re.DOTALL).group(0)
+                    parsed = parser.parse(json_text)
+                    summary_memory.save_context({"input": question}, {"output": parsed.Answer})
+                    print("✅ Parsed:", parsed)
+
+                    # Send parsed JSON to front-end
+                    yield json.dumps({
+                        "type": "parsed",
+                        "Answer": parsed.Answer,
+                        "Command": parsed.Command
+                    }) + "\n"
+
+                except Exception as e:
+                    yield json.dumps({"type": "error", "message": str(e)}) + "\n"
+                finally:
+                    buffer = ""  # reset
+                    json_started = False
+                    json_braces = 0
+
+    # Signal end of stream
+    yield json.dumps({"type": "done"}) + "\n"
 
 
 
@@ -537,3 +592,14 @@ async def query_endpoint(payload: QueryModel):
     except Exception as e :
         raise HTTPException(status_code=400,detail=f"Query to llm failed with error: {str(e)}")
     
+@app.post("/query/stream", dependencies=[Depends(verify_api_key)])
+async def query_stream(payload: QueryModel):
+    print("Stream ------------->")
+    async def event_generator():
+        try:
+            async for token in ask_stream(payload.query):
+                yield token
+        except Exception as e:
+            yield f"\n\n[ERROR]: {str(e)}"
+
+    return StreamingResponse(event_generator(), media_type="text/plain")
