@@ -44,3 +44,8 @@ Invoke-WebRequest -Uri "http://localhost:8000/nodes/list" `
     -Headers @{ "X-API-Key" = "mysecretkey"; "Content-Type" = "application/json" } `
     -Body '{"name": "Anshul"}'
 
+
+llm stream checker  --> do it in cmd not in powershell
+
+curl -N http://127.0.0.1:8000/query/stream -H "X-API-Key: mysecretkey" -H "Content-Type: application/json" -d "{\"collection\":\"Anshul\",\"query\":\"do a command node my name that i have told u\",\"conversation_id\":\"abc123\",\"max_results\":5,\"distance_threshold\":1.0,\"include_semantic_links\":true,\"brainstorm_mode\":false}"
+

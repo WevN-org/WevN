@@ -365,6 +365,7 @@ async def ask_stream(question: str):
 
     # Signal end of stream
     yield json.dumps({"type": "done"}) + "\n"
+    return 
 
 
 
