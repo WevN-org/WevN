@@ -9,7 +9,6 @@ from pydantic import BaseModel
 import json
 import chromadb
 from sentence_transformers import SentenceTransformer
-import numpy as np
 import uuid
 from typing import List,Optional
 import asyncio
@@ -20,14 +19,11 @@ llmImport=True
 try:
 
     from langchain_ollama import ChatOllama
-    from langchain.chains import LLMChain
     from langchain.prompts import PromptTemplate
     from langchain.memory import ConversationSummaryMemory
-    from langchain.output_parsers import PydanticOutputParser
     from pydantic import BaseModel, Field
     from typing import Optional
-    from langchain.output_parsers import OutputFixingParser
-    import re   
+    from collections import defaultdict  
 except Exception as e:
     llmImport=False
     print("Error: " , e)
@@ -44,11 +40,10 @@ llm = None
 llm_ready= asyncio.Event()
 llm_error: Optional[str] = None
 
-parser= None
+
 summary_memory = None
 
 prompt = None
-structured_chain = None
 raw_chain = None
 
 # llm structured response
@@ -85,10 +80,10 @@ async def lifespan(app : FastAPI):
                 print("Model loaded!")
                 model_ready.set()
     async def load_llm_and_parser():
-        global llm ,parser,summary_memory,llm_error,prompt,structured_chain,raw_chain
+        global llm ,summary_memory,llm_error,prompt,raw_chain
         if llm is None:
             try: 
-                base_parser = PydanticOutputParser(pydantic_object=StructuredResponse)
+                
 
 
                 # ---------------------------
@@ -98,8 +93,8 @@ async def lifespan(app : FastAPI):
                 def health_check():
                         resp = llm.invoke("hello")
                         return resp
-                parser = OutputFixingParser.from_llm(parser=base_parser, llm=llm)
-                summary_memory = ConversationSummaryMemory(llm=llm)
+                
+                summary_memory = defaultdict(lambda: ConversationSummaryMemory(llm=llm))
                 await asyncio.to_thread(health_check)
                 print("LLM (LangChain ChatOllama) ready.")
                 llm_ready.set()
@@ -115,18 +110,13 @@ async def lifespan(app : FastAPI):
 
                 User input: {input}
 
-                Respond strictly in JSON format.
-                Always return both fields: "Answer" and "Command".
-                If no command, set "Command": "".
-
-                {format_instructions}
+                Please provide a relevant answer based on the Conversation so far .
                 """,
-                    input_variables=["input", "history"],
-                    partial_variables={"format_instructions": parser.get_format_instructions()}
+                    input_variables=["input", "history"]
+                    
                 )
 
                 # llm structured chain
-                structured_chain = prompt | llm | parser
                 raw_chain = prompt | llm
             except Exception as e :
                 llm_error = e
@@ -262,11 +252,10 @@ class NodeDeleteModel(BaseModel):
 class QueryModel(BaseModel):
     collection: str
     query: str
-    conversation_id: Optional[str] = None  # Add this line
+    conversation_id: str
     max_results: Optional[int] = 10
     distance_threshold: Optional[float] = 1.4
-    include_semantic_links: Optional[bool] = True
-    brainstorm_mode: Optional[bool] = False
+
 
 
 # -- ChromaDB client -- 
@@ -286,86 +275,37 @@ async def model_embedding(text: str) -> list[float]:
     await model_ready.wait()
     return await asyncio.to_thread(lambda: model.encode(text))
 
-async def ask(question: str) -> StructuredResponse:
-    try:
-    # Wait until LLM and parser are ready
-        await llm_ready.wait()
-
-        # Load history from memory
-        history_vars = summary_memory.load_memory_variables({})
-        history = history_vars.get("history", "")
-        
-        # Run chain (LangChain already uses parser, so output is StructuredResponse)
-        raw_result = structured_chain.invoke({"input": question, "history": history})
-        print("result -->", raw_result)
-        
-        # LLMChain returns a dict with key "text" holding our parsed object
-        # result: StructuredResponse = raw_result["text"]
-        result= raw_result
-
-        # Save only Answer back into memory (not full JSON)
-        summary_memory.save_context(
-            {"input": question},
-            {"output": result.Answer}
-        )
-        print(result)
-        return result
-    except Exception as e:
-        print(f"\n \n error --> {e}")
-        raise 
 
 
-async def ask_stream(question: str):
+async def ask_stream(question: str, conv_id: str):
     await llm_ready.wait()
-    history_vars = summary_memory.load_memory_variables({})
+
+    memory = summary_memory[conv_id]
+    history_vars = memory.load_memory_variables({})
     history = history_vars.get("history", "")
 
-    buffer = ""
-    json_started = False
-    json_braces = 0
+    response_text = ""
 
-    async for chunk in raw_chain.astream({"input": question, "history": history}):
-        if chunk.content:
-            token = chunk.content
-            buffer += token
+    try:
+        async for chunk in raw_chain.astream({"input": question, "history": history}):
+            # append token if present
+            if chunk.content:
+                response_text += chunk.content
+                print(chunk)
+                yield chunk.content
 
-            # Track JSON block
-            for char in token:
-                if char == "{":
-                    if not json_started:
-                        json_started = True
-                    json_braces += 1
-                elif char == "}":
-                    json_braces -= 1
+            # manually stop when LLM signals done
+            done = chunk.response_metadata.get("done", False)
+            if done:
+                break
 
-            # Yield partial stream for UI (optional)
-            yield json.dumps({"type": "partial", "content": token}) + "\n"
-
-            # If we detect a complete JSON object, parse it immediately
-            if json_started and json_braces == 0:
-                try:
-                    json_text = re.search(r"\{.*?\}", buffer, re.DOTALL).group(0)
-                    parsed = parser.parse(json_text)
-                    summary_memory.save_context({"input": question}, {"output": parsed.Answer})
-                    print("✅ Parsed:", parsed)
-
-                    # Send parsed JSON to front-end
-                    yield json.dumps({
-                        "type": "parsed",
-                        "Answer": parsed.Answer,
-                        "Command": parsed.Command
-                    }) + "\n"
-
-                except Exception as e:
-                    yield json.dumps({"type": "error", "message": str(e)}) + "\n"
-                finally:
-                    buffer = ""  # reset
-                    json_started = False
-                    json_braces = 0
-
-    # Signal end of stream
-    yield json.dumps({"type": "done"}) + "\n"
-    return 
+    except Exception as e:
+        yield f"\n\n[ERROR]: {str(e)}"
+    finally:
+        memory.save_context({"input": question}, {"output": response_text})
+        # signal stream end
+        yield ""
+        return
 
 
 
@@ -583,22 +523,14 @@ async def deleteNode(payload:NodeDeleteModel, background_tasks: BackgroundTasks)
     except Exception as e:
         raise HTTPException(status_code=400,detail=f"Node delete failed with error: {str(e)}")
     
-@app.post("/query", dependencies=[Depends(verify_api_key)])
-async def query_endpoint(payload: QueryModel):
-    try:
-        response = await ask(payload.query)
-        print("Structured:", response)
-        print("Summary memory:", summary_memory.load_memory_variables({}))
-        return response
-    except Exception as e :
-        raise HTTPException(status_code=400,detail=f"Query to llm failed with error: {str(e)}")
+
     
 @app.post("/query/stream", dependencies=[Depends(verify_api_key)])
 async def query_stream(payload: QueryModel):
     print("Stream ------------->")
     async def event_generator():
         try:
-            async for token in ask_stream(payload.query):
+            async for token in ask_stream(payload.query,payload.conversation_id):
                 yield token
         except Exception as e:
             yield f"\n\n[ERROR]: {str(e)}"
