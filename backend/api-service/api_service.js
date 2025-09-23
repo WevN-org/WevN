@@ -257,7 +257,66 @@ export const ApiService = {
         );
         return await handleResponse(response, "Failed to list nodes");
 
+    }, 
+    
+    /**
+     * Stream an agent response token-by-token
+     * @param {string} collection - The collection name
+     * @param {string} query - User query
+     * @param {string} conversation_id - Conversation ID
+     * @param {number} max_results - Max results to retrieve
+     * @param {number} distance_threshold - Similarity threshold
+     * @param {boolean} include_semantic_links - Include semantic links
+     * @param {boolean} brainstorm_mode - Brainstorm mode flag
+     * @param {(chunk: string) => void} onChunk - Callback for each chunk
+     * @returns {Promise<void>}
+     */
+    async streamQuery(
+        collection,
+        query,
+        conversation_id,
+        max_results = 5,
+        distance_threshold = 1.0,
+        include_semantic_links = true,
+        brainstorm_mode = false,
+        onChunk
+    ) {
+        const response = await fetch(`${baseUrl}/query/stream`, {
+            method: "POST",
+            headers: Headers,
+            body: JSON.stringify({
+                collection,
+                query,
+                conversation_id,
+                max_results,
+                distance_threshold,
+                include_semantic_links,
+                brainstorm_mode
+            }),
+        });
+
+        // ✅ handle error responses before streaming
+        if (!response.ok) {
+            await handleResponse(response, "Streaming query failed");
+            return; // handleResponse will throw
+        }
+
+        if (!response.body) {
+            throw new Error("No response body from server");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            if (chunk && onChunk) onChunk(chunk);
+        }
     }
+};
 
 
 
@@ -265,7 +324,6 @@ export const ApiService = {
 
 
 
-}
 
 
 
