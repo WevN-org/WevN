@@ -13,6 +13,7 @@ import uuid
 from typing import List,Optional
 import asyncio
 
+
 # -- sentence - transformers  model
 llmImport=True
 
@@ -103,7 +104,7 @@ async def lifespan(app : FastAPI):
                 # llm Prompt template 
                 prompt = PromptTemplate(
                     template="""
-                You are a helpful assistant.
+                You are the WevN Assistant.
 
                 Conversation so far:
                 {history}
@@ -287,18 +288,22 @@ async def ask_stream(question: str, conv_id: str):
     response_text = ""
 
     try:
-        async for chunk in raw_chain.astream({"input": question, "history": history}):
+        async for event in raw_chain.astream_events({"input": question, "history": history},version="v2"):
             # append token if present
-            if chunk.content:
-                response_text += chunk.content
-                print(chunk)
-                yield chunk.content
+
+            event_type = event["event"]
+            if event_type == "on_chat_model_stream":
+                chunk = event["data"]["chunk"]
+                if chunk.content:
+                    response_text += chunk.content
+                    print(chunk)
+                    yield chunk.content
 
             # manually stop when LLM signals done
-            done = chunk.response_metadata.get("done", False)
-            if done:
-                break
-
+                done = chunk.response_metadata.get("done", False)
+                if done:
+                    break
+            
     except Exception as e:
         yield f"\n\n[ERROR]: {str(e)}"
     finally:
@@ -527,6 +532,7 @@ async def deleteNode(payload:NodeDeleteModel, background_tasks: BackgroundTasks)
     
 @app.post("/query/stream", dependencies=[Depends(verify_api_key)])
 async def query_stream(payload: QueryModel):
+    global node_input_model
     print("Stream ------------->")
     async def event_generator():
         try:
