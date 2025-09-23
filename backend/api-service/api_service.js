@@ -5,7 +5,7 @@ import { apiKey, baseUrl } from "./api_constants";
 
 
 
-var max_links,distance_threshold;
+var max_links, distance_threshold;
 // -- Headers -- 
 
 const Headers = {
@@ -113,7 +113,7 @@ export const ApiService = {
         //     }
         // )}`)
         const parsed = getGraphSettings();
-        if (parsed){
+        if (parsed) {
             distance_threshold = parsed.threshold ?? 1.3;
             max_links = parsed.maxSemanticLinks ?? 20
         }
@@ -161,7 +161,7 @@ export const ApiService = {
         //     }
         // )}`)
         const parsed = getGraphSettings();
-        if (parsed){
+        if (parsed) {
             distance_threshold = parsed.threshold ?? 1.3;
             max_links = parsed.maxSemanticLinks ?? 20
         }
@@ -187,7 +187,7 @@ export const ApiService = {
     },
 
 
-    async refactorNode(collection,max_links,distance_threshold) {
+    async refactorNode(collection, max_links, distance_threshold) {
         // console.log(` Here ${JSON.stringify(
         //     {
         //         collection,
@@ -257,8 +257,8 @@ export const ApiService = {
         );
         return await handleResponse(response, "Failed to list nodes");
 
-    }, 
-    
+    },
+
     /**
      * Stream an agent response token-by-token
      * @param {string} collection - The collection name
@@ -271,7 +271,7 @@ export const ApiService = {
      * @param {(chunk: string) => void} onChunk - Callback for each chunk
      * @returns {Promise<void>}
      */
-    async streamQuery(
+    async llm_response(
         collection,
         query,
         conversation_id,

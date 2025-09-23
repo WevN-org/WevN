@@ -77,21 +77,37 @@ const Sidebar = ({ state, setState }) => {
     };
 
     const handleCreateDomain = async (domainName) => {
-        try {
-            await ApiService.createDomain(domainName);
-            toast.success(`${domainName} created successfully.`);
-            setShowCreatePopup(false);
-            setNewDomain("");
-        } catch {
-            toast.error("Failed to create domain. Please try again.");
+        if (validateDomain(domainName)) {
+
+            try {
+                await ApiService.createDomain(domainName);
+                toast.success(`${domainName} created successfully.`);
+                setShowCreatePopup(false);
+                setNewDomain("");
+            } catch {
+                toast.error("Failed to create domain. Please try again.");
+            }
+        }
+        else {
+            toast.error("Name must be 3–512 characters long, use only letters, numbers, dots, hyphens, or underscores, and start and end with a letter or number.")
         }
     };
 
-    const ExpandSidbarAtStart = () => {
-        useEffect(() => {
-            setSidebarVisibility(false);
-        }, [])
+    //const ExpandSidbarAtStart = () => {
+    //    useEffect(() => {
+    //        setSidebarVisibility(false);
+    //    }, [])
+    //};
+
+    const domainRegex = /^[a-zA-Z0-9](?:[a-zA-Z0-9._-]{1,510})[a-zA-Z0-9]$/;
+
+    const validateDomain = (domain) => {
+        // enforce length 3–512 explicitly
+        if (domain.length < 3 || domain.length > 512) return false;
+
+        return domainRegex.test(domain);
     };
+
 
     return (
         <div className="sidebar-wrapper relative z-50 bg-green-500 transition-colors duration-500 h-dvh">

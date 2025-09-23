@@ -32,7 +32,9 @@ except Exception as e:
 
 
 # llm model
-llm_model="deepseek-r1:7b"
+#llm_model="deepseek-r1:7b"
+llm_model="llama3.2:latest"
+
 # some important global parameters 
 model = None
 model_ready = asyncio.Event()

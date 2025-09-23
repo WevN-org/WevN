@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import GraphViewToggle from './graph_view_toggle';
-import { fetchStreamingResponse } from '../../utils/fetchStreamingResponse';
+//import { fetchStreamingResponse } from '../../utils/fetchStreamingResponse';
+import { ApiService } from '../../../../backend/api-service/api_service';
+import { useDomain } from '../../contexts/domain-context/domain_context';
+import { toast } from 'react-toastify';
 
 /**
  * A React component that creates a UI for a prompt box.
@@ -9,8 +12,11 @@ import { fetchStreamingResponse } from '../../utils/fetchStreamingResponse';
  */
 function PromptContainer({ graphVisibility, toggleGraph, setState }) {
 
+    const { currentDomain } = useDomain()
+
     // console.log(state.domains)
     const [inputValue, setInputValue] = useState('');
+
 
     const textareaRef = useRef(null);
 
@@ -22,7 +28,6 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
         }
     }, [inputValue]);
 
-
     const handleInputChange = (e) => {
         setInputValue(e.target.value);
     };
@@ -32,27 +37,45 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
             const userMessage = inputValue;
             setInputValue("");
 
-            let assistantIndex;
-            setState((prev) => {
-                const userMsg = { role: "user", content: userMessage };
-                const assistantMsg = { role: "assistant", content: "" };
-
-                assistantIndex = prev.messages.length + 1; // after user message
-                return {
-                    ...prev,
-                    messages: [...prev.messages, userMsg, assistantMsg],
-                };
-            });
-
-            // Stream response
-            await fetchStreamingResponse(userMessage, (partial) => {
+            try {
+                let assistantIndex;
                 setState((prev) => {
-                    const updated = [...prev.messages];
-                    const prevContent = updated[assistantIndex].content || "";
-                    updated[assistantIndex] = { role: "assistant", content: prevContent + partial };
-                    return { ...prev, messages: updated };
+                    const userMsg = { role: "user", content: userMessage };
+                    const assistantMsg = { role: "assistant", content: "" };
+
+                    assistantIndex = prev.messages.length + 1; // after user message
+                    return {
+                        ...prev,
+                        messages: [...prev.messages, userMsg, assistantMsg],
+                    };
                 });
-            });
+
+                // Stream response
+                await ApiService.llm_response(
+                    currentDomain,        // 👈 your active domain (comes from useDomain())
+                    userMessage,          // the query
+                    "conv-123",           // or a real conversation_id if you track it
+                    5,                    // max_results
+                    1.0,                  // distance_threshold
+                    true,                 // include_semantic_links
+                    false,                // brainstorm_mode
+                    (partial) => {        // onChunk handler
+                        console.log(partial);
+                        setState((prev) => {
+                            const updated = [...prev.messages];
+                            const prevContent = updated[assistantIndex].content || "";
+                            updated[assistantIndex] = {
+                                role: "assistant",
+                                content: prevContent + partial,
+                            };
+                            return { ...prev, messages: updated };
+                        });
+                    }
+                );
+            } catch (error) {
+                toast.error(error)
+            }
+
         }
     };
 

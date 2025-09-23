@@ -1,10 +1,13 @@
 import clsx from "clsx";
 import { useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import rehypeHighlight from 'rehype-highlight';
+
 
 export default function ChatMessages({ messages, graphVisibility }) {
     const messagesEndRef = useRef(null);
 
-    // Auto-scroll to bottom
+    // Auto-scroll to bottom on new message
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
@@ -18,20 +21,20 @@ export default function ChatMessages({ messages, graphVisibility }) {
                 }
             )}
         >
-
             {messages.map((msg, idx) => (
                 <div
                     key={idx}
                     className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                     <div
-                        className={`px-4 py-2 rounded-2xl max-w-[75%] text-sm shadow
-                ${msg.role === "user"
-                                ? "bg-emerald-500 text-white rounded-br-none"
+                        className={`px-4 py-2 rounded-2xl max-w-[75%] text-sm shadow prose prose-sm break-words
+                            ${msg.role === "user"
+                                ? "bg-emerald-500 text-white rounded-br-none prose-invert"
                                 : "bg-gray-200 text-gray-900 rounded-bl-none"
                             }`}
                     >
-                        {msg.content}
+                        <ReactMarkdown children={msg.content} rehypePlugins={[rehypeHighlight]} />
+
                     </div>
                 </div>
             ))}
