@@ -80,9 +80,9 @@ export default function GraphContainer({ isVisible }) {
         (savedSettings.maxSemanticLinks !== maxSemanticLinks ||
             savedSettings.threshold !== threshold);
 
-    const handleSave = async()=> {
+    const handleSave = async () => {
         try {
-            await ApiService.refactorNode(currentDomain,maxSemanticLinks,threshold)
+            await ApiService.refactorNode(currentDomain, maxSemanticLinks, threshold)
             const settings = { maxSemanticLinks, threshold };
             localStorage.setItem("graphSettings", JSON.stringify(settings));
             setSavedSettings(settings); // update baseline
@@ -213,7 +213,7 @@ export default function GraphContainer({ isVisible }) {
             </div>
 
             {/* Graph Controls */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-4xl">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-3xl">
                 <div className="flex items-center justify-between gap-6 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl px-6 py-3 shadow-lg">
 
                     {/* Toggle */}
