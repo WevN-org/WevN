@@ -53,6 +53,13 @@ const Sidebar = ({ state, setState }) => {
         }));
     };
 
+    const handleAccountClick = () => {
+        setState(prev => ({
+            ...prev,
+            currentView: 'account'
+        }));
+    };
+
     // The different errors are not handled. just a common catch block is used
 
     const handleDomainRename = async (oldName, newName) => {
@@ -138,7 +145,7 @@ const Sidebar = ({ state, setState }) => {
                         { 'collapsed p-0 justify-center': isCollapsed }
                     )}
                     onDoubleClick={toggleSidebar} // This double-click still controls the parent state
-                    onClick={() => console.log("accounts page")}
+                    onClick={handleAccountClick}
                 >
                     {!isCollapsed && !sidebarVisibility && (
                         <h1 className="text-3xl font-extrabold text-gray-800">WevN</h1>

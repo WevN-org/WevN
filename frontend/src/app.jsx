@@ -9,6 +9,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNodes } from './contexts/nodes-context/nodes_context.jsx';
 import { useDomain } from './contexts/domain-context/domain_context.jsx';
+import AccountView from './components/account_view/Account_View.jsx';
 
 // This is the App component that orchestrates everything
 const App = ({ onLogout }) => {
@@ -113,12 +114,26 @@ const App = ({ onLogout }) => {
             <LogProvider>
                 <div className='flex overflow-hidden h-screen'>
                     <Sidebar state={state} setState={setState} />
-                    {state.currentView === 'query' ? (
-                        <QueryView state={state} setState={setState} />
-                    ) : (
-                        <ConceptView activeTab={activeTab} setActiveTab={setActiveTab} setState={setState} currentDomain={currentDomain} />
-                    )}
-                </div >
+                    {(() => {
+                        switch (state.currentView) {
+                            case 'query':
+                                return <QueryView state={state} setState={setState} />;
+                            case 'concept':
+                                return (
+                                    <ConceptView
+                                        activeTab={activeTab}
+                                        setActiveTab={setActiveTab}
+                                        setState={setState}
+                                        currentDomain={currentDomain}
+                                    />
+                                );
+                            case 'account':
+                                return <AccountView state={state} setState={setState} />;
+                            default:
+                                return null; // fallback if currentView is unexpected
+                        }
+                    })()}
+                </div>
             </LogProvider>
             <ToastContainer
                 position="top-right"
@@ -129,6 +144,7 @@ const App = ({ onLogout }) => {
                 draggable
             />
         </>
+
     );
 };
 
