@@ -214,11 +214,11 @@ export default function GraphContainer({ isVisible }) {
 
             {/* Graph Controls */}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-3xl">
-                <div className="flex items-center justify-between gap-6 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl px-6 py-3 shadow-lg">
+                <div className="flex flex-wrap items-center justify-center gap-4 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl px-4 py-3 shadow-lg">
 
                     {/* Toggle */}
                     <div className="flex items-center gap-3">
-                        <span className="text-sm text-gray-700 select-none min-w-[110px] text-right">
+                        <span className="text-sm text-gray-700 select-none min-w-[90px] text-right">
                             {useSemanticLinks ? "Semantic Links" : "User Links"}
                         </span>
                         <button
@@ -240,21 +240,19 @@ export default function GraphContainer({ isVisible }) {
 
                     {/* Max Semantic Links */}
                     <div className="flex items-center gap-2">
-                        <label className="text-sm text-gray-600 whitespace-nowrap">
-                            Max Links
-                        </label>
+                        <label className="text-sm text-gray-600 whitespace-nowrap">Max Links</label>
                         <input
                             type="number"
                             value={maxSemanticLinks}
                             onChange={(e) => setMaxSemanticLinks(Number(e.target.value))}
                             min={1}
-                            className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            className="w-16 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                         />
                     </div>
 
                     {/* Threshold */}
-                    <div className="flex items-center gap-3 flex-1">
-                        <span className="text-sm text-gray-800 whitespace-nowrap min-w-[110px] font-medium text-right font-mono">
+                    <div className="flex items-center gap-3 flex-1 min-w-[200px]">
+                        <span className="text-sm text-gray-800 whitespace-nowrap font-medium text-right font-mono">
                             Threshold ({threshold.toFixed(2)})
                         </span>
                         <input
@@ -279,9 +277,9 @@ export default function GraphContainer({ isVisible }) {
                     >
                         Save
                     </button>
-
                 </div>
             </div>
+
 
 
             {editConcept && (

@@ -190,7 +190,7 @@ const Sidebar = ({ state, setState }) => {
                                         tabIndex={0}
                                         key={domain.id}
                                         className={clsx(
-                                            "flex items-center justify-between p-3 rounded-lg transition duration-200 cursor-pointer",
+                                            "flex items-center justify-between p-2 rounded-lg transition duration-200 cursor-pointer",
                                             currentDomain === domain.name
                                                 ? "bg-indigo-50 text-indigo-700 font-medium shadow-inner relative before:absolute before:left-5 before:-translate-x-8 before:top-1/2 before:-translate-y-1/2 before:w-5 before:h-5 before:bg-indigo-500 before:rounded-full"
                                                 : "text-gray-700 hover:bg-gray-100"
