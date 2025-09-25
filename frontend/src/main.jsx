@@ -5,14 +5,20 @@ import './index.css'
 import App from './app.jsx'
 import NodesProvider from './contexts/nodes-context/nodes_provider.jsx'
 import DomainProvider from './contexts/domain-context/domain_provider.jsx'
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import AppRouter from './AppRouter.jsx'
+
+const CLIENT_ID = "908876742569-7pqs6n9cfd64q37sv7jbm9sj955ctd8i.apps.googleusercontent.com"
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <NodesProvider>
-      <DomainProvider>
-        <App />
-      </DomainProvider>
-    </NodesProvider>
+    <GoogleOAuthProvider clientId={CLIENT_ID}>
+      <NodesProvider>
+        <DomainProvider>
+          <AppRouter />
+        </DomainProvider>
+      </NodesProvider>
+    </GoogleOAuthProvider>
   </StrictMode>,
 )
 // -- trying in non-strict mode so as not to trigger two time rendering (for ws) --

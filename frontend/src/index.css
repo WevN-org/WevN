@@ -8,6 +8,7 @@
     --color-accent: #f3f4f6;
 
     --padding-card: .75rem 1.25rem;
+    --sidebar-full: 280px;
   }
 }
 
@@ -21,7 +22,7 @@ button {
 }
 
 .sidebar {
-  width: 320px;
+  width: var(--sidebar-full);
   background-color: #ffffff;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
@@ -56,7 +57,7 @@ button {
 }
 
 .hover-box {
-  width: calc(320px + 6rem);
+  width: calc(var(--sidebar-full) + 6rem);
 }
 
 .hover-box.collapsed {

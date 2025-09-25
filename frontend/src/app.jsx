@@ -10,11 +10,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useNodes } from './contexts/nodes-context/nodes_context.jsx';
 import { useDomain } from './contexts/domain-context/domain_context.jsx';
 
-
-
-
 // This is the App component that orchestrates everything
-const App = () => {
+const App = ({ onLogout }) => {
 
     const { setNodes } = useNodes();
     const { currentDomain } = useDomain();
@@ -111,6 +108,7 @@ const App = () => {
     const [activeTab, setActiveTab] = useState('All');
 
     return (
+        //pass onlogout to accounts page later to logout
         <>
             <LogProvider>
                 <div className='flex overflow-hidden h-screen'>
