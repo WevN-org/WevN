@@ -32,8 +32,8 @@ except Exception as e:
 
 
 # llm model
-#llm_model="deepseek-r1:7b"
-llm_model="llama3.2:latest"
+llm_model="deepseek-r1:7b"
+# llm_model="llama3.1:8b"
 
 # some important global parameters 
 model = None
@@ -282,7 +282,8 @@ async def model_embedding(text: str) -> list[float]:
 
 async def ask_stream(question: str, conv_id: str):
     await llm_ready.wait()
-
+    if llm_error :print("true-->") 
+    else: print("false")
     memory = summary_memory[conv_id]
     history_vars = memory.load_memory_variables({})
     history = history_vars.get("history", "")
@@ -298,7 +299,6 @@ async def ask_stream(question: str, conv_id: str):
                 chunk = event["data"]["chunk"]
                 if chunk.content:
                     response_text += chunk.content
-                    print(chunk)
                     yield chunk.content
 
             # manually stop when LLM signals done
