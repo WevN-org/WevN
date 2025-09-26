@@ -22,10 +22,11 @@ try:
 
     from langchain_ollama import ChatOllama
     from langchain.prompts import PromptTemplate
-    from langchain.memory import ConversationBufferWindowMemory, ConversationSummaryMemory, CombinedMemory
+    from sqlalchemy import create_engine
+    from langchain.memory import ConversationSummaryBufferMemory
     from pydantic import BaseModel, Field
     from typing import Optional
-    from collections import defaultdict  
+    from langchain_community.chat_message_histories import SQLChatMessageHistory
 except Exception as e:
     llmImport=False
     print("Error: " , e)
@@ -45,7 +46,7 @@ llm_ready= asyncio.Event()
 llm_error: Optional[str] = None
 
 
-memory_dict = None
+memory_dict = {}
 
 prompt = None
 raw_chain = None
@@ -90,7 +91,7 @@ async def lifespan(app : FastAPI):
                 print("Model loaded!")
                 model_ready.set()
     async def load_llm_and_parser():
-        global llm ,memory_dict,llm_error,prompt,raw_chain
+        global llm ,llm_error,prompt,raw_chain
         if llm is None:
             try: 
                 
@@ -103,22 +104,8 @@ async def lifespan(app : FastAPI):
                 def health_check():
                         resp = llm.invoke("hello")
                         return resp
-                def memory_factory():
-
-                    # suppressing warnings since i refuse to use langgraph
-                    with warnings.catch_warnings():
-                        warnings.simplefilter("ignore")
-                        # Keep last 5 messages in full
-                        recent_memory = ConversationBufferWindowMemory(k=5, return_messages=True,memory_key="recent_history",input_key="question")
-                        
-                        # Summarize older messages
-                        summary_memory = ConversationSummaryMemory(llm=llm, max_token_limit=5000,memory_key="summary" ,input_key="question")
-                    
-                    # Combine them
-                    return CombinedMemory(memories=[recent_memory,summary_memory])
                 
-                memory_dict = defaultdict(memory_factory)
-                await asyncio.to_thread(health_check)
+                # await asyncio.to_thread(health_check)
                 print("LLM (LangChain ChatOllama) ready.")
                 llm_ready.set()
                 print("Ollama LLM ready.") 
@@ -129,11 +116,8 @@ async def lifespan(app : FastAPI):
                 template="""
                 You are the WevN Assistant.
 
-                Conversation summary so far:
-                {summary}
-
-                Most recent exchanges:
-                {recent_history}
+                Conversation so far:
+                {conversation}
 
                 Relevant retrieved documents:
                 {context}
@@ -143,7 +127,7 @@ async def lifespan(app : FastAPI):
 
                 Please provide a relevant answer based on the conversation and context.
                 """,
-                    input_variables=["summary", "recent_history", "context", "question"]
+                    input_variables=["conversation", "context", "question"]
                 )
 
 
@@ -307,15 +291,70 @@ async def model_embedding(text: str) -> list[float]:
     return await asyncio.to_thread(lambda: model.encode(text))
 
 
+def get_or_create_memory(conv_id: str):
+    """
+    Returns a synchronous ConversationBufferWindowMemory for a conversation.
+    Uses sync SQLite backend.
+    """
+    if conv_id in memory_dict:
+        # Memory already exists, return it
+        return memory_dict[conv_id]
+
+    # --- Sync SQLite connection ---
+    
+
+    sync_engine = create_engine("sqlite:///chat_memory.db", echo=False)
+
+    # Sync chat history
+    chat_history_db = SQLChatMessageHistory(
+        session_id=conv_id,
+        connection=sync_engine,
+        async_mode=False,               # ⚠️ sync mode
+        table_name=f"chat_history_{conv_id}"
+    )
+
+    summary_prompt = PromptTemplate(
+    template="""
+    Progressively summarize the conversation provided, adding onto the previous summary.
+
+    Current summary:
+    {summary}
+
+    New lines of conversation:
+    {new_lines}
+
+    New summary:
+    """,
+    input_variables=["summary", "new_lines"]
+)
+
+    # Create sync memory
+    memory = ConversationSummaryBufferMemory(
+    llm=llm,                          # your sync LLM
+    chat_memory=chat_history_db,       # sync SQLite storage
+    max_token_limit=5000,              # older messages summarized
+    buffer_size=5,                     # keep last 8 messages in buffer
+    input_key="question",
+    memory_key="conversation",         # key to access later
+    return_messages=True,              # returns messages instead of text
+    prompt=summary_prompt              # custom summary prompt
+)
+
+    # Store in dict for reuse
+    memory_dict[conv_id] = memory
+    return memory
+
+
 async def ask_stream(question: str, conv_id: str, collection_name: str, max_results: int , distance_threshold: float ):
     if llm_error:
         raise HTTPException(status_code=400, detail=llm_error)
     await llm_ready.wait()
 
     # Conversation memory
-    memory = memory_dict[conv_id]
-    summary_memory_text = memory.load_memory_variables({})["summary"]
-    recent_memory_text = memory.load_memory_variables({})["recent_history"]
+    memory =  get_or_create_memory(conv_id)
+    memory_vars =  memory.load_memory_variables({})
+    conversation_text = memory_vars["conversation"]  # all combined (buffer + summary)
+    print(f"------------> {distance_threshold , max_results}")
 
     response_text = ""
 
@@ -341,8 +380,7 @@ async def ask_stream(question: str, conv_id: str, collection_name: str, max_resu
 
         # Final prompt for the LLM
         llm_input = {
-            "summary": summary_memory_text,
-            "recent_history": recent_memory_text,
+            "conversation": conversation_text,
             "context": context,
             "question": question
         }
@@ -371,7 +409,6 @@ async def ask_stream(question: str, conv_id: str, collection_name: str, max_resu
     finally:
         memory.save_context({"question": question}, {"output_text": response_text})
         # signal stream end
-        yield "\n..."
         return
 
 # async def ask_stream(question: str, conv_id: str):

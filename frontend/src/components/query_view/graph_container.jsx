@@ -18,7 +18,7 @@ export default function GraphContainer({ isVisible }) {
     const [graphData, setGraphData] = useState({ nodes: [], links: [] });
     const [useSemanticLinks, setUseSemanticLinks] = useState(false);
     const [maxSemanticLinks, setMaxSemanticLinks] = useState(10);
-    const [threshold, setThreshold] = useState(0.5);
+    const [threshold, setThreshold] = useState(1.3);
     const [savedSettings, setSavedSettings] = useState({
         maxSemanticLinks: 20,
         threshold: 1.4,

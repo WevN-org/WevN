@@ -28,5 +28,6 @@ dist-ssr
 # serverside/backend
 venv
 backend/server/db/
+backend/server/chat_memory.db
 __pycache__/
 __models__/

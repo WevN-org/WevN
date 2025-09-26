@@ -16,6 +16,8 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
 
     // console.log(state.domains)
     const [inputValue, setInputValue] = useState('');
+    const [maxSemanticLinks, setMaxSemanticLinks] = useState(10);
+    const [threshold, setThreshold] = useState(1.3);
 
 
     const textareaRef = useRef(null);
@@ -50,13 +52,21 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
                     };
                 });
 
+                const saved = localStorage.getItem("graphSettings");
+                    if (saved) {
+                        console.log(saved)
+                        const parsed = JSON.parse(saved);
+                        setMaxSemanticLinks(parsed.maxSemanticLinks ?? 20);
+                        setThreshold(parsed.threshold ?? 1.3);
+                    }
+
                 // Stream response
                 await ApiService.llm_response(
                     currentDomain,        // 👈 your active domain (comes from useDomain())
                     userMessage,          // the query
-                    "conv-1234",           // or a real conversation_id if you track it
-                    5,                    // max_results
-                    1.0,                  // distance_threshold
+                    "conv-1236",           // or a real conversation_id if you track it
+                    maxSemanticLinks ?? 5,                    // max_results
+                    threshold ?? 1.0,                  // distance_threshold
                     true,                 // include_semantic_links
                     false,                // brainstorm_mode
                     (partial) => {        // onChunk handler
