@@ -2,6 +2,7 @@
 
 from contextlib import asynccontextmanager
 import os
+import warnings
 from fastapi import FastAPI, Depends, Request, HTTPException, Query, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.responses import JSONResponse , StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,8 +22,7 @@ try:
 
     from langchain_ollama import ChatOllama
     from langchain.prompts import PromptTemplate
-    from langchain.memory import ConversationSummaryMemory
-    from langchain.memory import ConversationBufferWindowMemory
+    from langchain.memory import ConversationBufferWindowMemory, ConversationSummaryMemory, CombinedMemory
     from pydantic import BaseModel, Field
     from typing import Optional
     from collections import defaultdict  
@@ -45,7 +45,7 @@ llm_ready= asyncio.Event()
 llm_error: Optional[str] = None
 
 
-summary_memory = None
+memory_dict = None
 
 prompt = None
 raw_chain = None
@@ -54,6 +54,12 @@ raw_chain = None
 class StructuredResponse(BaseModel):
     Answer: str = Field(description="Main answer text, can include explanation or code")
     Command: Optional[str] = Field(default="", description="Custom command for tools, if any")
+
+
+# Combination of summery memory and buffer memory 
+
+
+
 
 
 
@@ -84,7 +90,7 @@ async def lifespan(app : FastAPI):
                 print("Model loaded!")
                 model_ready.set()
     async def load_llm_and_parser():
-        global llm ,summary_memory,llm_error,prompt,raw_chain
+        global llm ,memory_dict,llm_error,prompt,raw_chain
         if llm is None:
             try: 
                 
@@ -97,28 +103,49 @@ async def lifespan(app : FastAPI):
                 def health_check():
                         resp = llm.invoke("hello")
                         return resp
+                def memory_factory():
+
+                    # suppressing warnings since i refuse to use langgraph
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        # Keep last 5 messages in full
+                        recent_memory = ConversationBufferWindowMemory(k=5, return_messages=True,memory_key="recent_history",input_key="question")
+                        
+                        # Summarize older messages
+                        summary_memory = ConversationSummaryMemory(llm=llm, max_token_limit=5000,memory_key="summary" ,input_key="question")
+                    
+                    # Combine them
+                    return CombinedMemory(memories=[recent_memory,summary_memory])
                 
-                summary_memory = defaultdict(lambda: ConversationSummaryMemory(llm=llm))
+                memory_dict = defaultdict(memory_factory)
                 await asyncio.to_thread(health_check)
                 print("LLM (LangChain ChatOllama) ready.")
                 llm_ready.set()
                 print("Ollama LLM ready.") 
                                 
                 # llm Prompt template 
+                
                 prompt = PromptTemplate(
-                    template="""
+                template="""
                 You are the WevN Assistant.
 
-                Conversation so far:
-                {history}
+                Conversation summary so far:
+                {summary}
 
-                User input: {input}
+                Most recent exchanges:
+                {recent_history}
 
-                Please provide a relevant answer based on the Conversation so far .
+                Relevant retrieved documents:
+                {context}
+
+                User question:
+                {question}
+
+                Please provide a relevant answer based on the conversation and context.
                 """,
-                    input_variables=["input", "history"]
-                    
+                    input_variables=["summary", "recent_history", "context", "question"]
                 )
+
 
                 # llm structured chain
                 raw_chain = prompt | llm
@@ -280,15 +307,15 @@ async def model_embedding(text: str) -> list[float]:
     return await asyncio.to_thread(lambda: model.encode(text))
 
 
-async def ask_stream(question: str, conv_id: str, collection_name: str, max_results: int = 5, distance_threshold: float = 1.0):
+async def ask_stream(question: str, conv_id: str, collection_name: str, max_results: int , distance_threshold: float ):
     if llm_error:
         raise HTTPException(status_code=400, detail=llm_error)
     await llm_ready.wait()
 
     # Conversation memory
-    memory = summary_memory[conv_id]
-    history_vars = memory.load_memory_variables({})
-    history = history_vars.get("history", "")
+    memory = memory_dict[conv_id]
+    summary_memory_text = memory.load_memory_variables({})["summary"]
+    recent_memory_text = memory.load_memory_variables({})["recent_history"]
 
     response_text = ""
 
@@ -314,9 +341,15 @@ async def ask_stream(question: str, conv_id: str, collection_name: str, max_resu
 
         # Final prompt for the LLM
         llm_input = {
-            "input": f"Question: {question}\n\nRelevant context:\n{context}\n\nConversation history:\n{history}",
-            "history": history,
+            "summary": summary_memory_text,
+            "recent_history": recent_memory_text,
+            "context": context,
+            "question": question
         }
+
+        formatted_prompt = prompt.format(**llm_input)
+        print(formatted_prompt)
+
 
         # --- STREAMING RESPONSE ---
         async for event in raw_chain.astream_events(llm_input, version="v2"):
@@ -334,11 +367,17 @@ async def ask_stream(question: str, conv_id: str, collection_name: str, max_resu
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
+    
+    finally:
+        memory.save_context({"question": question}, {"output_text": response_text})
+        # signal stream end
+        yield "\n..."
+        return
 
 # async def ask_stream(question: str, conv_id: str):
 #     if llm_error : raise HTTPException(status_code=400,detail=llm_error)
 #     await llm_ready.wait()
-#     memory = summary_memory[conv_id]
+#     memory = memory_dict[conv_id]
 #     history_vars = memory.load_memory_variables({})
 #     history = history_vars.get("history", "")
 

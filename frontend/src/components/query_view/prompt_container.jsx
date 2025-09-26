@@ -54,7 +54,7 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
                 await ApiService.llm_response(
                     currentDomain,        // 👈 your active domain (comes from useDomain())
                     userMessage,          // the query
-                    "conv-123",           // or a real conversation_id if you track it
+                    "conv-1234",           // or a real conversation_id if you track it
                     5,                    // max_results
                     1.0,                  // distance_threshold
                     true,                 // include_semantic_links
