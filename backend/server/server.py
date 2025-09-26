@@ -22,6 +22,7 @@ try:
     from langchain_ollama import ChatOllama
     from langchain.prompts import PromptTemplate
     from langchain.memory import ConversationSummaryMemory
+    from langchain.memory import ConversationBufferWindowMemory
     from pydantic import BaseModel, Field
     from typing import Optional
     from collections import defaultdict  
@@ -32,7 +33,7 @@ except Exception as e:
 
 
 # llm model
-llm_model="deepseek-r1:7b"
+llm_model="gemma3:4b"
 # llm_model="llama3.1:8b"
 
 # some important global parameters 
@@ -279,10 +280,12 @@ async def model_embedding(text: str) -> list[float]:
     return await asyncio.to_thread(lambda: model.encode(text))
 
 
-
-async def ask_stream(question: str, conv_id: str):
-    if llm_error : raise HTTPException(status_code=400,detail=llm_error)
+async def ask_stream(question: str, conv_id: str, collection_name: str, max_results: int = 5, distance_threshold: float = 1.0):
+    if llm_error:
+        raise HTTPException(status_code=400, detail=llm_error)
     await llm_ready.wait()
+
+    # Conversation memory
     memory = summary_memory[conv_id]
     history_vars = memory.load_memory_variables({})
     history = history_vars.get("history", "")
@@ -290,28 +293,80 @@ async def ask_stream(question: str, conv_id: str):
     response_text = ""
 
     try:
-        async for event in raw_chain.astream_events({"input": question, "history": history},version="v2"):
-            # append token if present
+        # --- NEW PART: retrieve context from ChromaDB ---
+        collection = client.get_collection(collection_name)
+        q_embedding = await model_embedding(question)
 
+        q_result = collection.query(
+            query_embeddings=q_embedding,
+            n_results=max_results,
+            include=["documents", "distances", "metadatas"],
+        )
+
+        # filter by distance threshold
+        retrieved_docs = []
+        for i, doc in enumerate(q_result["documents"][0]):
+            if q_result["distances"][0][i] <= distance_threshold:
+                retrieved_docs.append(doc)
+
+        # Build a context string for the LLM
+        context = "\n\n".join(retrieved_docs) if retrieved_docs else "No relevant context found."
+
+        # Final prompt for the LLM
+        llm_input = {
+            "input": f"Question: {question}\n\nRelevant context:\n{context}\n\nConversation history:\n{history}",
+            "history": history,
+        }
+
+        # --- STREAMING RESPONSE ---
+        async for event in raw_chain.astream_events(llm_input, version="v2"):
             event_type = event["event"]
+
             if event_type == "on_chat_model_stream":
                 chunk = event["data"]["chunk"]
                 if chunk.content:
                     response_text += chunk.content
                     yield chunk.content
 
-            # manually stop when LLM signals done
                 done = chunk.response_metadata.get("done", False)
                 if done:
                     break
-            
+
     except Exception as e:
-        yield f"\n\n[ERROR]: {str(e)}"
-    finally:
-        memory.save_context({"input": question}, {"output": response_text})
-        # signal stream end
-        yield ""
-        return
+        raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
+
+# async def ask_stream(question: str, conv_id: str):
+#     if llm_error : raise HTTPException(status_code=400,detail=llm_error)
+#     await llm_ready.wait()
+#     memory = summary_memory[conv_id]
+#     history_vars = memory.load_memory_variables({})
+#     history = history_vars.get("history", "")
+
+#     response_text = ""
+
+#     try:
+#         async for event in raw_chain.astream_events({"input": question, "history": history},version="v2"):
+#             # append token if present
+
+#             event_type = event["event"]
+#             if event_type == "on_chat_model_stream":
+#                 chunk = event["data"]["chunk"]
+#                 if chunk.content:
+#                     response_text += chunk.content
+#                     yield chunk.content
+
+#             # manually stop when LLM signals done
+#                 done = chunk.response_metadata.get("done", False)
+#                 if done:
+#                     break
+            
+#     except Exception as e:
+#         yield f"\n\n[ERROR]: {str(e)}"
+#     finally:
+#         memory.save_context({"input": question}, {"output": response_text})
+#         # signal stream end
+#         yield ""
+#         return
 
 
 
@@ -537,7 +592,14 @@ async def query_stream(payload: QueryModel):
     print("Stream ------------->")
     async def event_generator():
         try:
-            async for token in ask_stream(payload.query,payload.conversation_id):
+            async for token in ask_stream(
+                payload.query,
+                payload.conversation_id,
+                collection_name=payload.collection,
+                distance_threshold=payload.distance_threshold,
+                max_results=payload.max_results
+                ):
+
                 yield token
         except Exception as e:
             yield f"\n\n[ERROR]: {str(e)}"
