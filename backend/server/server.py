@@ -281,9 +281,8 @@ async def model_embedding(text: str) -> list[float]:
 
 
 async def ask_stream(question: str, conv_id: str):
+    if llm_error : raise HTTPException(status_code=400,detail=llm_error)
     await llm_ready.wait()
-    if llm_error :print("true-->") 
-    else: print("false")
     memory = summary_memory[conv_id]
     history_vars = memory.load_memory_variables({})
     history = history_vars.get("history", "")
