@@ -10,6 +10,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useNodes } from './contexts/nodes-context/nodes_context.jsx';
 import { useDomain } from './contexts/domain-context/domain_context.jsx';
 import AccountView from './components/account_view/Account_View.jsx';
+import { useDomainsList } from './contexts/domans-list-context/domains_list_context.jsx';
+
 
 // This is the App component that orchestrates everything
 const App = ({ onLogout }) => {
@@ -25,6 +27,7 @@ const App = ({ onLogout }) => {
             { role: "assistant", content: "Hi! Ask me anything about your knowledgebase." }
         ],
     });
+    const {setDomains } = useDomainsList();
 
     // Preventing the default browser menus (like: the rightclick browser default menu)
     useEffect(() => {
@@ -53,6 +56,7 @@ const App = ({ onLogout }) => {
                         domains: result
                     })
                 )
+                 setDomains(result);
             }
             catch (err) {
                 console.log(err)

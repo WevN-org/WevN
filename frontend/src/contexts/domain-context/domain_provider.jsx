@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { DomainContext } from "./domain_context";
-import { useLog } from "../log-context/log_context";
 import { toast } from "react-toastify";
 
 export default function DomainProvider({ children }) {

@@ -7,8 +7,10 @@ import { toast } from "react-toastify";
 import EditConceptModal from "../concept_view/edit_concept_modal";
 import { ApiService } from "../../../../backend/api-service/api_service";
 import { useDomain } from "../../contexts/domain-context/domain_context";
+import { useLinks } from "../../contexts/link-context/link_context";
 
 export default function GraphContainer({ isVisible }) {
+    const { domainLinks, setLinksForDomain } = useLinks();  
     const containerRef = useRef();
     const fgRef = useRef();
     const { nodesList } = useNodes();
@@ -191,9 +193,9 @@ export default function GraphContainer({ isVisible }) {
                         ctx.fillStyle = "black";
                         ctx.fillText(node.label, node.x, node.y + 15);
                     }}
-                    linkDirectionalParticles={1}
-                    linkDirectionalParticleColor={(link) => link.source.color}
-                    linkDirectionalParticleSpeed={0.004}
+                    // linkDirectionalParticles={1}
+                    // linkDirectionalParticleColor={(link) => link.source.color}
+                    // linkDirectionalParticleSpeed={0.004}
                     linkColor={() => "#ccccccff"}
                     backgroundColor="#fff"
                     onNodeClick={(node) => {
