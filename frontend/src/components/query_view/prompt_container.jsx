@@ -5,19 +5,25 @@ import GraphViewToggle from './graph_view_toggle';
 import { ApiService } from '../../../../backend/api-service/api_service';
 import { useDomain } from '../../contexts/domain-context/domain_context';
 import { toast } from 'react-toastify';
+import { useDomainsList } from '../../contexts/domans-list-context/domains_list_context';
+import { useLinks } from '../../contexts/link-context/link_context';
 
 /**
  * A React component that creates a UI for a prompt box.
  * It features a dynamically resizing textarea, an icon to toggle a graph, and a send button.
  */
 function PromptContainer({ graphVisibility, toggleGraph, setState }) {
-
+    const { domainLinks } = useLinks();
     const { currentDomain } = useDomain()
+    const { domains } = useDomainsList();
 
     // console.log(state.domains)
     const [inputValue, setInputValue] = useState('');
     const [maxSemanticLinks, setMaxSemanticLinks] = useState(10);
     const [threshold, setThreshold] = useState(1.3);
+    // use this id for switching chats for each domain and as llm query id makesure both are the same 
+    const [currentId, setCurrentId] = useState("");
+
 
 
     const textareaRef = useRef(null);
@@ -29,6 +35,17 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
             textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
         }
     }, [inputValue]);
+
+
+    // update id upon change in current domain
+
+    useEffect(() => {
+        if (domains.length > 0) {
+            console.log(domains)
+            const dm = domains.find((d) => d.name === currentDomain)
+            setCurrentId(dm.id)
+        }
+    },[currentDomain])
 
     const handleInputChange = (e) => {
         setInputValue(e.target.value);
@@ -51,20 +68,29 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
                         messages: [...prev.messages, userMsg, assistantMsg],
                     };
                 });
+                try {
+                    if (domains.length > 0) {
+                        console.log(domains)
+                        const dm = domains.find((d) => d.name === currentDomain)
+                        console.log("dm", dm)
+                        const saved = domainLinks[dm.id]
+                        if (saved) {
+                            console.log("svd", saved)
+                            setMaxSemanticLinks(saved.max_links ?? 20);
+                            setThreshold(saved.distance_threshold ?? 1.3);
 
-                const saved = localStorage.getItem("graphSettings");
-                    if (saved) {
-                        console.log(saved)
-                        const parsed = JSON.parse(saved);
-                        setMaxSemanticLinks(parsed.maxSemanticLinks ?? 20);
-                        setThreshold(parsed.threshold ?? 1.3);
+                        }
                     }
+                }
+                catch (e) {
+                    console.log("error: ", e)
+                }
 
                 // Stream response
                 await ApiService.llm_response(
                     currentDomain,        // 👈 your active domain (comes from useDomain())
                     userMessage,          // the query
-                    "conv-1236",           // or a real conversation_id if you track it
+                    currentId,           // or a real conversation_id if you track it
                     maxSemanticLinks ?? 5,                    // max_results
                     threshold ?? 1.0,                  // distance_threshold
                     true,                 // include_semantic_links
