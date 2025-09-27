@@ -19,8 +19,6 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
 
     // console.log(state.domains)
     const [inputValue, setInputValue] = useState('');
-    const [maxSemanticLinks, setMaxSemanticLinks] = useState(10);
-    const [threshold, setThreshold] = useState(1.3);
     // use this id for switching chats for each domain and as llm query id makesure both are the same 
     const [currentId, setCurrentId] = useState("");
 
@@ -45,7 +43,7 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
             const dm = domains.find((d) => d.name === currentDomain)
             setCurrentId(dm.id)
         }
-    },[currentDomain])
+    }, [currentDomain])
 
     const handleInputChange = (e) => {
         setInputValue(e.target.value);
@@ -68,6 +66,8 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
                         messages: [...prev.messages, userMsg, assistantMsg],
                     };
                 });
+                let effectiveMaxLinks = 20;
+                let effectiveThreshold = 1.3;
                 try {
                     if (domains.length > 0) {
                         console.log(domains)
@@ -76,8 +76,10 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
                         const saved = domainLinks[dm.id]
                         if (saved) {
                             console.log("svd", saved)
-                            setMaxSemanticLinks(saved.max_links ?? 20);
-                            setThreshold(saved.distance_threshold ?? 1.3);
+                            // setMaxSemanticLinks(saved.max_links ?? 20);
+                            // setThreshold(saved.distance_threshold ?? 1.3);
+                            effectiveMaxLinks = saved.max_links ?? 20;
+                            effectiveThreshold = saved.distance_threshold ?? 1.3;
 
                         }
                     }
@@ -91,10 +93,10 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
                     currentDomain,        // 👈 your active domain (comes from useDomain())
                     userMessage,          // the query
                     currentId,           // or a real conversation_id if you track it
-                    maxSemanticLinks ?? 5,                    // max_results
-                    threshold ?? 1.0,                  // distance_threshold
-                    true,                 // include_semantic_links
-                    false,                // brainstorm_mode
+                    // maxSemanticLinks ?? 5,                    // max_results
+                    // threshold ?? 1.0,                  // distance_threshold
+                    effectiveMaxLinks,
+                    effectiveThreshold,
                     (partial) => {        // onChunk handler
                         // console.log(partial);
                         setState((prev) => {
@@ -109,6 +111,7 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
                     }
                 );
             } catch (error) {
+                console.log(error)
                 toast.error(error)
             }
 

@@ -131,7 +131,7 @@ async def lifespan(app: FastAPI):
                     - If retrieved documents are relevant, integrate them into your response in a clear and concise way.
                     - If no documents are relevant, rely on the conversation and your reasoning to provide value.
                     - Always answer the user’s question directly and professionally.
-                    - Keep responses informative but not unnecessarily verbose.
+                    - Keep responses informative.
 
                     Conversation so far:
                     {conversation}
@@ -383,7 +383,7 @@ async def ask_stream(
         }
 
         formatted_prompt = prompt.format(**llm_input)
-        print(formatted_prompt)
+        # print(formatted_prompt)
 
         # --- STREAMING RESPONSE ---
         async for event in raw_chain.astream_events(llm_input, version="v2"):
@@ -695,9 +695,12 @@ async def query_stream(payload: QueryModel):
 
         # filter by distance threshold
         retrieved_docs = []
+        retrieved_ids = []
         for i, doc in enumerate(q_result["documents"][0]):
             if q_result["distances"][0][i] <= payload.distance_threshold:
                 retrieved_docs.append(doc)
+                retrieved_ids.append(q_result["ids"][0][i]) 
+        print(payload.distance_threshold,payload.max_results, "ret id --> ",retrieved_ids)
 
         # Build a context string for the LLM
         context = (
@@ -715,7 +718,7 @@ async def query_stream(payload: QueryModel):
                 payload.conversation_id,
                 context=context
             ):
-                print(token)
+                # print(token)
 
                 yield token
         except Exception as e:

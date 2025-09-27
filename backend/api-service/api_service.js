@@ -261,8 +261,6 @@ export const ApiService = {
         conversation_id,
         max_results = 5,
         distance_threshold = 1.0,
-        include_semantic_links = true,
-        brainstorm_mode = false,
         onChunk
     ) {
         const response = await fetch(`${baseUrl}/query/stream`, {
@@ -274,8 +272,6 @@ export const ApiService = {
                 conversation_id,
                 max_results,
                 distance_threshold,
-                include_semantic_links,
-                brainstorm_mode
             }),
         });
 

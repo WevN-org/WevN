@@ -138,7 +138,7 @@ export default function GraphContainer({ isVisible }) {
 
     // Random bright color
     function getRandomBrightColor() {
-        const hue = Math.floor(Math.random() * 360);
+        const hue = Math.floor(Math.random() * 360); // output [0,1) * 360 - floor roundes it - for a specific range use ([0,1) * (max - min)) + min  
         return `hsl(${hue}, 100%, 50%)`;
     }
 
