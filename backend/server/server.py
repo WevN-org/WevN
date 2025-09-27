@@ -704,7 +704,6 @@ async def deleteNode(payload: NodeDeleteModel, background_tasks: BackgroundTasks
 
 @app.post("/query/stream", dependencies=[Depends(verify_api_key)])
 async def query_stream(payload: QueryModel):
-    global node_input_model
     print("Stream ------------->")
 
     async def event_generator():
@@ -716,6 +715,7 @@ async def query_stream(payload: QueryModel):
                 distance_threshold=payload.distance_threshold,
                 max_results=payload.max_results,
             ):
+                print(token)
 
                 yield token
         except Exception as e:

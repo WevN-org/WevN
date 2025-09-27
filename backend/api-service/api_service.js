@@ -297,8 +297,9 @@ export const ApiService = {
             if (done) break;
 
             const chunk = decoder.decode(value, { stream: true });
+            // console.log("Received chunk:", chunk); 
             if (chunk && onChunk) onChunk(chunk);
-        }
+        }   
     }
 };
 

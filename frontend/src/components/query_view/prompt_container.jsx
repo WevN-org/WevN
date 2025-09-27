@@ -96,7 +96,7 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
                     true,                 // include_semantic_links
                     false,                // brainstorm_mode
                     (partial) => {        // onChunk handler
-                        console.log(partial);
+                        // console.log(partial);
                         setState((prev) => {
                             const updated = [...prev.messages];
                             const prevContent = updated[assistantIndex].content || "";
