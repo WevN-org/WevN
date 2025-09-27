@@ -8,9 +8,12 @@ import EditConceptModal from "../concept_view/edit_concept_modal";
 import { ApiService } from "../../../../backend/api-service/api_service";
 import { useDomain } from "../../contexts/domain-context/domain_context";
 import { useLinks } from "../../contexts/link-context/link_context";
+import { useDomainsList } from "../../contexts/domans-list-context/domains_list_context";
 
 export default function GraphContainer({ isVisible }) {
-    const { domainLinks, setLinksForDomain } = useLinks();  
+    const { domainLinks, setLinksForDomain } = useLinks();
+    const { domains } = useDomainsList();
+    // console.log(domainLinks)
     const containerRef = useRef();
     const fgRef = useRef();
     const { nodesList } = useNodes();
@@ -51,15 +54,29 @@ export default function GraphContainer({ isVisible }) {
     };
 
     useEffect(() => {
-        const saved = localStorage.getItem("graphSettings");
-        if (saved) {
-            console.log(saved)
-            const parsed = JSON.parse(saved);
-            setMaxSemanticLinks(parsed.maxSemanticLinks ?? 20);
-            setThreshold(parsed.threshold ?? 1.3);
-            setSavedSettings(parsed);
+        try {
+            if (domains.length > 0) {
+                console.log(domains)
+                const dm = domains.find((d) => d.name === currentDomain)
+                console.log("dm", dm)
+                const saved = domainLinks[dm.id]
+                if (saved) {
+                    console.log("svd", saved)
+                    const max_links = saved.max_links ?? 20
+                    const distance_threshold = saved.distance_threshold ?? 1.3
+                    setMaxSemanticLinks(max_links);
+                    setThreshold(distance_threshold);
+                    setSavedSettings({
+                        maxSemanticLinks: max_links,
+                        threshold: distance_threshold
+                    });
+                }
+            }
         }
-    }, []);
+        catch (e) {
+            console.log("error: ", e)
+        }
+    }, [currentDomain, domains]);
 
     useEffect(() => {
         const saved = localStorage.getItem("graphSemanticView");
@@ -84,16 +101,30 @@ export default function GraphContainer({ isVisible }) {
 
     const handleSave = async () => {
         try {
-            await ApiService.refactorNode(currentDomain, maxSemanticLinks, threshold)
-            const settings = { maxSemanticLinks, threshold };
-            localStorage.setItem("graphSettings", JSON.stringify(settings));
-            setSavedSettings(settings); // update baseline
-            toast.success("refactored semantic links")
+            await ApiService.refactorNode(currentDomain, maxSemanticLinks, threshold);
+
+            const domainObj = domains.find(d => d.name === currentDomain);
+            if (!domainObj) {
+                console.error("Domain not found for currentDomain:", currentDomain);
+                return;
+            }
+
+            const domainId = domainObj.id;
+            console.log("dId",domainId)
+
+            setLinksForDomain(domainId, threshold, maxSemanticLinks);
+
+            setSavedSettings({
+                maxSemanticLinks,
+                threshold,
+            }); // update baseline
+
+            toast.success("Refactored semantic links");
+        } catch (err) {
+            toast.error(`Failed to refactor links - ${err}`);
         }
-        catch (err) {
-            toast.error(`failed to refactor links - ${err}`);
-        }
-    }
+    };
+
 
     // Resize observer
     useEffect(() => {
