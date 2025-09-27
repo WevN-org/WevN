@@ -356,9 +356,7 @@ def get_or_create_memory(conv_id: str):
 async def ask_stream(
     question: str,
     conv_id: str,
-    collection_name: str,
-    max_results: int,
-    distance_threshold: float,
+    context: str
 ):
     if llm_error:
         raise HTTPException(status_code=400, detail=llm_error)
@@ -369,33 +367,13 @@ async def ask_stream(
     memory_vars = memory.load_memory_variables({})
     # all combined (buffer + summary)
     conversation_text = memory_vars["conversation"]
-    print(f"------------> {distance_threshold, max_results}")
+
 
     response_text = ""
 
     try:
         # --- NEW PART: retrieve context from ChromaDB ---
-        collection = client.get_collection(collection_name)
-        q_embedding = await model_embedding(question)
-
-        q_result = collection.query(
-            query_embeddings=q_embedding,
-            n_results=max_results,
-            include=["documents", "distances", "metadatas"],
-        )
-
-        # filter by distance threshold
-        retrieved_docs = []
-        for i, doc in enumerate(q_result["documents"][0]):
-            if q_result["distances"][0][i] <= distance_threshold:
-                retrieved_docs.append(doc)
-
-        # Build a context string for the LLM
-        context = (
-            "\n\n".join(retrieved_docs)
-            if retrieved_docs
-            else "No relevant context found."
-        )
+        
 
         # Final prompt for the LLM
         llm_input = {
@@ -705,15 +683,37 @@ async def deleteNode(payload: NodeDeleteModel, background_tasks: BackgroundTasks
 @app.post("/query/stream", dependencies=[Depends(verify_api_key)])
 async def query_stream(payload: QueryModel):
     print("Stream ------------->")
+    try:
+        collection = client.get_collection(payload.collection)
+        q_embedding = await model_embedding(payload.query)
+
+        q_result = collection.query(
+            query_embeddings=q_embedding,
+            n_results=payload.max_results,
+            include=["documents", "distances", "metadatas"],
+        )
+
+        # filter by distance threshold
+        retrieved_docs = []
+        for i, doc in enumerate(q_result["documents"][0]):
+            if q_result["distances"][0][i] <= payload.distance_threshold:
+                retrieved_docs.append(doc)
+
+        # Build a context string for the LLM
+        context = (
+            "\n\n".join(retrieved_docs)
+            if retrieved_docs
+            else "No relevant context found."
+        )
+    except Exception as e:
+        print("failed to load context")
 
     async def event_generator():
         try:
             async for token in ask_stream(
                 payload.query,
                 payload.conversation_id,
-                collection_name=payload.collection,
-                distance_threshold=payload.distance_threshold,
-                max_results=payload.max_results,
+                context=context
             ):
                 print(token)
 
