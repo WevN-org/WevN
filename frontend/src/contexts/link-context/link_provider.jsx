@@ -17,7 +17,6 @@ export function LinksProvider({ children }) {
   let parsed = {};
   if (stored) {
     try {
-      console.log("st---->",stored)
       parsed = JSON.parse(stored);
     } catch (err) {
       console.error("Failed to parse links_settings_per_domain", err);
@@ -36,7 +35,6 @@ export function LinksProvider({ children }) {
 
   setDomainLinks(updatedLinks);
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedLinks));
-  console.log("------------------>here", updatedLinks);
 }, [domains]);
 
   const setLinksForDomain = (domainId, distance_threshold, max_links) => {
@@ -50,7 +48,6 @@ export function LinksProvider({ children }) {
         },
       };
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
-      console.log("up----->",updated)
       return updated;
     });
   };

@@ -8,6 +8,9 @@ import { ApiService } from '../../../../backend/api-service/api_service';
 import { motion } from "framer-motion";
 import { useNodes } from '../../contexts/nodes-context/nodes_context';
 import { useDomain } from '../../contexts/domain-context/domain_context';
+import { useDomainsList } from '../../contexts/domans-list-context/domains_list_context';
+import { useLinks } from '../../contexts/link-context/link_context';
+import { toast } from "react-toastify";
 
 const ConceptView = ({ activeTab, setActiveTab, setState }) => {
     const [showCreateNodePopup, setShowNodeCreatePopup] = useState(false);
@@ -18,6 +21,8 @@ const ConceptView = ({ activeTab, setActiveTab, setState }) => {
     const nodeRef = useRef(null);
     const { currentDomain } = useDomain();
     const { nodesList } = useNodes();
+    const { domainLinks } = useLinks();
+    const { domains } = useDomainsList();
 
     // Filter out already selected domains
     const availableNodes = nodesList?.filter(
@@ -44,32 +49,54 @@ const ConceptView = ({ activeTab, setActiveTab, setState }) => {
     };
 
     const handleSubmit = async () => {
-        // Handle form submission here
         if (!currentDomain) return;
+
         try {
+            let max_links = 20;
+            let distance_threshold = 1.3;
+
+            if (domains.length > 0) {
+                const dm = domains.find((d) => d.name === currentDomain);
+                if (dm) {
+                    const saved = domainLinks[dm.id];
+                    if (saved) {
+                        max_links =
+                            Number.isInteger(saved.max_links) && saved.max_links > 0
+                                ? saved.max_links
+                                : 20;
+
+                        distance_threshold =
+                            typeof saved.distance_threshold === "number" &&
+                                saved.distance_threshold > 0
+                                ? saved.distance_threshold
+                                : 1.3;
+                    }
+                }
+            }
+
             const result = await ApiService.insertNode(
                 currentDomain,
                 node_Name,
                 nodeContent,
-                selectedNodes.map(node => node.node_id)
-            )
-            console.log(result)
-        }
-        catch (err) {
-            console.log(err)
-        }
-        // console.log({
-        //     name: node_Name,
-        //     content: nodeContent,
-        //     nodes: selectedNodes,
-        // });
+                selectedNodes.map((node) => node.node_id),
+                max_links,
+                distance_threshold
+            );
 
-        // Reset form
-        setnode_Name('');
-        setNodeContent('');
-        setSelectedNodes([]);
-        setShowNodeCreatePopup(false);
+            console.log(result);
+            toast.success(`Created node - ${node_Name}`);
+
+            // Reset form
+            setnode_Name("");
+            setNodeContent("");
+            setSelectedNodes([]);
+            setShowNodeCreatePopup(false);
+        } catch (err) {
+            console.error(err);
+            toast.error(`Failed to create node. Please try again.`);
+        }
     };
+
 
     const handleCancel = () => {
         // Reset form and close popup

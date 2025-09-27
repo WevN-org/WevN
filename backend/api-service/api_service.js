@@ -13,15 +13,7 @@ const Headers = {
     'X-API-Key': apiKey,
 };
 
-function getGraphSettings() {
-    const saved = localStorage.getItem("graphSettings");
-    if (saved) {
-        console.log(saved)
-        const parsed = JSON.parse(saved);
-        return parsed
-    }
-    return null
-}
+
 
 
 export const ApiService = {
@@ -101,7 +93,7 @@ export const ApiService = {
  * @param {number} distance_threshold - Threshold for similarity
  * @returns {Promise<any>} - Response from the server
  */
-    async insertNode(collection, name, content, user_links) {
+    async insertNode(collection, name, content, user_links,max_links,distance_threshold) {
         // console.log(` Here ${JSON.stringify(
         //     {
         //         collection,
@@ -112,11 +104,7 @@ export const ApiService = {
         //         distance_threshold
         //     }
         // )}`)
-        const parsed = getGraphSettings();
-        if (parsed) {
-            distance_threshold = parsed.threshold ?? 1.3;
-            max_links = parsed.maxSemanticLinks ?? 20
-        }
+      
         const response = await fetch(
             `${baseUrl}/nodes/insert`, {
             method: 'POST',
@@ -148,7 +136,7 @@ export const ApiService = {
 * @param {number} distance_threshold - Threshold for similarity
 * @returns {Promise<any>} - Response from the server
 */
-    async updateNode(collection, node_id, name, content, user_links) {
+    async updateNode(collection, node_id, name, content, user_links, max_links,distance_threshold) {
         // console.log(` Here ${JSON.stringify(
         //     {
         //         collection,
@@ -160,11 +148,7 @@ export const ApiService = {
         //         distance_threshold
         //     }
         // )}`)
-        const parsed = getGraphSettings();
-        if (parsed) {
-            distance_threshold = parsed.threshold ?? 1.3;
-            max_links = parsed.maxSemanticLinks ?? 20
-        }
+        
         const response = await fetch(
             `${baseUrl}/nodes/update`, {
             method: 'POST',

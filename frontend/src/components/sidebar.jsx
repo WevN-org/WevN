@@ -64,8 +64,9 @@ const Sidebar = ({ state, setState }) => {
 
     const handleDomainRename = async (oldName, newName) => {
         try {
-            toast.success(`${oldName} renamed to ${newName} successfully.`);
+            
             await ApiService.renameDomain(oldName, newName);
+            toast.success(`${oldName} renamed to ${newName} successfully.`);
             setShowRenamePopup(false);
         } catch {
             toast.error("Failed to rename domain. Please try again.");
@@ -74,8 +75,8 @@ const Sidebar = ({ state, setState }) => {
 
     const handleDomainDelete = async (domainName) => {
         try {
-            toast.info(`${domainName} deleted successfully.`);
             await ApiService.deleteDomain(domainName);
+            toast.info(`${domainName} deleted successfully.`);
             setDeleteDomain(null);
             setShowDeletePopup(false);
         } catch {

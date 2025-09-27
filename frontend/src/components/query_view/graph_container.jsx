@@ -43,7 +43,9 @@ export default function GraphContainer({ isVisible }) {
                 updated.node_id,
                 updated.name,
                 updated.content,
-                updated.user_links
+                updated.user_links,
+                maxSemanticLinks,
+                threshold
 
             )
             toast.success(`updated nodes - ${updated.name}`)
@@ -58,10 +60,8 @@ export default function GraphContainer({ isVisible }) {
             if (domains.length > 0) {
                 console.log(domains)
                 const dm = domains.find((d) => d.name === currentDomain)
-                console.log("dm", dm)
                 const saved = domainLinks[dm.id]
                 if (saved) {
-                    console.log("svd", saved)
                     const max_links = saved.max_links ?? 20
                     const distance_threshold = saved.distance_threshold ?? 1.3
                     setMaxSemanticLinks(max_links);

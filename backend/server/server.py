@@ -367,8 +367,9 @@ async def ask_stream(
     # Conversation memory
     memory = get_or_create_memory(conv_id)
     memory_vars = memory.load_memory_variables({})
-    conversation_text = memory_vars["conversation"]  # all combined (buffer + summary)
-    print(f"------------> {distance_threshold , max_results}")
+    # all combined (buffer + summary)
+    conversation_text = memory_vars["conversation"]
+    print(f"------------> {distance_threshold, max_results}")
 
     response_text = ""
 
