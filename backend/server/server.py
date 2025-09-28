@@ -22,6 +22,7 @@ from sentence_transformers import SentenceTransformer
 import uuid
 from typing import List, Optional
 import asyncio
+from datetime import datetime
 
 
 # -- sentence - transformers  model
@@ -36,6 +37,8 @@ try:
     from pydantic import BaseModel, Field
     from typing import Optional
     from langchain_community.chat_message_histories import SQLChatMessageHistory
+    from sqlalchemy.ext.asyncio import create_async_engine
+    from langchain_core.runnables.history import RunnableWithMessageHistory
 except Exception as e:
     llmImport = False
     print("Error: ", e)
@@ -43,7 +46,7 @@ except Exception as e:
 
 
 # llm model
-llm_model = "gemma3:4b"
+llm_model = "deepseek-r1:7b"
 # llm_model="llama3.1:8b"
 
 # some important global parameters
@@ -59,6 +62,9 @@ memory_dict = {}
 
 prompt = None
 raw_chain = None
+
+async_engine = create_async_engine("sqlite+aiosqlite:///chat_memory.db", echo=False)
+chain_with_memory = None
 
 
 # llm structured response
@@ -97,7 +103,7 @@ async def lifespan(app: FastAPI):
                 model_ready.set()
 
     async def load_llm_and_parser():
-        global llm, llm_error, prompt, raw_chain
+        global llm, llm_error, prompt, raw_chain, chain_with_memory
         if llm is None:
             try:
 
@@ -105,8 +111,13 @@ async def lifespan(app: FastAPI):
                 # 2. LLM + Memory
                 # ---------------------------
                 llm = ChatOllama(
-                    model=llm_model, temperature=0, disable_streaming=False
+                    model=llm_model,
+                    temperature=0,
+                    disable_streaming=False,
+                    num_ctx=4096,
+                    verbose=True,
                 )
+                print(f"ChatOllama context size has been set to: {llm.num_ctx}")
 
                 def health_check():
                     resp = llm.invoke("hello")
@@ -119,36 +130,55 @@ async def lifespan(app: FastAPI):
 
                 # llm Prompt template
 
-                prompt = PromptTemplate(
-                    template="""
-                    You are the WevN Assistant, an intelligent and helpful system designed to
-                    assist the user with queries, explanations, and context from prior conversations
-                    and retrieved documents.
+                # It's good practice to add dynamic data like the current date
 
-                    -- Guidelines --
-                    - Continue the conversation naturally without restarting with greetings unless the user greets first.
-                    - Use the conversation history to stay consistent and avoid repeating earlier answers.
-                    - If retrieved documents are relevant, integrate them into your response in a clear and concise way.
-                    - If no documents are relevant, rely on the conversation and your reasoning to provide value.
-                    - Always answer the user’s question directly and professionally.
-                    - Keep responses informative.
+                template = """
+                    You are **WevN Assistant**, a versatile and helpful AI companion. 
+                    Your job is to provide accurate, relevant, and natural answers.
 
-                    Conversation so far:
+                    ### Core Rules
+                    1. First, check the `<retrieved_documents>` and `<chat_history>` for answers. If found, integrate them naturally.
+                    2. If context is missing or insufficient, rely on your own knowledge.
+                    3. Adapt your tone: friendly for casual chat, professional for technical topics.
+                    4. Do not repeat the user’s question. Start directly with the answer.
+                    5. Never output meta-reasoning or instructions.
+
+                    ### Information Sources
+                    - Chat history:
                     {conversation}
 
-                    Relevant retrieved documents:
+                    - Retrieved documents:
                     {context}
 
-                    User question:
-                    {question}
+                    ### Task
+                    User question: {question}
 
-                    Final Answer (continue naturally, grounded in context and history):
-                    """,
+                    ### Response
+                    Provide a clear, helpful answer below:
+                    """
+
+                prompt = PromptTemplate(
+                    template=template,
                     input_variables=["conversation", "context", "question"],
                 )
 
                 # llm structured chain
-                raw_chain = prompt | llm
+                core_chain = prompt | llm
+                chain_with_memory = RunnableWithMessageHistory(
+                    core_chain,
+                    # This lambda function creates an ASYNC history object on the fly for each session
+                    lambda session_id: SQLChatMessageHistory(
+                        session_id=session_id,
+                        connection=async_engine,
+                    ),
+                    input_messages_key="question",
+                    history_messages_key="conversation",
+                )
+
+                print("✅ Chain with async memory history is ready.")
+                print("LLM model:", llm.model)
+                print("LLM max tokens:", getattr(llm, "max_tokens", "unknown"))
+
             except Exception as e:
                 llm_error = e
                 print("llm error : ", e)
@@ -287,6 +317,10 @@ class QueryModel(BaseModel):
     distance_threshold: Optional[float] = 1.4
 
 
+class ClearHistoryModel(BaseModel):
+    conversation_id: str
+
+
 # -- ChromaDB client --
 client = chromadb.PersistentClient(path="db")
 
@@ -298,148 +332,6 @@ client = chromadb.PersistentClient(path="db")
 async def model_embedding(text: str) -> list[float]:
     await model_ready.wait()
     return await asyncio.to_thread(lambda: model.encode(text))
-
-
-def get_or_create_memory(conv_id: str):
-    """
-    Returns a synchronous ConversationBufferWindowMemory for a conversation.
-    Uses sync SQLite backend.
-    """
-    if conv_id in memory_dict:
-        # Memory already exists, return it
-        return memory_dict[conv_id]
-
-    # --- Sync SQLite connection ---
-
-    sync_engine = create_engine("sqlite:///chat_memory.db", echo=False)
-
-    # Sync chat history
-    chat_history_db = SQLChatMessageHistory(
-        session_id=conv_id,
-        connection=sync_engine,
-        async_mode=False,  # ⚠️ sync mode
-        table_name=f"chat_history_{conv_id}",
-    )
-
-    summary_prompt = PromptTemplate(
-        template="""
-    Progressively summarize the conversation provided, adding onto the previous summary.
-
-    Current summary:
-    {summary}
-
-    New lines of conversation:
-    {new_lines}
-
-    New summary:
-    """,
-        input_variables=["summary", "new_lines"],
-    )
-
-    # Create sync memory
-    memory = ConversationSummaryBufferMemory(
-        llm=llm,  # your sync LLM
-        chat_memory=chat_history_db,  # sync SQLite storage
-        max_token_limit=5000,  # older messages summarized
-        buffer_size=5,  # keep last 8 messages in buffer
-        input_key="question",
-        memory_key="conversation",  # key to access later
-        return_messages=True,  # returns messages instead of text
-        prompt=summary_prompt,  # custom summary prompt
-    )
-
-    # Store in dict for reuse
-    memory_dict[conv_id] = memory
-    return memory
-
-
-async def ask_stream(
-    question: str,
-    conv_id: str,
-    context: str
-):
-    if llm_error:
-        raise HTTPException(status_code=400, detail=llm_error)
-    await llm_ready.wait()
-
-    # Conversation memory
-    memory = get_or_create_memory(conv_id)
-    memory_vars = memory.load_memory_variables({})
-    # all combined (buffer + summary)
-    conversation_text = memory_vars["conversation"]
-
-
-    response_text = ""
-
-    try:
-        # --- NEW PART: retrieve context from ChromaDB ---
-        
-
-        # Final prompt for the LLM
-        llm_input = {
-            "conversation": conversation_text,
-            "context": context,
-            "question": question,
-        }
-
-        formatted_prompt = prompt.format(**llm_input)
-        # print(formatted_prompt)
-
-        # --- STREAMING RESPONSE ---
-        async for event in raw_chain.astream_events(llm_input, version="v2"):
-            event_type = event["event"]
-
-            if event_type == "on_chat_model_stream":
-                chunk = event["data"]["chunk"]
-                if chunk.content:
-                    response_text += chunk.content
-                    yield chunk.content
-
-                done = chunk.response_metadata.get("done", False)
-                if done:
-                    break
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
-
-    finally:
-        memory.save_context({"question": question}, {"output_text": response_text})
-        # signal stream end
-        return
-
-
-# async def ask_stream(question: str, conv_id: str):
-#     if llm_error : raise HTTPException(status_code=400,detail=llm_error)
-#     await llm_ready.wait()
-#     memory = memory_dict[conv_id]
-#     history_vars = memory.load_memory_variables({})
-#     history = history_vars.get("history", "")
-
-#     response_text = ""
-
-#     try:
-#         async for event in raw_chain.astream_events({"input": question, "history": history},version="v2"):
-#             # append token if present
-
-#             event_type = event["event"]
-#             if event_type == "on_chat_model_stream":
-#                 chunk = event["data"]["chunk"]
-#                 if chunk.content:
-#                     response_text += chunk.content
-#                     yield chunk.content
-
-#             # manually stop when LLM signals done
-#                 done = chunk.response_metadata.get("done", False)
-#                 if done:
-#                     break
-
-#     except Exception as e:
-#         yield f"\n\n[ERROR]: {str(e)}"
-#     finally:
-#         memory.save_context({"input": question}, {"output": response_text})
-#         # signal stream end
-#         yield ""
-#         return
 
 
 # -- fastapi endpoints --
@@ -598,6 +490,7 @@ def rename_collection(
 @app.post("/nodes/insert", dependencies=[Depends(verify_api_key)])
 async def createNode(payload: NodeInputModel, background_tasks: BackgroundTasks):
     try:
+
         collection = client.get_collection(payload.collection)
         embedding = await model_embedding(f"Name: {payload.name}. {payload.content}")
         node_id = str(uuid.uuid1())
@@ -682,7 +575,10 @@ async def deleteNode(payload: NodeDeleteModel, background_tasks: BackgroundTasks
 
 @app.post("/query/stream", dependencies=[Depends(verify_api_key)])
 async def query_stream(payload: QueryModel):
-    print("Stream ------------->")
+    retrieved_docs = []
+    retrieved_ids = []
+    context = "No relevant context found."
+
     try:
         collection = client.get_collection(payload.collection)
         q_embedding = await model_embedding(payload.query)
@@ -694,34 +590,67 @@ async def query_stream(payload: QueryModel):
         )
 
         # filter by distance threshold
-        retrieved_docs = []
-        retrieved_ids = []
         for i, doc in enumerate(q_result["documents"][0]):
             if q_result["distances"][0][i] <= payload.distance_threshold:
                 retrieved_docs.append(doc)
-                retrieved_ids.append(q_result["ids"][0][i]) 
-        print(payload.distance_threshold,payload.max_results, "ret id --> ",retrieved_ids)
+                retrieved_ids.append(q_result["ids"][0][i])
 
-        # Build a context string for the LLM
-        context = (
-            "\n\n".join(retrieved_docs)
-            if retrieved_docs
-            else "No relevant context found."
-        )
+        if retrieved_docs:
+            context = "\n\n".join(retrieved_docs)
+
     except Exception as e:
-        print("failed to load context")
+        print("Failed to load context:", e)
 
     async def event_generator():
         try:
-            async for token in ask_stream(
-                payload.query,
-                payload.conversation_id,
-                context=context
+            # The config dictionary tells RunnableWithMessageHistory which session to use.
+            # It will automatically load history and save the new Q&A pair.
+            config = {"configurable": {"session_id": payload.conversation_id}}
+            # Call the chain directly. No more manual memory management!
+            async for chunk in chain_with_memory.astream(
+                {"question": payload.query, "context": context},
+                config=config,
             ):
-                # print(token)
-
-                yield token
+                if chunk.content:
+                    yield chunk.content
         except Exception as e:
             yield f"\n\n[ERROR]: {str(e)}"
 
-    return StreamingResponse(event_generator(), media_type="text/plain")
+    headers = {"X-Retrieved-Ids": json.dumps(retrieved_ids)}
+
+    try:
+        return StreamingResponse(
+            event_generator(), media_type="text/plain", headers=headers
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=400, detail=f"LLM query failed with error: {str(e)}"
+        )
+
+
+@app.post("/history/clear", dependencies=[Depends(verify_api_key)])
+async def clear_history(payload: ClearHistoryModel):
+    """
+    Clears the entire conversation history for a given session_id.
+    """
+    try:
+        # 1. Get an instance of the history backend for the specific conversation
+        history = SQLChatMessageHistory(
+            session_id=payload.conversation_id,
+            connection=async_engine,
+        )
+
+        # 2. Call the async clear() method
+        await history.clear()
+
+        # Optional: Remove the memory object from the in-memory cache if you want
+        if payload.conversation_id in memory_dict:
+            del memory_dict[payload.conversation_id]
+
+        return StatusModel(
+            status=f"History for conversation_id '{payload.conversation_id}' has been cleared."
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to clear history: {str(e)}"
+        )

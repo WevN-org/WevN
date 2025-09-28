@@ -30,17 +30,17 @@ const App = ({ onLogout }) => {
     const {setDomains } = useDomainsList();
 
     // Preventing the default browser menus (like: the rightclick browser default menu)
-    useEffect(() => {
-        const handleContextMenu = (event) => {
-            event.preventDefault(); // block default menu
-        };
+    // useEffect(() => {
+    //     const handleContextMenu = (event) => {
+    //         event.preventDefault(); // block default menu
+    //     };
 
-        document.addEventListener("contextmenu", handleContextMenu);
+    //     document.addEventListener("contextmenu", handleContextMenu);
 
-        return () => {
-            document.removeEventListener("contextmenu", handleContextMenu);
-        };
-    }, []);
+    //     return () => {
+    //         document.removeEventListener("contextmenu", handleContextMenu);
+    //     };
+    // }, []);
 
 
 
