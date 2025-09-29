@@ -67,7 +67,7 @@ export const ApiService = {
             }
         );
 
-        return await handleResponse(response, "Failed to delete domain");
+        return await handleResponse(response, "Error: ");
     },
 
     async renameDomain(d_old, d_new) {
@@ -93,7 +93,7 @@ export const ApiService = {
  * @param {number} distance_threshold - Threshold for similarity
  * @returns {Promise<any>} - Response from the server
  */
-    async insertNode(collection, name, content, user_links,max_links,distance_threshold) {
+    async insertNode(collection, name, content, user_links, max_links, distance_threshold) {
         // console.log(` Here ${JSON.stringify(
         //     {
         //         collection,
@@ -104,7 +104,7 @@ export const ApiService = {
         //         distance_threshold
         //     }
         // )}`)
-      
+
         const response = await fetch(
             `${baseUrl}/nodes/insert`, {
             method: 'POST',
@@ -136,7 +136,7 @@ export const ApiService = {
 * @param {number} distance_threshold - Threshold for similarity
 * @returns {Promise<any>} - Response from the server
 */
-    async updateNode(collection, node_id, name, content, user_links, max_links,distance_threshold) {
+    async updateNode(collection, node_id, name, content, user_links, max_links, distance_threshold) {
         // console.log(` Here ${JSON.stringify(
         //     {
         //         collection,
@@ -148,7 +148,7 @@ export const ApiService = {
         //         distance_threshold
         //     }
         // )}`)
-        
+
         const response = await fetch(
             `${baseUrl}/nodes/update`, {
             method: 'POST',
@@ -261,7 +261,8 @@ export const ApiService = {
         conversation_id,
         max_results = 5,
         distance_threshold = 1.0,
-        onChunk
+        onChunk,
+        onRetrievedIds
     ) {
         const response = await fetch(`${baseUrl}/query/stream`, {
             method: "POST",
@@ -281,6 +282,20 @@ export const ApiService = {
             return; // handleResponse will throw
         }
 
+        const retrievedIdsHeader = response.headers.get("X-Retrieved-Ids");
+        console.log("here")
+        let retrievedIds = null;
+        if (retrievedIdsHeader) {
+            
+            try {
+                retrievedIds = JSON.parse(retrievedIdsHeader);
+                if (onRetrievedIds) onRetrievedIds(retrievedIds);
+            } catch (e) {
+                console.warn("Failed to parse X-Retrieved-Ids:", retrievedIdsHeader);
+            }
+        }
+
+
         if (!response.body) {
             throw new Error("No response body from server");
         }
@@ -295,7 +310,7 @@ export const ApiService = {
             const chunk = decoder.decode(value, { stream: true });
             // console.log("Received chunk:", chunk); 
             if (chunk && onChunk) onChunk(chunk);
-        }   
+        }
     }
 };
 

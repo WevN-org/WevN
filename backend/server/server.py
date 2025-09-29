@@ -123,7 +123,7 @@ async def lifespan(app: FastAPI):
                     resp = llm.invoke("hello")
                     return resp
 
-                # await asyncio.to_thread(health_check)
+                await asyncio.to_thread(health_check)
                 print("LLM (LangChain ChatOllama) ready.")
                 llm_ready.set()
                 print("Ollama LLM ready.")
@@ -204,6 +204,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Retrieved-Ids"],
 )
 
 API_KEY = "mysecretkey"
@@ -214,6 +215,10 @@ def verify_api_key(request: Request):
     key = request.headers.get("X-API-Key")
     if key != API_KEY:
         raise HTTPException(status_code=403, detail="Forbidden: Invalid API Key")
+    
+def verify_llm_ready():
+    if llm_error:
+        raise HTTPException(status_code=503, detail=f"LLM not available: {llm_error}")
 
 
 # -- token validate function --
@@ -573,7 +578,7 @@ async def deleteNode(payload: NodeDeleteModel, background_tasks: BackgroundTasks
         )
 
 
-@app.post("/query/stream", dependencies=[Depends(verify_api_key)])
+@app.post("/query/stream", dependencies=[Depends(verify_api_key) , Depends(verify_llm_ready)])
 async def query_stream(payload: QueryModel):
     retrieved_docs = []
     retrieved_ids = []

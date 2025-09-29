@@ -92,8 +92,8 @@ const Sidebar = ({ state, setState }) => {
                 toast.success(`${domainName} created successfully.`);
                 setShowCreatePopup(false);
                 setNewDomain("");
-            } catch {
-                toast.error("Failed to create domain. Please try again.");
+            } catch(e) {
+                toast.error(`${e}`);
             }
         }
         else {

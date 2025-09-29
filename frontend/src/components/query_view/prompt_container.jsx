@@ -7,6 +7,7 @@ import { useDomain } from '../../contexts/domain-context/domain_context';
 import { toast } from 'react-toastify';
 import { useDomainsList } from '../../contexts/domans-list-context/domains_list_context';
 import { useLinks } from '../../contexts/link-context/link_context';
+import { useRagList } from '../../contexts/rag-list-context/rag_list_context';
 
 /**
  * A React component that creates a UI for a prompt box.
@@ -16,6 +17,7 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
     const { domainLinks } = useLinks();
     const { currentDomain } = useDomain()
     const { domains } = useDomainsList();
+    const { ragList, setRagList } = useRagList();
 
     // console.log(state.domains)
     const [inputValue, setInputValue] = useState('');
@@ -108,11 +110,20 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
                             };
                             return { ...prev, messages: updated };
                         });
+                    },
+                    (retrievedIds) => {
+                        // handle retrieved IDs
+                        console.log("Received retrieved IDs:", retrievedIds);
+                        setRagList(retrievedIds);
+                        console.log("--->",ragList)
+                        // you could save them to state here
                     }
                 );
             } catch (error) {
+                const msg = error instanceof Error ? error.message : String(error);
+                toast.error(msg)
                 console.log(error)
-                toast.error(error)
+
             }
 
         }
