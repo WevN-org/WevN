@@ -17,7 +17,7 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
     const { domainLinks } = useLinks();
     const { currentDomain } = useDomain()
     const { domains } = useDomainsList();
-    const { ragList, setRagList } = useRagList();
+    const { setRagList } = useRagList();
 
     // console.log(state.domains)
     const [inputValue, setInputValue] = useState('');
@@ -115,7 +115,7 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
                         // handle retrieved IDs
                         console.log("Received retrieved IDs:", retrievedIds);
                         setRagList(retrievedIds);
-                        console.log("--->",ragList)
+                        // console.log("--->",ragList)
                         // you could save them to state here
                     }
                 );

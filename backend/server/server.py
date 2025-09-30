@@ -116,6 +116,7 @@ async def lifespan(app: FastAPI):
                     disable_streaming=False,
                     num_ctx=4096,
                     verbose=True,
+                    
                 )
                 print(f"ChatOllama context size has been set to: {llm.num_ctx}")
 
@@ -158,6 +159,7 @@ async def lifespan(app: FastAPI):
                     """
 
                 prompt = PromptTemplate(
+                    
                     template=template,
                     input_variables=["conversation", "context", "question"],
                 )
@@ -608,6 +610,7 @@ async def query_stream(payload: QueryModel):
 
     async def event_generator():
         try:
+            await llm_ready.wait()
             # The config dictionary tells RunnableWithMessageHistory which session to use.
             # It will automatically load history and save the new Q&A pair.
             config = {"configurable": {"session_id": payload.conversation_id}}

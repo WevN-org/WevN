@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { useEffect, useState, useRef, useCallback } from "react";
+import React,{ useEffect, useState, useRef, useCallback } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import "./css/GraphPage.css";
 import { useNodes } from "../../contexts/nodes-context/nodes_context";
@@ -9,8 +9,9 @@ import { ApiService } from "../../../../backend/api-service/api_service";
 import { useDomain } from "../../contexts/domain-context/domain_context";
 import { useLinks } from "../../contexts/link-context/link_context";
 import { useDomainsList } from "../../contexts/domans-list-context/domains_list_context";
+import { useRagList } from "../../contexts/rag-list-context/rag_list_context";
 
-export default function GraphContainer({ isVisible }) {
+const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
     const { domainLinks, setLinksForDomain } = useLinks();
     const { domains } = useDomainsList();
     // console.log(domainLinks)
@@ -30,6 +31,11 @@ export default function GraphContainer({ isVisible }) {
     });
     const { currentDomain } = useDomain();
     const [editConcept, setEditConcept] = useState(null);
+    const { ragList, setRagList } = useRagList();
+
+    // useEffect(() => {
+    //     console.log("----->R:", ragList)
+    // },[ragList])
 
 
     // edit node functions
@@ -110,7 +116,7 @@ export default function GraphContainer({ isVisible }) {
             }
 
             const domainId = domainObj.id;
-            console.log("dId",domainId)
+            console.log("dId", domainId)
 
             setLinksForDomain(domainId, threshold, maxSemanticLinks);
 
@@ -212,6 +218,12 @@ export default function GraphContainer({ isVisible }) {
                     nodeLabel={(node) => node.label}
                     nodeCanvasObject={(node, ctx, globalScale) => {
 
+                        if (ragList.includes(node.id)) {
+                            ctx.beginPath();
+                            ctx.arc(node.x, node.y, 12, 0, 2 * Math.PI, false); // slightly bigger radius
+                            ctx.fillStyle = "rgba(255, 215, 0, 0.3)"; // gold halo
+                            ctx.fill();
+                        }
                         // node circle
                         ctx.fillStyle = node.color;
                         ctx.beginPath();
@@ -324,4 +336,6 @@ export default function GraphContainer({ isVisible }) {
             )}
         </div>
     );
-}
+});
+
+export default GraphContainer;
