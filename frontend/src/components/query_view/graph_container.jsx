@@ -27,7 +27,7 @@ const stringToColor = (str) => {
     const hue = unsignedHash / 0xffffffff;
 
     // 4. Convert to HSL color.
-    return `hsl(${hue * 360}, 90%,55%)`;   
+    return `hsl(${hue * 360}, 90%,55%)`;
 };
 
 const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
@@ -162,6 +162,24 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
         return () => observer.disconnect();
     }, []);
 
+    // useEffect(() => {
+    //     // Give the physics engine a "kick" to re-evaluate animations.
+    //     // This is crucial for when the link structure changes (e.g., toggling semantic links).
+    //     if (fgRef.current) {
+    //         fgRef.current.d3ReheatSimulation();
+    //     }
+    // }, [graphData]);
+    //     useEffect(() => {
+    //     if (fgRef.current) {
+    //         fgRef.current.d3ReheatSimulation();
+    //         fgRef.current.refresh();  // Important: redraw triggers particle restart
+    //     }
+    // }, [graphData]);  // <- dependency on graphData
+
+
+
+
+
     useEffect(() => {
         if (fgRef.current) {
             fgRef.current.d3Force("charge").strength(-30);
@@ -179,12 +197,77 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
         setEditConcept(nodesList.find((n) => n.node_id === node.id));
     }, [nodesList]);
 
+    // ✅ FINAL, ROBUST SOLUTION: Handles browser tab throttling.
+    useEffect(() => {
+        // If there's nothing to animate, do nothing.
+        if (ragList.length === 0) {
+            return;
+        }
+
+
+        const burstDuration = 1200;
+        let intervalId = null; // Use `let` so we can manage it in different functions.
+
+        const emitParticlesNow = () => {
+            if (!fgRef.current || !graphData.links) return;
+
+            const linksToAnimate = graphData.links.filter(link =>
+                ragList.includes(typeof link.source === 'object' ? link.source.id : link.source)
+            );
+
+            linksToAnimate.forEach(link => {
+                fgRef.current.emitParticle(link);
+            });
+        };
+
+        // Helper function to start the animation loop
+        const startAnimation = () => {
+            // Clear any existing timer to prevent duplicates
+            if (intervalId) clearInterval(intervalId);
+
+            // Fire immediately, then set the interval
+            emitParticlesNow();
+            intervalId = setInterval(emitParticlesNow, burstDuration);
+        };
+
+        // Helper function to stop the animation loop
+        const stopAnimation = () => {
+            clearInterval(intervalId);
+        };
+
+        // This function is called by the browser when the tab visibility changes
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                // If page is hidden, stop the timer
+                stopAnimation();
+            } else {
+                // If page becomes visible, restart the timer
+                startAnimation();
+            }
+        };
+
+        // Start the animation when the effect first runs
+        startAnimation();
+
+        // Set up the browser event listener
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        // IMPORTANT: The cleanup function now has two jobs
+        return () => {
+            stopAnimation(); // 1. Stop the timer
+            document.removeEventListener('visibilitychange', handleVisibilityChange); // 2. Remove the listener
+        };
+
+    }, [ragList, graphData]); // Rerun if the core data changes
+
     const nodeCanvasObject = useCallback((node, ctx, globalScale) => {
         // 1. --- Pulsing Halo Animation ---
         if (ragList.includes(node.id)) {
             // --- Animation settings (tweak these for different effects) ---
             const burstDuration = 1200; // milliseconds for one full burst cycle
-            const maxBurstRadius = 15;  // Max radius of the burst circle
+            const zoomOutFixRadius = 50 / globalScale;
+            const zoomInFixRadius = 20
+            const maxBurstRadius = zoomOutFixRadius> zoomInFixRadius ? zoomOutFixRadius : zoomInFixRadius  // Max radius of the burst circle
             const baseAlpha = 1;      // Starting opacity for the burst
 
             // Calculate time since component mount (or start of animation)
@@ -232,6 +315,14 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
         }
 
     }, [ragList]); // Make sure ragList is in the dependency array if you use useCallback
+
+    // At the top of your component
+    // const getLinkParticles = useCallback((link) => {
+    //     return ragList.includes(link.source.id) ? 1 : 0;
+    // }, [ragList]);
+
+    // const getLinkParticleColor = useCallback((link) => link.source.color, []);
+
     return (
         <div
             className={clsx(
@@ -247,22 +338,19 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
                     width={dimensions.width}
                     height={dimensions.height}
                     graphData={graphData}
+                    cooldownTime={ragList.length > 0 ? 60000 : 15000}
                     nodeLabel="label"
                     nodeCanvasObject={nodeCanvasObject}
                     linkColor={() => "#ccccccff"}
                     backgroundColor="#fff"
                     onNodeClick={handleNodeClick}
                     onNodeRightClick={handleNodeRightClick}
-                    linkDirectionalParticles={(link) =>
-                        ragList.includes(link.source.id) ? 1 : 0
-                    }
-
-                    // This now only runs for links that will have particles.
-                    // No conditional logic needed here.
                     linkDirectionalParticleColor={(link) => link.source.color}
-
-                    // This prop can be a static value since it's the same for all active particles.
-                    linkDirectionalParticleSpeed={0.006}
+                    linkDirectionalParticleSpeed={0.006} // The synced speed we calculated
+                    // linkDirectionalParticleWidth={2}
+                // linkDirectionalParticles={getLinkParticles}
+                // linkDirectionalParticleColor={getLinkParticleColor}
+                // linkDirectionalParticleSpeed={0.006}
                 />
             </div>
 
