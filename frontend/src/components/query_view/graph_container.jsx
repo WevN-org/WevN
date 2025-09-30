@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import React,{ useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import "./css/GraphPage.css";
 import { useNodes } from "../../contexts/nodes-context/nodes_context";
@@ -11,38 +11,102 @@ import { useLinks } from "../../contexts/link-context/link_context";
 import { useDomainsList } from "../../contexts/domans-list-context/domains_list_context";
 import { useRagList } from "../../contexts/rag-list-context/rag_list_context";
 
+// 1. ✅ STABLE COLORS: A simple hash function to generate a consistent color from a node ID.
+const stringToColor = (str) => {
+    // 1. We still use FNV-1a to get a good hash.
+    let hash = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+        hash ^= str.charCodeAt(i);
+        hash *= 16777619;
+    }
+    // 2. ✅ The Fix: Force the hash to be a positive 32-bit integer.
+    // The '>>> 0' is a JavaScript trick for unsigned conversion.
+    const unsignedHash = hash >>> 0;
+    // 3. ✅ Normalize the hash to a 0-1 range using division.
+    // 0xffffffff is the largest 32-bit unsigned integer (4,294,967,295).
+    const hue = unsignedHash / 0xffffffff;
+
+    // 4. Convert to HSL color.
+    return `hsl(${hue * 360}, 90%,55%)`;   
+};
+
 const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
     const { domainLinks, setLinksForDomain } = useLinks();
     const { domains } = useDomainsList();
-    // console.log(domainLinks)
+    const { nodesList } = useNodes();
+    const { currentDomain } = useDomain();
+    const { ragList } = useRagList();
+
     const containerRef = useRef();
     const fgRef = useRef();
-    const { nodesList } = useNodes();
 
-    const [_, setLoading] = useState(false);
     const [dimensions, setDimensions] = useState({ width: 800, height: 800 });
-    const [graphData, setGraphData] = useState({ nodes: [], links: [] });
-    const [useSemanticLinks, setUseSemanticLinks] = useState(false);
-    const [maxSemanticLinks, setMaxSemanticLinks] = useState(10);
-    const [threshold, setThreshold] = useState(1.3);
-    const [savedSettings, setSavedSettings] = useState({
-        maxSemanticLinks: 20,
-        threshold: 1.4,
-    });
-    const { currentDomain } = useDomain();
     const [editConcept, setEditConcept] = useState(null);
-    const { ragList, setRagList } = useRagList();
 
-    // useEffect(() => {
-    //     console.log("----->R:", ragList)
-    // },[ragList])
+    // 2. ✅ LAZY INITIALIZATION: Initialize state from localStorage only once.
+    const [useSemanticLinks, setUseSemanticLinks] = useState(() => {
+        try {
+            const saved = localStorage.getItem("graphSemanticView");
+            return saved ? JSON.parse(saved).useSemanticLinks ?? false : false;
+        } catch {
+            return false;
+        }
+    });
+
+    // 3. ✅ DERIVED STATE: Derive settings directly from context instead of a useEffect->useState chain.
+    const savedSettings = useMemo(() => {
+        if (!currentDomain || !domains.length) {
+            return { maxSemanticLinks: 20, threshold: 1.3 };
+        }
+        const dm = domains.find((d) => d.name === currentDomain);
+        if (!dm) return { maxSemanticLinks: 20, threshold: 1.3 };
+
+        const saved = domainLinks[dm.id];
+        return {
+            maxSemanticLinks: saved?.max_links ?? 20,
+            threshold: saved?.distance_threshold ?? 1.3,
+        };
+    }, [currentDomain, domains, domainLinks]);
+
+    // Local state for UI controls, initialized from derived settings
+    const [maxSemanticLinks, setMaxSemanticLinks] = useState(savedSettings.maxSemanticLinks);
+    const [threshold, setThreshold] = useState(savedSettings.threshold);
+
+    // Sync UI state when savedSettings change (e.g., domain switch)
+    useEffect(() => {
+        setMaxSemanticLinks(savedSettings.maxSemanticLinks);
+        setThreshold(savedSettings.threshold);
+    }, [savedSettings]);
+
+    // 4. ✅ MEMOIZED GRAPH DATA: Consolidate and memoize node/link calculation.
+    // This expensive operation now only runs when nodesList or the link type changes.
+    const graphData = useMemo(() => {
+        if (!nodesList) return { nodes: [], links: [] };
+
+        const formattedNodes = nodesList.map((n) => ({
+            id: n.node_id,
+            label: n.name || n.node_id,
+            color: stringToColor(n.node_id), // Use stable color
+        }));
+
+        const validNodeIds = new Set(formattedNodes.map((n) => n.id));
+        const links = [];
+
+        for (const node of nodesList) {
+            const linkSource = useSemanticLinks ? node.s_links : node.user_links;
+            for (const targetId of linkSource || []) {
+                if (validNodeIds.has(node.node_id) && validNodeIds.has(targetId)) {
+                    links.push({ source: node.node_id, target: targetId });
+                }
+            }
+        }
+        return { nodes: formattedNodes, links };
+    }, [nodesList, useSemanticLinks]);
 
 
-    // edit node functions
-    const handleEditSave = async (updated) => {
-        // console.log("Save concept:", updated);
+    // 5. ✅ MEMOIZED CALLBACKS: All handlers are wrapped in useCallback.
+    const handleEditSave = useCallback(async (updated) => {
         setEditConcept(null);
-
         try {
             await ApiService.updateNode(
                 currentDomain,
@@ -52,87 +116,43 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
                 updated.user_links,
                 maxSemanticLinks,
                 threshold
+            );
+            toast.success(`Updated node - ${updated.name}`);
+        } catch (err) {
+            toast.error(`Failed to update concept: ${err}`);
+        }
+    }, [currentDomain, maxSemanticLinks, threshold]);
 
-            )
-            toast.success(`updated nodes - ${updated.name}`)
-        }
-        catch (err) {
-            toast.error(`Failed to update concept ${err}. Please try again.`);
-        }
-    };
-
-    useEffect(() => {
-        try {
-            if (domains.length > 0) {
-                console.log(domains)
-                const dm = domains.find((d) => d.name === currentDomain)
-                const saved = domainLinks[dm.id]
-                if (saved) {
-                    const max_links = saved.max_links ?? 20
-                    const distance_threshold = saved.distance_threshold ?? 1.3
-                    setMaxSemanticLinks(max_links);
-                    setThreshold(distance_threshold);
-                    setSavedSettings({
-                        maxSemanticLinks: max_links,
-                        threshold: distance_threshold
-                    });
-                }
-            }
-        }
-        catch (e) {
-            console.log("error: ", e)
-        }
-    }, [currentDomain, domains]);
-
-    useEffect(() => {
-        const saved = localStorage.getItem("graphSemanticView");
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            setUseSemanticLinks(parsed.useSemanticLinks ?? false);
-        }
-    }, [])
-
-    const toggleSemanticLinks = () => {
+    const toggleSemanticLinks = useCallback(() => {
         setUseSemanticLinks(prev => {
             const next = !prev;
             localStorage.setItem("graphSemanticView", JSON.stringify({ useSemanticLinks: next }));
             return next;
         });
-    };
+    }, []);
 
-    const hasChanges =
-        savedSettings &&
-        (savedSettings.maxSemanticLinks !== maxSemanticLinks ||
-            savedSettings.threshold !== threshold);
-
-    const handleSave = async () => {
+    const handleSave = useCallback(async () => {
         try {
             await ApiService.refactorNode(currentDomain, maxSemanticLinks, threshold);
-
             const domainObj = domains.find(d => d.name === currentDomain);
-            if (!domainObj) {
-                console.error("Domain not found for currentDomain:", currentDomain);
-                return;
+            if (domainObj) {
+                setLinksForDomain(domainObj.id, threshold, maxSemanticLinks);
             }
-
-            const domainId = domainObj.id;
-            console.log("dId", domainId)
-
-            setLinksForDomain(domainId, threshold, maxSemanticLinks);
-
-            setSavedSettings({
-                maxSemanticLinks,
-                threshold,
-            }); // update baseline
-
             toast.success("Refactored semantic links");
         } catch (err) {
-            toast.error(`Failed to refactor links - ${err}`);
+            toast.error(`Failed to refactor links: ${err}`);
         }
-    };
+    }, [currentDomain, maxSemanticLinks, threshold, domains, setLinksForDomain]);
 
+    // This calculation is cheap, so useMemo is optional but doesn't hurt.
+    const hasChanges = useMemo(() =>
+        savedSettings.maxSemanticLinks !== maxSemanticLinks ||
+        savedSettings.threshold !== threshold,
+        [savedSettings, maxSemanticLinks, threshold]
+    );
 
-    // Resize observer
+    // --- Other Effects (largely unchanged as they were correct) ---
+
     useEffect(() => {
         const observer = new ResizeObserver(([entry]) => {
             const { width, height } = entry.contentRect;
@@ -142,54 +162,6 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
         return () => observer.disconnect();
     }, []);
 
-    // Random bright color
-    function getRandomBrightColor() {
-        const hue = Math.floor(Math.random() * 360); // output [0,1) * 360 - floor roundes it - for a specific range use ([0,1) * (max - min)) + min  
-        return `hsl(${hue}, 100%, 50%)`;
-    }
-
-    // Load nodes
-    useEffect(() => {
-        if (!nodesList) {
-            return;
-        }
-
-        const formattedNodes = nodesList.map((n) => ({
-            id: n.node_id,
-            label: n.name || n.node_id,
-            type: "note",
-            color: getRandomBrightColor(),
-        }));
-
-        setGraphData((prev) => ({
-            nodes: formattedNodes,
-            links: []
-
-        }));
-        toast.success(`🧠 Loaded ${nodesList.length} nodes`);
-    }, [nodesList]);
-
-    // Build links
-    useEffect(() => {
-        if (!nodesList || nodesList.length === 0) return;
-
-        const validNodeIds = new Set(nodesList.map((n) => n.node_id));
-        const links = [];
-
-        for (const node of nodesList) {
-            for (const targetId of (useSemanticLinks ? node.s_links : node.user_links) || []) {
-                if (validNodeIds.has(node.node_id) && validNodeIds.has(targetId)) {
-                    links.push({ source: node.node_id, target: targetId });
-                }
-            }
-        }
-
-        setGraphData((prev) => ({
-            nodes: prev.nodes,
-            links,
-        }));
-    }, [nodesList, useSemanticLinks]);
-
     useEffect(() => {
         if (fgRef.current) {
             fgRef.current.d3Force("charge").strength(-30);
@@ -197,8 +169,69 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
         }
     }, []);
 
+    const handleNodeClick = useCallback((node) => {
+        if (!fgRef.current) return;
+        fgRef.current.centerAt(node.x, node.y, 1000);
+        fgRef.current.zoom(3, 1000);
+    }, []);
 
+    const handleNodeRightClick = useCallback((node) => {
+        setEditConcept(nodesList.find((n) => n.node_id === node.id));
+    }, [nodesList]);
 
+    const nodeCanvasObject = useCallback((node, ctx, globalScale) => {
+        // 1. --- Pulsing Halo Animation ---
+        if (ragList.includes(node.id)) {
+            // --- Animation settings (tweak these for different effects) ---
+            const burstDuration = 1200; // milliseconds for one full burst cycle
+            const maxBurstRadius = 15;  // Max radius of the burst circle
+            const baseAlpha = 1;      // Starting opacity for the burst
+
+            // Calculate time since component mount (or start of animation)
+            const currentTime = Date.now();
+
+            // Calculate a phase for the animation (0 to 1) that loops
+            const phase = (currentTime % burstDuration) / burstDuration; // 0 -> 1 -> 0 -> 1...
+
+            // Use phase to determine current radius and opacity
+            // Radius grows from 0 to maxBurstRadius
+            const currentRadius = maxBurstRadius * phase;
+
+            // Opacity fades out as it expands: starts at baseAlpha, goes to 0
+            const currentAlpha = baseAlpha * (1 - phase);
+
+            const burstColor = node.color
+                .replace('hsl', 'hsla') // Change hsl to hsla
+                .replace(')', `, ${currentAlpha})`);
+
+            // Draw the animated halo
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, currentRadius, 0, 2 * Math.PI, false);
+            ctx.fillStyle = burstColor;
+            ctx.fill();
+            // ctx.lineWidth = 5 / globalScale; // Make line thin regardless of zoom
+            // ctx.strokeStyle = burstColor; // Slightly stronger gold outline
+            // ctx.stroke();
+        }
+
+        // 2. --- Main Node Circle (unchanged) ---
+        ctx.fillStyle = node.color;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, 6, 0, 2 * Math.PI, false);
+        ctx.fill();
+
+        // 3. --- Node Label  ---
+        const TEXT_VISIBILITY_THRESHOLD = 1.1;
+        if (globalScale >= TEXT_VISIBILITY_THRESHOLD) {
+            // 3. If it is, draw the text as before
+            ctx.font = `${13 / globalScale}px Sans-Serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = "black";
+            ctx.fillText(node.label, node.x, node.y + 10);
+        }
+
+    }, [ragList]); // Make sure ragList is in the dependency array if you use useCallback
     return (
         <div
             className={clsx(
@@ -210,57 +243,32 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
         >
             <div className="graph-container" ref={containerRef}>
                 <ForceGraph2D
-
                     ref={fgRef}
                     width={dimensions.width}
                     height={dimensions.height}
                     graphData={graphData}
-                    nodeLabel={(node) => node.label}
-                    nodeCanvasObject={(node, ctx, globalScale) => {
-
-                        if (ragList.includes(node.id)) {
-                            ctx.beginPath();
-                            ctx.arc(node.x, node.y, 12, 0, 2 * Math.PI, false); // slightly bigger radius
-                            ctx.fillStyle = "rgba(255, 215, 0, 0.3)"; // gold halo
-                            ctx.fill();
-                        }
-                        // node circle
-                        ctx.fillStyle = node.color;
-                        ctx.beginPath();
-                        ctx.arc(node.x, node.y, 6, 0, 2 * Math.PI, false);
-                        ctx.fill();
-
-                        ctx.font = `${14 / globalScale}px Sans-Serif`;
-                        ctx.textAlign = "center";
-                        ctx.textBaseline = "middle";
-                        ctx.fillStyle = "black";
-                        ctx.fillText(node.label, node.x, node.y + 15);
-                    }}
-                    // linkDirectionalParticles={1}
-                    // linkDirectionalParticleColor={(link) => link.source.color}
-                    // linkDirectionalParticleSpeed={0.004}
+                    nodeLabel="label"
+                    nodeCanvasObject={nodeCanvasObject}
                     linkColor={() => "#ccccccff"}
                     backgroundColor="#fff"
-                    onNodeClick={(node) => {
-                        if (!fgRef.current) return;
+                    onNodeClick={handleNodeClick}
+                    onNodeRightClick={handleNodeRightClick}
+                    linkDirectionalParticles={(link) =>
+                        ragList.includes(link.source.id) ? 1 : 0
+                    }
 
-                        // fgRef.current.zoomToFit(500, 350, n => n.id === node.id);
-                        fgRef.current.centerAt(node.x, node.y, 1000); // smoothly center on node
-                        fgRef.current.zoom(3, 1000);
-                    }}
+                    // This now only runs for links that will have particles.
+                    // No conditional logic needed here.
+                    linkDirectionalParticleColor={(link) => link.source.color}
 
-                    onNodeRightClick={(node) => {
-                        setEditConcept(nodesList.find((n) => n.node_id === node.id))
-                    }}
-
-
+                    // This prop can be a static value since it's the same for all active particles.
+                    linkDirectionalParticleSpeed={0.006}
                 />
             </div>
 
             {/* Graph Controls */}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-3xl">
                 <div className="flex flex-wrap items-center justify-center gap-4 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl px-4 py-3 shadow-lg">
-
                     {/* Toggle */}
                     <div className="flex items-center gap-3">
                         <span className="text-sm text-gray-700 select-none min-w-[90px] text-right">
@@ -268,7 +276,7 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
                         </span>
                         <button
                             type="button"
-                            onClick={() => toggleSemanticLinks()}
+                            onClick={toggleSemanticLinks}
                             className={clsx(
                                 "relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-200",
                                 useSemanticLinks ? "bg-blue-600" : "bg-gray-300"
@@ -315,17 +323,15 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
                     <button
                         onClick={handleSave}
                         disabled={!hasChanges}
-                        className={`px-3 py-1 rounded ${hasChanges
-                            ? "bg-green-600 text-white"
-                            : "bg-gray-300 text-gray-500"
+                        className={`px-3 py-1 rounded transition-colors ${hasChanges
+                            ? "bg-green-600 text-white hover:bg-green-700"
+                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
                             }`}
                     >
                         Save
                     </button>
                 </div>
             </div>
-
-
 
             {editConcept && (
                 <EditConceptModal
