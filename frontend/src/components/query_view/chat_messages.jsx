@@ -4,24 +4,43 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { materialDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
+
+
+// --- Utility: Normalize math delimiters (\(...\), \[...\]) into $...$ / $$...$$ ---
+function normalizeMathDelimiters(text) {
+  if (!text) return text;
+
+  return text
+    .replace(/```math([\s\S]*?)```/g, (_, m) => `$$${m}$$`)
+    .replace(/\$`([^`]+?)`\$/g, (_, m) => `$${m}$`)
+    .replace(/\\\[([\s\S]*?)\\\]/g, (_, m) => `$$${m}$$`)
+    .replace(/\\\(([\s\S]*?)\\\)/g, (_, m) => `$${m}$`);
+}
+
+
 
 // --- Step 1: Create a dedicated component for a single chat bubble ---
 
 function ChatMessageBubble({ message }) {
-  // State to manage the visibility of the thinking process for this specific message
   const [isThinkingVisible, setIsThinkingVisible] = useState(false);
 
   // Parse the message content to separate the thinking from the answer
   const { thinkingText, answerText } = useMemo(() => {
-    // This regex captures the text inside <think>...</think> and the text after it.
     const match = /<think>([\s\S]*?)<\/think>([\s\S]*)/.exec(message.content);
-    
+
     if (match) {
-      // If a <think> block is found, separate the parts.
-      return { thinkingText: match[1].trim(), answerText: match[2].trim() };
+      return {
+        thinkingText: normalizeMathDelimiters(match[1].trim()),
+        answerText: normalizeMathDelimiters(match[2].trim()),
+      };
     } else {
-      // Otherwise, the whole message is the answer.
-      return { thinkingText: null, answerText: message.content.trim() };
+      return {
+        thinkingText: null,
+        answerText: normalizeMathDelimiters(message.content.trim()),
+      };
     }
   }, [message.content]);
 
@@ -40,12 +59,13 @@ function ChatMessageBubble({ message }) {
           }
         )}
       >
-        {/* Always render the main answer */}
+        {/* --- Always render the main answer --- */}
         <ReactMarkdown
           children={answerText}
-          remarkPlugins={[remarkGfm]}
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
           components={{
-            code({ node, inline, className, children, ...props }) {
+            code({ inline, className, children, ...props }) {
               const match = /language-(\w+)/.exec(className || "");
               return !inline && match ? (
                 <SyntaxHighlighter
@@ -78,7 +98,8 @@ function ChatMessageBubble({ message }) {
               <div className="mt-1 text-xs prose-p:my-1">
                 <ReactMarkdown
                   children={thinkingText}
-                  remarkPlugins={[remarkGfm]}
+                  remarkPlugins={[remarkGfm, remarkMath]}
+                  rehypePlugins={[rehypeKatex]}
                 />
               </div>
             )}
