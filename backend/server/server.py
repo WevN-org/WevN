@@ -2,7 +2,6 @@
 
 from contextlib import asynccontextmanager
 import os
-import warnings
 from fastapi import (
     FastAPI,
     Depends,
@@ -17,12 +16,12 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import json
+import pprint
 import chromadb
 from sentence_transformers import SentenceTransformer
 import uuid
 from typing import List, Optional
 import asyncio
-from datetime import datetime
 
 
 # -- sentence - transformers  model
@@ -32,8 +31,9 @@ try:
 
     from langchain_ollama import ChatOllama
     from langchain.prompts import PromptTemplate
-    from sqlalchemy import create_engine
-    from langchain.memory import ConversationSummaryBufferMemory
+    from langchain_core.messages import BaseMessage
+    # from sqlalchemy import create_engine
+    # from langchain.memory import ConversationSummaryBufferMemory
     from pydantic import BaseModel, Field
     from typing import Optional
     from langchain_community.chat_message_histories import SQLChatMessageHistory
@@ -55,10 +55,12 @@ model_ready = asyncio.Event()
 
 llm = None
 llm_ready = asyncio.Event()
+summary_llm_ready = asyncio.Event()
 llm_error: Optional[str] = None
 
 
 memory_dict = {}
+app_state = {} 
 
 prompt = None
 raw_chain = None
@@ -67,17 +69,47 @@ async_engine = create_async_engine("sqlite+aiosqlite:///chat_memory.db", echo=Fa
 chain_with_memory = None
 
 
-# llm structured response
-class StructuredResponse(BaseModel):
-    Answer: str = Field(description="Main answer text, can include explanation or code")
-    Command: Optional[str] = Field(
-        default="", description="Custom command for tools, if any"
+
+
+
+# --- Pydantic Models for Summarization Output ---
+
+class CustomSummary(BaseModel):
+    """A structured summary with a name and content."""
+    name: str = Field(description="A concise, descriptive name or title for the summary.")
+    content: str = Field(
+        description="The main body of the summary. Must be descriptive, match the name, and be derived exclusively from the provided conversation history."
     )
 
 
-# Combination of summery memory and buffer memory
 
+# --- Function to build the summarization chain ---
+# In your main.py, replace the old create_summarization_chain function
 
+# In your main.py, replace the old create_summarization_chain function
+
+def create_summarization_chain():
+    """Builds a chain that returns a structured CustomSummary object."""
+    
+    summarizer_llm = ChatOllama(model=llm_model, temperature=0)
+    
+    # Use with_structured_output with our new CustomSummary model
+    structured_llm = summarizer_llm.with_structured_output(CustomSummary)
+    
+    # Update the prompt to instruct the LLM on the new 'name' and 'content' fields
+    prompt = PromptTemplate.from_template("""
+        You are an expert summarizer. Your response MUST be a valid JSON object.
+        Analyze the conversation below. Your task is to {task_description}.
+        
+        Based ONLY on the provided text, generate a descriptive 'name' (title) for the summary and the 'content' for the summary itself.
+
+        --- CONVERSATION START ---
+        {formatted_memory}
+        --- CONVERSATION END ---
+    """)
+    
+    # The chain now ends with the structured output parser
+    return prompt | structured_llm
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global model
@@ -179,7 +211,12 @@ async def lifespan(app: FastAPI):
 
                 print("✅ Chain with async memory history is ready.")
                 print("LLM model:", llm.model)
-                print("LLM max tokens:", getattr(llm, "max_tokens", "unknown"))
+                print("Initializing Summarization chain...")
+                app.state.db_engine = async_engine
+                summarization_chain = create_summarization_chain()
+                app.state.summarization_chain = summarization_chain
+                summary_llm_ready.set()
+                print("✅ Summarization chain is ready.")
 
             except Exception as e:
                 llm_error = e
@@ -191,6 +228,7 @@ async def lifespan(app: FastAPI):
     yield  # ⚠️ THIS is required! App runs after this
 
     print("Server shutting down")
+    
 
 
 # -- websocket  clients
@@ -229,6 +267,17 @@ def verify_llm_ready():
 def validate_token(token: str) -> bool:
     return token == "api-token"
 
+async def get_history_by_session_id(session_id: str,db_engine) -> List[BaseMessage]:
+    """
+    Retrieves the conversation history for a specific session ID from the database.
+    This function uses the global 'async_engine' defined during startup.
+    """
+    history_store = SQLChatMessageHistory(
+        session_id=session_id,
+        connection=async_engine,
+    )
+    messages = await history_store.aget_messages()
+    return messages
 
 # -- permenent ws connection --
 @app.websocket("/ws")
@@ -326,6 +375,29 @@ class QueryModel(BaseModel):
 
 class ClearHistoryModel(BaseModel):
     conversation_id: str
+
+# -- Pydantic Models -- this is the structure for each http request start with a Model suffix for each class
+
+# --- ADD THESE NEW MODELS ---
+class HistoryRequest(BaseModel):
+    """The request body for getting a session's history."""
+    session_id: str
+
+class ResponseMessage(BaseModel):
+    """Structures a single message for the API response."""
+    type: str
+    content: str
+
+class SummarizeHistoryRequest(BaseModel):
+    session_id: str
+    query: Optional[str] = None
+    collection: str
+    max_results: Optional[int] = 10
+    distance_threshold: Optional[float] = 1.4
+
+
+
+
 
 
 # -- ChromaDB client --
@@ -493,35 +565,45 @@ def rename_collection(
         )
 
 
+
+async def _create_node_logic(payload: NodeInputModel):
+    """
+    Core logic for creating a node in ChromaDB.
+    This function can be called from anywhere.
+    """
+    collection = client.get_collection(payload.collection)
+    embedding = await model_embedding(f"Name: {payload.name}. {payload.content}")
+    node_id = str(uuid.uuid1())
+    q_result = collection.query(
+        query_embeddings=embedding,
+        n_results=payload.max_links,
+        include=["distances"],
+    )
+
+    s_links = []
+    for i, id in enumerate(q_result["ids"][0]):
+        if q_result["distances"][0][i] <= payload.distance_threshold:
+            s_links.append(id)
+    metadata = {
+        "name": payload.name,
+        "user_links": json.dumps(payload.user_links),
+        "s_links": json.dumps(s_links),
+    }
+    collection.add(
+        documents=[payload.content],
+        ids=[node_id],
+        embeddings=[embedding],
+        metadatas=[metadata],
+    )
+    return node_id
+
+
 # -- insert a node --
 @app.post("/nodes/insert", dependencies=[Depends(verify_api_key)])
 async def createNode(payload: NodeInputModel, background_tasks: BackgroundTasks):
     try:
 
-        collection = client.get_collection(payload.collection)
-        embedding = await model_embedding(f"Name: {payload.name}. {payload.content}")
-        node_id = str(uuid.uuid1())
-        q_result = collection.query(
-            query_embeddings=embedding,
-            n_results=payload.max_links,
-            include=["distances"],
-        )
-
-        s_links = []
-        for i, id in enumerate(q_result["ids"][0]):
-            if q_result["distances"][0][i] <= payload.distance_threshold:
-                s_links.append(id)
-        metadata = {
-            "name": payload.name,
-            "user_links": json.dumps(payload.user_links),
-            "s_links": json.dumps(s_links),
-        }
-        collection.add(
-            documents=[payload.content],
-            ids=[node_id],
-            embeddings=[embedding],
-            metadatas=[metadata],
-        )
+        await _create_node_logic(payload)
         background_tasks.add_task(notify_clients, "node")
         return StatusModel(status=f"Added Node {payload.name} Successfully.")
 
@@ -634,6 +716,96 @@ async def query_stream(payload: QueryModel):
         raise HTTPException(
             status_code=400, detail=f"LLM query failed with error: {str(e)}"
         )
+
+# @app.post("/history/get", dependencies=[Depends(verify_api_key)], response_model=List[ResponseMessage])
+# async def get_history(payload: HistoryRequest):
+#     """
+#     API endpoint to retrieve conversation history for a given session_id.
+#     """
+#     session_id = payload.session_id
+#     print(f"\nReceived request to fetch history for session_id: '{session_id}'")
+
+#     try:
+#         # Call the retriever function
+#         messages = await get_history_by_session_id(session_id)
+
+#         # Print the raw messages to the server console
+#         print("\n--- Raw Messages from Store ---")
+#         for msg in messages:
+#             print(msg)
+        
+#         # Format the messages for the JSON API response
+#         response_data = [{"type": msg.type, "content": msg.content} for msg in messages]
+#         return response_data
+        
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=500, detail=f"Failed to retrieve history: {str(e)}"
+#         )
+
+
+
+
+@app.post("/history/summarize", dependencies=[Depends(verify_api_key)], response_model=CustomSummary)
+async def summarize_history(request: Request, payload: SummarizeHistoryRequest, background_tasks: BackgroundTasks):
+    """
+    Summarizes a conversation history and returns a single, structured JSON object.
+    If a query is provided, the summary is targeted. Otherwise, a general summary is created.
+    """
+    session_id = payload.session_id
+    query = payload.query
+    
+    print(f"\nReceived request to summarize history for session_id: '{session_id}'")
+
+    try:
+        db_engine = request.app.state.db_engine
+        summarization_chain = request.app.state.summarization_chain
+
+        history_messages = await get_history_by_session_id(session_id, db_engine)
+        if not history_messages:
+            raise HTTPException(status_code=404, detail="No history found for this session_id.")
+
+        formatted_memory = "\n".join([f"{msg.type.capitalize()}: {msg.content}" for msg in history_messages])
+        
+        if query:
+            task_description = f"create a detailed summary focused specifically on: '{query}'"
+        else:
+            task_description = "create a concise, general summary of the entire conversation"
+        
+        # Invoke the chain ONCE and await the final Pydantic object
+        summary_response = await summarization_chain.ainvoke({
+            "formatted_memory": formatted_memory,
+            "task_description": task_description
+        })
+
+        print("Creating a new node from the summary...")
+        try:
+            new_node_payload = NodeInputModel(
+                collection=payload.collection, # Or wherever you want to save it
+                name=summary_response.name,
+                content=summary_response.content,
+                user_links=[],
+                distance_threshold=payload.distance_threshold, # Default values
+                max_links=payload.max_results
+            )
+            
+            # Call the same reusable logic function
+            new_node_id = await _create_node_logic(new_node_payload)
+            
+            # You have access to background_tasks here, so you can use it
+            background_tasks.add_task(notify_clients, "node")
+            
+            print(f"Successfully created summary node with ID: {new_node_id}")
+
+        except Exception as e:
+            print(f"Warning: Failed to create summary node. Error: {e}")
+        
+        # Return the Pydantic object directly. FastAPI handles the JSON conversion.
+        return summary_response
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate summary: {str(e)}")
+
 
 
 @app.post("/history/clear", dependencies=[Depends(verify_api_key)])

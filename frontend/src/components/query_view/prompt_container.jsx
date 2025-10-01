@@ -24,10 +24,18 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
         }
     }, [inputValue]);
 
+
+
     const currentDomainObject = useMemo(() => {
         if (!currentDomain || domains.length === 0) return null;
         return domains.find((d) => d.name === currentDomain);
+        
     }, [currentDomain, domains]);
+
+    useEffect(()=>{
+        if(!currentDomainObject) return
+        console.log(currentDomainObject.id,"    name: ",currentDomainObject.name)
+    },[currentDomainObject])
 
     const handleInputChange = useCallback((e) => {
         setInputValue(e.target.value);
