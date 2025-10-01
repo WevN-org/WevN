@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo ,memo} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -21,7 +21,7 @@ function normalizeMathDelimiters(text) {
 
 // --- Step 1: Create a dedicated component for a single chat bubble ---
 
-function ChatMessageBubble({ message }) {
+const ChatMessageBubble = memo(function ChatMessageBubble({ message }) {
   const [isThinkingVisible, setIsThinkingVisible] = useState(false);
 
   // Parse the message content to separate the thinking from the answer
@@ -108,7 +108,7 @@ function ChatMessageBubble({ message }) {
       </div>
     </div>
   );
-}
+});
 
 export default function ChatMessages({ messages, graphVisibility }) {
   const scrollContainerRef = useRef(null); // Ref for the scrollable div

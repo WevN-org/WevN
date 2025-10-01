@@ -198,67 +198,67 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
     }, [nodesList]);
 
     // ✅ FINAL, ROBUST SOLUTION: Handles browser tab throttling.
-    useEffect(() => {
-        // If there's nothing to animate, do nothing.
-        if (ragList.length === 0) {
-            return;
-        }
+    // useEffect(() => {
+    //     // If there's nothing to animate, do nothing.
+    //     if (ragList.length === 0) {
+    //         return;
+    //     }
 
 
-        const burstDuration = 1200;
-        let intervalId = null; // Use `let` so we can manage it in different functions.
+    //     const burstDuration = 1200;
+    //     let intervalId = null; // Use `let` so we can manage it in different functions.
 
-        const emitParticlesNow = () => {
-            if (!fgRef.current || !graphData.links) return;
+    //     const emitParticlesNow = () => {
+    //         if (!fgRef.current || !graphData.links) return;
 
-            const linksToAnimate = graphData.links.filter(link =>
-                ragList.includes(typeof link.source === 'object' ? link.source.id : link.source)
-            );
+    //         const linksToAnimate = graphData.links.filter(link =>
+    //             ragList.includes(typeof link.source === 'object' ? link.source.id : link.source)
+    //         );
 
-            linksToAnimate.forEach(link => {
-                fgRef.current.emitParticle(link);
-            });
-        };
+    //         linksToAnimate.forEach(link => {
+    //             fgRef.current.emitParticle(link);
+    //         });
+    //     };
 
-        // Helper function to start the animation loop
-        const startAnimation = () => {
-            // Clear any existing timer to prevent duplicates
-            if (intervalId) clearInterval(intervalId);
+    //     // Helper function to start the animation loop
+    //     const startAnimation = () => {
+    //         // Clear any existing timer to prevent duplicates
+    //         if (intervalId) clearInterval(intervalId);
 
-            // Fire immediately, then set the interval
-            emitParticlesNow();
-            intervalId = setInterval(emitParticlesNow, burstDuration);
-        };
+    //         // Fire immediately, then set the interval
+    //         emitParticlesNow();
+    //         intervalId = setInterval(emitParticlesNow, burstDuration);
+    //     };
 
-        // Helper function to stop the animation loop
-        const stopAnimation = () => {
-            clearInterval(intervalId);
-        };
+    //     // Helper function to stop the animation loop
+    //     const stopAnimation = () => {
+    //         clearInterval(intervalId);
+    //     };
 
-        // This function is called by the browser when the tab visibility changes
-        const handleVisibilityChange = () => {
-            if (document.hidden) {
-                // If page is hidden, stop the timer
-                stopAnimation();
-            } else {
-                // If page becomes visible, restart the timer
-                startAnimation();
-            }
-        };
+    //     // This function is called by the browser when the tab visibility changes
+    //     const handleVisibilityChange = () => {
+    //         if (document.hidden) {
+    //             // If page is hidden, stop the timer
+    //             stopAnimation();
+    //         } else {
+    //             // If page becomes visible, restart the timer
+    //             startAnimation();
+    //         }
+    //     };
 
-        // Start the animation when the effect first runs
-        startAnimation();
+    //     // Start the animation when the effect first runs
+    //     startAnimation();
 
-        // Set up the browser event listener
-        document.addEventListener('visibilitychange', handleVisibilityChange);
+    //     // Set up the browser event listener
+    //     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-        // IMPORTANT: The cleanup function now has two jobs
-        return () => {
-            stopAnimation(); // 1. Stop the timer
-            document.removeEventListener('visibilitychange', handleVisibilityChange); // 2. Remove the listener
-        };
+    //     // IMPORTANT: The cleanup function now has two jobs
+    //     return () => {
+    //         stopAnimation(); // 1. Stop the timer
+    //         document.removeEventListener('visibilitychange', handleVisibilityChange); // 2. Remove the listener
+    //     };
 
-    }, [ragList, graphData]); // Rerun if the core data changes
+    // }, [ragList, graphData]); // Rerun if the core data changes
 
     const nodeCanvasObject = useCallback((node, ctx, globalScale) => {
         // 1. --- Pulsing Halo Animation ---
@@ -323,6 +323,10 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
 
     // const getLinkParticleColor = useCallback((link) => link.source.color, []);
 
+    const getLinkColor = useCallback((link) => {
+        return ragList.includes(link.source.id) ? link.source.color : "#ccccccff"
+    },[ragList])
+
     return (
         <div
             className={clsx(
@@ -342,7 +346,7 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
                     cooldownTime={ragList.length > 0 ? 60000 : 15000}
                     nodeLabel="label"
                     nodeCanvasObject={nodeCanvasObject}
-                    linkColor={() => "#ccccccff"}
+                    linkColor={getLinkColor}
                     backgroundColor="#fff"
                     onNodeClick={handleNodeClick}
                     onNodeRightClick={handleNodeRightClick}
