@@ -8,7 +8,6 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 
-
 // --- Utility: Normalize math delimiters (\(...\), \[...\]) into $...$ / $$...$$ ---
 function normalizeMathDelimiters(text) {
   if (!text) return text;
@@ -19,8 +18,6 @@ function normalizeMathDelimiters(text) {
     .replace(/\\\[([\s\S]*?)\\\]/g, (_, m) => `$$${m}$$`)
     .replace(/\\\(([\s\S]*?)\\\)/g, (_, m) => `$${m}$`);
 }
-
-
 
 // --- Step 1: Create a dedicated component for a single chat bubble ---
 
@@ -68,14 +65,17 @@ function ChatMessageBubble({ message }) {
             code({ inline, className, children, ...props }) {
               const match = /language-(\w+)/.exec(className || "");
               return !inline && match ? (
-                <SyntaxHighlighter
-                  children={String(children).replace(/\n$/, "")}
-                  style={materialDark}
-                  language={match[1]}
-                  PreTag="div"
-                  customStyle={{ overflowX: "auto" }}
-                  {...props}
-                />
+                // ✅ --- FIX: Wrap SyntaxHighlighter in a non-expanding container ---
+                <div style={{ display: 'table', tableLayout: 'fixed', width: '100%' }}>
+                  <SyntaxHighlighter
+                    children={String(children).replace(/\n$/, "")}
+                    style={materialDark}
+                    language={match[1]}
+                    PreTag="div"
+                    customStyle={{ overflowX: "auto" }}
+                    {...props}
+                  />
+                </div>
               ) : (
                 <code className={className} {...props}>
                   {children}
@@ -95,7 +95,7 @@ function ChatMessageBubble({ message }) {
               {isThinkingVisible ? "Hide thought process" : "Show thought process"}
             </button>
             {isThinkingVisible && (
-              <div className="mt-1 text-xs prose-p:my-1">
+              <div className="mt-1 text-xs prose-p:my-1 break-words overflow-x-auto">
                 <ReactMarkdown
                   children={thinkingText}
                   remarkPlugins={[remarkGfm, remarkMath]}
@@ -110,19 +110,34 @@ function ChatMessageBubble({ message }) {
   );
 }
 
-
-// --- Step 2: Simplify your main ChatMessages component ---
-
 export default function ChatMessages({ messages, graphVisibility }) {
-  const messagesEndRef = useRef(null);
+  const scrollContainerRef = useRef(null); // Ref for the scrollable div
+  const messagesEndRef = useRef(null);     // Ref for the target element at the bottom
 
-  // Auto-scroll to bottom on new message
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    // A threshold to determine if the user is "close enough" to the bottom.
+    const scrollThreshold = 50; // in pixels
+
+    // Check if the user is near the bottom before the new message causes a resize.
+    // scrollHeight: Total height of the content.
+    // scrollTop: How far down the user has scrolled from the top.
+    // clientHeight: The visible height of the container.
+    const isScrolledToBottom =
+      container.scrollHeight - container.scrollTop <=
+      container.clientHeight + scrollThreshold;
+
+    // Only scroll if the user was already at or near the bottom.
+    if (isScrolledToBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]); // This effect still depends on messages
 
   return (
     <div
+      ref={scrollContainerRef} // ✅ Assign the ref to the scrollable container
       className={clsx(
         "overflow-y-auto p-4 space-y-4 max-h-[90%] pt-14 transition-all duration-500",
         {

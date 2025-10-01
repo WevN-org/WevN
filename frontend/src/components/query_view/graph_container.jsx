@@ -338,6 +338,7 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
                     width={dimensions.width}
                     height={dimensions.height}
                     graphData={graphData}
+                    forceEngine="ngraph"
                     cooldownTime={ragList.length > 0 ? 60000 : 15000}
                     nodeLabel="label"
                     nodeCanvasObject={nodeCanvasObject}
