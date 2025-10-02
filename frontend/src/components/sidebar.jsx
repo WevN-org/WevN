@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { Plus, PanelLeftClose, PanelLeftOpen, Search, FilePenLine, Trash2 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
-
+import { useRef, useCallback } from "react";
 import { ApiService } from "../../../backend/api-service/api_service";
 import { toast } from "react-toastify";
 import { useDomain } from "../contexts/domain-context/domain_context";
@@ -99,12 +99,6 @@ const Sidebar = ({ state, setState, userpic, username, email }) => {
         }
     };
 
-    //const ExpandSidbarAtStart = () => {
-    //    useEffect(() => {
-    //        setSidebarVisibility(false);
-    //    }, [])
-    //};
-
     const domainRegex = /^[a-zA-Z0-9](?:[a-zA-Z0-9._-]{1,510})[a-zA-Z0-9]$/;
 
     const validateDomain = (domain) => {
@@ -114,6 +108,33 @@ const Sidebar = ({ state, setState, userpic, username, email }) => {
         return domainRegex.test(domain);
     };
 
+
+    function useClickAndDoubleClick(onClick, onDoubleClick, delay = 250) {
+        const timer = useRef(null);
+
+        const handleClick = useCallback(() => {
+            if (timer.current) return; // already waiting for second click
+            timer.current = setTimeout(() => {
+                onClick();
+                timer.current = null;
+            }, delay);
+        }, [onClick, delay]);
+
+        const handleDoubleClick = useCallback(() => {
+            if (timer.current) {
+                clearTimeout(timer.current);
+                timer.current = null;
+            }
+            onDoubleClick();
+        }, [onDoubleClick]);
+
+        return { showProfile: handleClick, collapseSidebar: handleDoubleClick };
+    }
+
+    const { showProfile, collapseSidebar } = useClickAndDoubleClick(
+        handleAccountClick,
+        toggleSidebar
+    );
 
     return (
         <div className="sidebar-wrapper relative z-50 bg-green-500 transition-colors duration-500 h-dvh">
@@ -143,8 +164,8 @@ const Sidebar = ({ state, setState, userpic, username, email }) => {
                         { 'justify-between p-4': !isCollapsed },
                         { 'collapsed p-0 justify-center': isCollapsed }
                     )}
-                    onDoubleClick={toggleSidebar} // This double-click still controls the parent state
-                    onClick={handleAccountClick}
+                    onClick={showProfile}
+                    onDoubleClick={collapseSidebar} // This double-click still controls the parent state
                 >
                     {!isCollapsed && !sidebarVisibility && (
                         <div className="flex flex-col items-start">

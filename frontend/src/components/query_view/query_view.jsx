@@ -14,7 +14,7 @@ import { toast } from "react-toastify";
 export default function QueryView({ state, setState }) {
     const [graphVisibility, setGraphVisibility] = useState(true);
     // expand graph view
-    const [chatVisibiilty, setChatVisibility] = useState(true);
+    const [chatVisibiilty, setChatVisibility] = useState(false);
 
     const toggleGraphView = () => setGraphVisibility((prev) => !prev);
     const toggleChatWindow = () => setChatVisibility((prev) => !prev);

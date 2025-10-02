@@ -147,7 +147,7 @@ export default function ChatMessages({ graphVisibility }) {
     <div
       ref={scrollContainerRef} // ✅ Assign the ref to the scrollable container
       className={clsx(
-        "overflow-y-auto p-4 space-y-2 max-h-[90%] transition-all duration-500",
+        "overflow-y-auto p-4 pb-24 space-y-2 max-h-[90%] transition-all duration-500",
         {
           "w-1/2 mx-auto": !graphVisibility,
         }
