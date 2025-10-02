@@ -1,22 +1,31 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send } from 'lucide-react';
-import GraphViewToggle from './graph_view_toggle';
-import { ApiService } from '../../../../backend/api-service/api_service';
-import { useDomain } from '../../contexts/domain-context/domain_context';
 import { toast } from 'react-toastify';
-import { useDomainsList } from '../../contexts/domans-list-context/domains_list_context';
+
+// Local Component Imports
+import GraphViewToggle from './graph_view_toggle';
+
+// API & Context Imports
+import { ApiService } from '../../../../backend/api-service/api_service';
 import { useLinks } from '../../contexts/link-context/link_context';
 import { useRagList } from '../../contexts/rag-list-context/rag_list_context';
+import { useMessages } from '../../contexts/message-context/message_context';
 
-function PromptContainer({ graphVisibility, toggleGraph, setState }) {
+// Remove 'setState' from the component's props
+function PromptContainer({ graphVisibility, toggleGraph }) {
+    // 2. Consume the messages context to get the updater function and active ID
+    const { updateMessages, activeDomainId, currentDomainObject } = useMessages();
+
+    // Other context hooks
     const { domainLinks } = useLinks();
-    const { currentDomain } = useDomain();
-    const { domains } = useDomainsList();
-    const { setRagList } = useRagList(); 
+
+    const { setRagList } = useRagList();
+
+    // Local component state
     const [inputValue, setInputValue] = useState('');
     const textareaRef = useRef(null);
 
-    // Auto-resize the textarea - this is a perfect use case for useEffect.
+    // useEffect for auto-resizing the textarea (no changes here)
     useEffect(() => {
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
@@ -24,26 +33,14 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
         }
     }, [inputValue]);
 
-
-
-    const currentDomainObject = useMemo(() => {
-        if (!currentDomain || domains.length === 0) return null;
-        return domains.find((d) => d.name === currentDomain);
-        
-    }, [currentDomain, domains]);
-
-    useEffect(()=>{
-        if(!currentDomainObject) return
-        console.log(currentDomainObject.id,"    name: ",currentDomainObject.name)
-    },[currentDomainObject])
-
     const handleInputChange = useCallback((e) => {
         setInputValue(e.target.value);
-    }, []); // No dependencies, so this function is created only once.
+    }, []);
 
     const handleSendMessage = useCallback(async () => {
-        const userMessage = inputValue.trim();
-        if (!userMessage || !currentDomainObject) {
+        const userMessage = inputValue;
+        console.log("usermessage: ", userMessage, "\ncurrentDomainObject: ", currentDomainObject, "\nactiveDomainID: ", activeDomainId)
+        if (!userMessage || !currentDomainObject || !activeDomainId) {
             if (!currentDomainObject) {
                 toast.error("No active domain selected.");
             }
@@ -52,62 +49,60 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
 
         setInputValue("");
 
-        // Add user message and assistant placeholder immediately for better UX
+        // 3. Update state using the context function
         let assistantIndex;
-        setState((prev) => {
-            const userMsg = { role: "user", content: userMessage };
-            const assistantMsg = { role: "assistant", content: "" };
-            assistantIndex = prev.messages.length + 1;
-            return {
-                ...prev,
-                messages: [...prev.messages, userMsg, assistantMsg],
+        updateMessages(activeDomainId, (prevMessages) => {
+            const userMsg = {
+                role: "user",
+                id: `user-${Date.now()}`,
+                content: userMessage
             };
+            const assistantMsg = {
+                role: "assistant",
+                id: `user-${Date.now()}`,
+                content: ""
+            };
+            assistantIndex = prevMessages.length + 1;
+            return [...prevMessages, userMsg, assistantMsg];
         });
 
         try {
-            //: Get settings directly from the memoized domain object.
             const domainSettings = domainLinks[currentDomainObject.id];
             const effectiveMaxLinks = domainSettings?.max_links ?? 20;
             const effectiveThreshold = domainSettings?.distance_threshold ?? 1.3;
 
             await ApiService.llm_response(
-                currentDomain,
+                currentDomainObject.name,
                 userMessage,
-                currentDomainObject.id, // Use the directly derived ID
+                activeDomainId,
                 effectiveMaxLinks,
                 effectiveThreshold,
                 (partial) => { // onChunk handler
-                    setState((prev) => {
-                        const updatedMessages = [...prev.messages];
+                    // 4. Update the streaming message using the context
+                    updateMessages(activeDomainId, (prev) => {
+                        const updatedMessages = [...prev];
                         const currentAssistantMessage = updatedMessages[assistantIndex];
                         if (currentAssistantMessage) {
-                             updatedMessages[assistantIndex] = {
+                            updatedMessages[assistantIndex] = {
                                 ...currentAssistantMessage,
                                 content: (currentAssistantMessage.content || "") + partial,
                             };
                         }
-                        return { ...prev, messages: updatedMessages };
+                        return updatedMessages;
                     });
                 },
                 (retrievedIds) => { // onRetrievedIds handler
-                    console.log("Received retrieved IDs:", retrievedIds);
                     setRagList(retrievedIds);
                 }
             );
         } catch (error) {
             const msg = error instanceof Error ? error.message : String(error);
             toast.error(msg);
-            console.error("Error sending message:", error);
-            // Optional: Remove the placeholder message on error
-            setState(prev => ({
-                ...prev,
-                messages: prev.messages.slice(0, -1) // Removes the last (assistant) message
-            }));
+            // 5. On error, remove the placeholder using the context
+            updateMessages(activeDomainId, prev => prev.slice(0, -2));
         }
-    }, [inputValue, currentDomain, currentDomainObject, domainLinks, setState, setRagList]);
+    }, [inputValue, currentDomainObject, domainLinks, updateMessages, activeDomainId, setRagList]);
 
-
-    // 3.  MEMOIZED HANDLER: Wrap the keydown handler in useCallback.
     const handleKeyDown = useCallback((e) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
@@ -128,7 +123,7 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
                     ref={textareaRef}
                     value={inputValue}
                     onChange={handleInputChange}
-                    onKeyDown={handleKeyDown} // Use the memoized handler
+                    onKeyDown={handleKeyDown}
                     placeholder="Explore your knowledgebase..."
                     rows={1}
                     className="flex-1 resize-none overflow-hidden bg-transparent text-gray-800 text-base p-2 leading-relaxed focus:outline-none placeholder-gray-400 max-h-64"
@@ -138,8 +133,8 @@ function PromptContainer({ graphVisibility, toggleGraph, setState }) {
                     disabled={isInputEmpty}
                     aria-label="Send message"
                     className={`p-2 rounded-xl transition-colors duration-300 ${isInputEmpty
-                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                            : "bg-emerald-500 text-white hover:bg-emerald-600"
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-emerald-500 text-white hover:bg-emerald-600"
                         }`}
                 >
                     <Send size={24} />

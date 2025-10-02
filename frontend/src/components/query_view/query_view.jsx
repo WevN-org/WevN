@@ -31,7 +31,7 @@ export default function QueryView({ state, setState }) {
                     { "flex-grow": !graphVisibility }
                 )}
             >
-                <ChatMessages messages={state.messages} graphVisibility={graphVisibility} />   {/* use state.messages */}
+                <ChatMessages graphVisibility={graphVisibility} />   {/* use state.messages */}
                 <PromptContainer
                     graphVisibility={graphVisibility}
                     toggleGraph={toggleGraphView}

@@ -10,6 +10,7 @@ import AppRouter from './AppRouter.jsx'
 import { DomainsListProvider } from './contexts/domans-list-context/domains_list_provider.jsx'
 import { LinksProvider } from './contexts/link-context/link_provider.jsx'
 import { RagListProvider } from './contexts/rag-list-context/rag_list_provider.jsx'
+import { MessagesProvider } from './contexts/message-context/message_provider.jsx'
 
 
 const CLIENT_ID = "908876742569-7pqs6n9cfd64q37sv7jbm9sj955ctd8i.apps.googleusercontent.com"
@@ -21,9 +22,11 @@ createRoot(document.getElementById('root')).render(
         <LinksProvider>
           <NodesProvider>
             <DomainProvider>
-              <RagListProvider>
-                <AppRouter />
-              </RagListProvider>
+              <MessagesProvider>
+                <RagListProvider>
+                  <AppRouter />
+                </RagListProvider>
+              </MessagesProvider>
             </DomainProvider>
           </NodesProvider>
         </LinksProvider>

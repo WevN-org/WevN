@@ -42,6 +42,9 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
 
     const [dimensions, setDimensions] = useState({ width: 800, height: 800 });
     const [editConcept, setEditConcept] = useState(null);
+    // NEW: State for hover effects
+    const [hoveredNodeId, setHoveredNodeId] = useState(null);
+    const hoverTimerRef = useRef(null);
 
     // 2. ✅ LAZY INITIALIZATION: Initialize state from localStorage only once.
     const [useSemanticLinks, setUseSemanticLinks] = useState(() => {
@@ -52,6 +55,9 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
             return false;
         }
     });
+
+
+
 
     // 3. ✅ DERIVED STATE: Derive settings directly from context instead of a useEffect->useState chain.
     const savedSettings = useMemo(() => {
@@ -151,6 +157,55 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
         [savedSettings, maxSemanticLinks, threshold]
     );
 
+    // NEW: Memoize highlighted nodes and links for performance
+    const highlight = useMemo(() => {
+        if (!hoveredNodeId) {
+            return { nodes: new Set(), links: new Set() };
+        }
+
+        const highlightNodes = new Set([hoveredNodeId]);
+        const highlightLinks = new Set();
+
+        // Note: The graphData object uses {nodes, links}, and links have {source, target}
+        // where source and target are the full node objects after the engine processes them.
+        graphData.links.forEach(link => {
+            if (link.source.id === hoveredNodeId) {
+                highlightLinks.add(link);
+                highlightNodes.add(link.target.id);
+            }
+            if (link.target.id === hoveredNodeId) {
+                highlightLinks.add(link);
+                highlightNodes.add(link.source.id);
+            }
+        });
+
+        return { nodes: highlightNodes, links: highlightLinks };
+    }, [hoveredNodeId, graphData]);
+
+
+
+
+    // NEW: Delayed hover handler
+    const handleNodeHover = useCallback((node) => {
+        clearTimeout(hoverTimerRef.current); // Clear any existing timer
+
+        if (node) {
+            // Set a new timer to activate the highlight after a delay
+            hoverTimerRef.current = setTimeout(() => {
+                setHoveredNodeId(node.id);
+            }, 400); // 200ms delay
+        } else {
+            // If mouse leaves, clear highlight immediately
+            setHoveredNodeId(null);
+        }
+    }, []);
+
+
+
+
+
+
+
     // --- Other Effects (largely unchanged as they were correct) ---
 
     useEffect(() => {
@@ -162,22 +217,28 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
         return () => observer.disconnect();
     }, []);
 
+
+
+    // Add this useEffect to your GraphContainer component
+
+    // Add this useEffect to your GraphContainer component to zoom upon graph change or initial load(well default is enough for now)
+
     // useEffect(() => {
-    //     // Give the physics engine a "kick" to re-evaluate animations.
-    //     // This is crucial for when the link structure changes (e.g., toggling semantic links).
-    //     if (fgRef.current) {
-    //         fgRef.current.d3ReheatSimulation();
+    //     // Ensure the graph ref is ready and there are nodes to fit
+    //     if (fgRef.current && graphData.nodes.length > 0) {
+
+    //         // Use a timeout to allow the physics engine to start arranging nodes first
+    //         const timer = setTimeout(() => {
+    //             if (fgRef.current) { // Check ref again in case component unmounted
+    //                  fgRef.current.zoomToFit(400, 120); // 400ms transition, 150px padding
+    //             }
+    //         }, 200); // 200ms delay, this value can be adjusted
+
+    //         // It's a best practice to clear the timeout if the component unmounts
+    //         // or if graphData changes again before the timeout has fired.
+    //         return () => clearTimeout(timer);
     //     }
-    // }, [graphData]);
-    //     useEffect(() => {
-    //     if (fgRef.current) {
-    //         fgRef.current.d3ReheatSimulation();
-    //         fgRef.current.refresh();  // Important: redraw triggers particle restart
-    //     }
-    // }, [graphData]);  // <- dependency on graphData
-
-
-
+    // }, [graphData]); // Re-run this effect whenever the graph data changes
 
 
     useEffect(() => {
@@ -190,7 +251,7 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
     const handleNodeClick = useCallback((node) => {
         if (!fgRef.current) return;
         fgRef.current.centerAt(node.x, node.y, 1000);
-        fgRef.current.zoom(3, 1000);
+        fgRef.current.zoom(7, 1000);
     }, []);
 
     const handleNodeRightClick = useCallback((node) => {
@@ -261,13 +322,21 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
     // }, [ragList, graphData]); // Rerun if the core data changes
 
     const nodeCanvasObject = useCallback((node, ctx, globalScale) => {
+
+        // Determine if the graph is in a highlighted state and if the current node is NOT part of it
+        const isDimmed = highlight.nodes.size > 0 && !highlight.nodes.has(node.id);
+        const originalAlpha = ctx.globalAlpha;
+        ctx.globalAlpha = isDimmed ? 0 : 1.0; // Dim non-highlighted nodes
+
+
+
         // 1. --- Pulsing Halo Animation ---
         if (ragList.includes(node.id)) {
             // --- Animation settings (tweak these for different effects) ---
             const burstDuration = 1200; // milliseconds for one full burst cycle
             const zoomOutFixRadius = 50 / globalScale;
             const zoomInFixRadius = 20
-            const maxBurstRadius = zoomOutFixRadius> zoomInFixRadius ? zoomOutFixRadius : zoomInFixRadius  // Max radius of the burst circle
+            const maxBurstRadius = zoomOutFixRadius > zoomInFixRadius ? zoomOutFixRadius : zoomInFixRadius  // Max radius of the burst circle
             const baseAlpha = 1;      // Starting opacity for the burst
 
             // Calculate time since component mount (or start of animation)
@@ -304,7 +373,7 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
         ctx.fill();
 
         // 3. --- Node Label  ---
-        const TEXT_VISIBILITY_THRESHOLD = 1.1;
+        const TEXT_VISIBILITY_THRESHOLD = 1.9;
         if (globalScale >= TEXT_VISIBILITY_THRESHOLD) {
             // 3. If it is, draw the text as before
             ctx.font = `${13 / globalScale}px Sans-Serif`;
@@ -313,8 +382,10 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
             ctx.fillStyle = "black";
             ctx.fillText(node.label, node.x, node.y + 10);
         }
+        // IMPORTANT: Reset alpha to its original value
+        ctx.globalAlpha = originalAlpha;
 
-    }, [ragList]); // Make sure ragList is in the dependency array if you use useCallback
+    }, [ragList, highlight]); // Make sure ragList is in the dependency array if you use useCallback
 
     // At the top of your component
     // const getLinkParticles = useCallback((link) => {
@@ -323,9 +394,36 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
 
     // const getLinkParticleColor = useCallback((link) => link.source.color, []);
 
+    // REPLACE your existing getLinkColor function with this one
+
+
+
+
+
+
     const getLinkColor = useCallback((link) => {
-        return ragList.includes(link.source.id) ? link.source.color : "#ccccccff"
-    },[ragList])
+        // Priority 1: Highlighted links always get their source color
+        if (highlight.links.has(link)) {
+            return link.source.color;
+        }
+
+        
+        // Priority 2: For all other "default" links
+        // If a node is being hovered anywhere on the graph, make them transparent.
+        // Otherwise, show them in the default grey color.
+        return hoveredNodeId ? 'transparent' : '#ccccccff';
+
+    }, [highlight, hoveredNodeId]); // <-- IMPORTANT: Add hoveredNodeId to the dependency array
+
+
+
+
+
+
+
+    const getLinkWidth = useCallback((link) => {
+        return highlight.links.has(link) ? 2.5 : 1;
+    }, [highlight]);
 
     return (
         <div
@@ -343,16 +441,17 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
                     height={dimensions.height}
                     graphData={graphData}
                     forceEngine="ngraph"
-                    cooldownTime={ragList.length > 0 ? 60000 : 15000}
+                    cooldownTime={ragList.length > 0 ? 120000 : 15000}
                     nodeLabel="label"
                     nodeCanvasObject={nodeCanvasObject}
                     linkColor={getLinkColor}
                     backgroundColor="#fff"
+                    onNodeHover={handleNodeHover}
                     onNodeClick={handleNodeClick}
                     onNodeRightClick={handleNodeRightClick}
-                    linkDirectionalParticleColor={(link) => link.source.color}
-                    linkDirectionalParticleSpeed={0.006} // The synced speed we calculated
-                    // linkDirectionalParticleWidth={2}
+                // linkDirectionalParticleColor={(link) => link.source.color}
+                // linkDirectionalParticleSpeed={0.006} // The synced speed we calculated
+                // linkDirectionalParticleWidth={2}
                 // linkDirectionalParticles={getLinkParticles}
                 // linkDirectionalParticleColor={getLinkParticleColor}
                 // linkDirectionalParticleSpeed={0.006}
