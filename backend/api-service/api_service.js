@@ -333,12 +333,12 @@ export const ApiService = {
     },
 
     async clearMemory(conversation_id) {
-        const response = await fetch(`${baseUrl}/history/summarize`, {
+        const response = await fetch(`${baseUrl}/history/clear`, {
             method: "POST",
             headers: Headers,
             body: JSON.stringify({ conversation_id }),
         });
-        return await handleResponse(response, "failed to create history");
+        return await handleResponse(response, "failed to clear history");
     }
 }; // end of api service
 

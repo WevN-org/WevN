@@ -4,6 +4,11 @@ import PromptContainer from "./prompt_container";
 import ChatMessages from "./chat_messages";
 import clsx from "clsx";
 import { Trash2, Plus, Sparkles, X, Loader2, AlertCircle } from 'lucide-react';
+import { ApiService } from "../../../../backend/api-service/api_service";
+import { useDomain } from "../../contexts/domain-context/domain_context";
+import { useMessages } from "../../contexts/message-context/message_context";
+import { useLinks } from "../../contexts/link-context/link_context";
+import { toast } from "react-toastify";
 
 
 export default function QueryView({ state, setState }) {
@@ -51,13 +56,35 @@ function ModernHeader({ graphVisibility }) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(false);
     const [onSuccess, setSuccess] = useState(false);
+    const { currentDomain } = useDomain();
+    const { clearMessages, activeDomainId } = useMessages();
+    const { domainLinks } = useLinks();
+    const [statusString, setStatusString] = useState()
+    // console.log("dm: ",domainLinks[activeDomainId])
 
-    const handleClearChat = () => {
-        console.log('Clear chat clicked');
+    const handleClearChat = async () => {
+        if (!activeDomainId) return
+        try {
+            const isConfirmed = window.confirm(
+                `Are you sure you want to clear all messages for the "${currentDomain}" domain? This cannot be undone.`
+            );
+
+            if (isConfirmed) {
+                // 3. Call the clearMessages function with the current domain's ID
+                clearMessages(activeDomainId);
+                await ApiService.clearMemory(activeDomainId);
+                toast.success("Chat history has been cleared.");
+            }
+            
+        }
+        catch (err) {
+            console.log(err)
+            toast.error(`Error: ${err}`)
+        }
     };
 
     const handleCreateNode = async () => {
-        if (!query.trim()) return;
+        if (!query.trim() || !currentDomain || !activeDomainId || !domainLinks) return;
 
         setIsLoading(true);
         setError(false);
@@ -65,16 +92,24 @@ function ModernHeader({ graphVisibility }) {
         try {
             //call node create api here 
 
+            const newNode = await ApiService.autoCreateNode(
+                currentDomain,
+                activeDomainId,
+                query,
+                domainLinks[activeDomainId].max_links,
+                domainLinks[activeDomainId].distance_threshold
 
-            await new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    // Randomly succeed or fail for demo
-                    Math.random() > 0.3 ? resolve() : reject();
-                }, 2000);
-            });
+            )
+            // await new Promise((resolve, reject) => {
+            //     setTimeout(() => {
+            //         // Randomly succeed or fail for demo
+            //         Math.random() > 0.3 ? resolve() : reject();
+            //     }, 2000);
+            // });
 
             // Success - close modal and reset
             // setShowNodeModal(false); // enable if need autoclose
+            setStatusString(`Node ${newNode.name} created successfully!`)
             setSuccess(true);
             setQuery('');
             setIsLoading(false);
@@ -201,7 +236,7 @@ function ModernHeader({ graphVisibility }) {
                                 {onSuccess && (
                                     <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg animate-in slide-in-from-top-2 duration-200">
                                         <Sparkles className="w-5 h-5 text-green-500 flex-shrink-0" />
-                                        <p className="text-sm text-green-700">Node created successfully!</p>
+                                        <p className="text-sm text-green-700">{statusString}</p>
                                     </div>
                                 )}
 

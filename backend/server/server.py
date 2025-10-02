@@ -37,6 +37,7 @@ try:
     from pydantic import BaseModel, Field
     from typing import Optional
     from langchain_community.chat_message_histories import SQLChatMessageHistory
+    from sqlalchemy.orm import declarative_base 
     from sqlalchemy.ext.asyncio import create_async_engine
     from langchain_core.runnables.history import RunnableWithMessageHistory
 except Exception as e:
@@ -65,7 +66,8 @@ app_state = {}
 prompt = None
 raw_chain = None
 
-async_engine = create_async_engine("sqlite+aiosqlite:///chat_memory.db", echo=False)
+async_engine = create_async_engine("sqlite+aiosqlite:///chat_memory.db", echo=True)
+Base = declarative_base()
 chain_with_memory = None
 
 
