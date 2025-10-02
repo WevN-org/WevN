@@ -37,7 +37,6 @@ try:
     from pydantic import BaseModel, Field
     from typing import Optional
     from langchain_community.chat_message_histories import SQLChatMessageHistory
-    from sqlalchemy.orm import declarative_base 
     from sqlalchemy.ext.asyncio import create_async_engine
     from langchain_core.runnables.history import RunnableWithMessageHistory
 except Exception as e:
@@ -66,8 +65,7 @@ app_state = {}
 prompt = None
 raw_chain = None
 
-async_engine = create_async_engine("sqlite+aiosqlite:///chat_memory.db", echo=True)
-Base = declarative_base()
+async_engine = create_async_engine("sqlite+aiosqlite:///chat_memory.db", echo=False)
 chain_with_memory = None
 
 
@@ -672,6 +670,7 @@ async def query_stream(payload: QueryModel):
     retrieved_docs = []
     retrieved_ids = []
     context = "No relevant context found."
+    print(f"distance Threshold: {payload.distance_threshold}, maxlinks: {payload.max_results}")
 
     try:
         collection = client.get_collection(payload.collection)
@@ -827,7 +826,7 @@ async def clear_history(payload: ClearHistoryModel):
         )
 
         # 2. Call the async clear() method
-        await history.clear()
+        await history.aclear()
 
         # Optional: Remove the memory object from the in-memory cache if you want
         if payload.conversation_id in memory_dict:

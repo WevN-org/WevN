@@ -65,28 +65,30 @@ function ModernHeader({ graphVisibility }) {
     const { clearMessages, activeDomainId } = useMessages();
     const { domainLinks } = useLinks();
     const [statusString, setStatusString] = useState()
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
     // console.log("dm: ",domainLinks[activeDomainId])
 
     const handleClearChat = async () => {
-        if (!activeDomainId) return
-        try {
-            const isConfirmed = window.confirm(
-                `Are you sure you want to clear all messages for the "${currentDomain}" domain? This cannot be undone.`
-            );
+        if (!activeDomainId) {
+            toast.warn("No active domain selected to clear.");
+            return;
+        }
+        setShowClearConfirm(true);
 
-            if (isConfirmed) {
-                // 3. Call the clearMessages function with the current domain's ID
-                clearMessages(activeDomainId);
-                await ApiService.clearMemory(activeDomainId);
-                toast.success("Chat history has been cleared.");
-            }
-            
-        }
-        catch (err) {
-            console.log(err)
-            toast.error(`Error: ${err}`)
-        }
     };
+
+    const clearChat = async () => {
+        try {
+            clearMessages(activeDomainId);
+            await ApiService.clearMemory(activeDomainId);
+            toast.success("Chat history has been cleared.");
+        } catch (err) {
+            console.log(err);
+            toast.error(`${err}`);
+        } finally {
+            setShowClearConfirm(false);
+        }
+    }
 
     const handleCreateNode = async () => {
         if (!query.trim() || !currentDomain || !activeDomainId || !domainLinks) return;
@@ -115,6 +117,7 @@ function ModernHeader({ graphVisibility }) {
             // Success - close modal and reset
             // setShowNodeModal(false); // enable if need autoclose
             setStatusString(`Node ${newNode.name} created successfully!`)
+            toast.success(`Node ${newNode.name} created successfully!`);
             setSuccess(true);
             setQuery('');
             setIsLoading(false);
@@ -124,6 +127,7 @@ function ModernHeader({ graphVisibility }) {
 
         } catch (err) {
             // Failure - show retry
+            toast.error(`${err}`)
             setError(true);
             setIsLoading(false);
         }
@@ -183,6 +187,59 @@ function ModernHeader({ graphVisibility }) {
                     </div>
                 </div>
             </div>
+            {/* ... inside the return statement of ModernHeader, after the main header div */}
+
+            {/* Confirmation Popup for Clearing Chat */}
+            {showClearConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl shadow-gray-900/20 animate-in zoom-in-95 duration-200">
+                        {/* Red accent bar for destructive action */}
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-red-600 to-yellow-500 rounded-t-2xl" />
+
+                        {/* Modal header */}
+                        <div className="flex items-start justify-between p-6 pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/30">
+                                    <AlertCircle className="w-5 h-5 text-white" strokeWidth={2.5} />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-900">Clear Chat History</h2>
+                                    <p className="text-xs text-gray-500">This action cannot be undone.</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowClearConfirm(false)}
+                                className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                            >
+                                <X className="w-5 h-5 text-gray-500" />
+                            </button>
+                        </div>
+
+                        {/* Modal body */}
+                        <div className="px-6 pb-6">
+                            <p className="text-sm text-gray-600 mb-6">
+                                Are you sure you want to permanently delete all messages for the "<strong>{currentDomain}</strong>" domain?
+                            </p>
+
+                            {/* Action buttons */}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowClearConfirm(false)}
+                                    className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={clearChat}
+                                    className="flex-1 px-4 py-3 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-xl font-medium shadow-md shadow-red-500/30 hover:shadow-lg hover:shadow-red-500/40 hover:-translate-y-0.5 transition-all duration-300"
+                                >
+                                    Yes, Clear History
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal */}
             {showNodeModal && (
