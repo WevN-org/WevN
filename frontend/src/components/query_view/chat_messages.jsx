@@ -50,7 +50,7 @@ const ChatMessageBubble = memo(function ChatMessageBubble({ message }) {
     <div className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
       <div
         className={clsx(
-          "px-4 py-2 rounded-2xl max-w-[75%] text-sm shadow prose prose-sm break-words overflow-x-auto",
+          "px-4 py-2 rounded-2xl max-w-[75%] text-sm shadow prose prose-sm break-words overflow-x-auto whitespace-pre-wrap",
           {
             "bg-emerald-500 text-white rounded-br-none prose-invert": message.role === "user",
             "bg-gray-200 text-gray-900 rounded-bl-none": message.role !== "user",

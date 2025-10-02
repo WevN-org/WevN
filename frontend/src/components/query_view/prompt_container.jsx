@@ -39,7 +39,6 @@ function PromptContainer({ graphVisibility, toggleGraph }) {
 
     const handleSendMessage = useCallback(async () => {
         const userMessage = inputValue;
-        console.log("usermessage: ", userMessage, "\ncurrentDomainObject: ", currentDomainObject, "\nactiveDomainID: ", activeDomainId)
         if (!userMessage || !currentDomainObject || !activeDomainId) {
             if (!currentDomainObject) {
                 toast.error("No active domain selected.");
@@ -126,7 +125,7 @@ function PromptContainer({ graphVisibility, toggleGraph }) {
                     onKeyDown={handleKeyDown}
                     placeholder="Explore your knowledgebase..."
                     rows={1}
-                    className="flex-1 resize-none overflow-hidden bg-transparent text-gray-800 text-base p-2 leading-relaxed focus:outline-none placeholder-gray-400 max-h-64"
+                    className="flex-1 resize-none overflow-auto bg-transparent text-gray-800 text-base p-2 leading-relaxed focus:outline-none placeholder-gray-400 max-h-64"
                 />
                 <button
                     onClick={handleSendMessage}

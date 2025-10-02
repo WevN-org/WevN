@@ -250,8 +250,6 @@ export const ApiService = {
      * @param {string} conversation_id - Conversation ID
      * @param {number} max_results - Max results to retrieve
      * @param {number} distance_threshold - Similarity threshold
-     * @param {boolean} include_semantic_links - Include semantic links
-     * @param {boolean} brainstorm_mode - Brainstorm mode flag
      * @param {(chunk: string) => void} onChunk - Callback for each chunk
      * @returns {Promise<void>}
      */
@@ -286,7 +284,7 @@ export const ApiService = {
         console.log("here")
         let retrievedIds = null;
         if (retrievedIdsHeader) {
-            
+
             try {
                 retrievedIds = JSON.parse(retrievedIdsHeader);
                 if (onRetrievedIds) onRetrievedIds(retrievedIds);
@@ -311,6 +309,36 @@ export const ApiService = {
             // console.log("Received chunk:", chunk); 
             if (chunk && onChunk) onChunk(chunk);
         }
+    },
+
+    async autoCreateNode(
+        collection,
+        session_id,
+        query,
+        max_results,
+        distance_threshold
+    ) {
+        const response = await fetch(`${baseUrl}/history/summarize`, {
+            method: "POST",
+            headers: Headers,
+            body: JSON.stringify({
+                session_id,
+                query,
+                collection,
+                max_results,
+                distance_threshold,
+            }),
+        });
+        return await handleResponse(response,"failed to create node");
+    },
+
+    async clearMemory(conversation_id){
+        const response = await fetch(`${baseUrl}/history/summarize`, {
+            method: "POST",
+            headers: Headers,
+            body: JSON.stringify({conversation_id}),
+        });
+        return await handleResponse(response, "failed to create history");
     }
 };
 

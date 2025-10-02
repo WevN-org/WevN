@@ -257,8 +257,7 @@ def verify_api_key(request: Request):
         raise HTTPException(status_code=403, detail="Forbidden: Invalid API Key")
     
 async def verify_llm_ready():
-    await llm_ready.wait()
-    await summary_llm_ready.wait()
+
     if llm_error:
         raise HTTPException(status_code=503, detail=f"LLM not available: {llm_error}")
 
