@@ -8,8 +8,11 @@ import { Trash2, Plus, Sparkles, X, Loader2, AlertCircle } from 'lucide-react';
 
 export default function QueryView({ state, setState }) {
     const [graphVisibility, setGraphVisibility] = useState(true);
+    // expand graph view
+    const [chatVisibiilty, setChatVisibility] = useState(false);
 
     const toggleGraphView = () => setGraphVisibility((prev) => !prev);
+    const toggleChatWindow = () => setChatVisibility((prev) => !prev);
 
     return (
         <main
@@ -23,14 +26,16 @@ export default function QueryView({ state, setState }) {
             )}
         >
             {/* Graph */}
-            <GraphContainer isVisible={graphVisibility} className="w-full md:w-[40%] h-64 md:h-auto md:order-last" />
+            <GraphContainer isVisible={graphVisibility} isChatVisible={!chatVisibiilty} toggleChatWindow={toggleChatWindow} className="w-full md:w-[40%] h-64 md:h-auto md:order-last" />
 
             {/* Chat */}
             <div
                 id="chat-window"
                 className={clsx(
-                    "relative flex flex-col h-full flex-1 order-last md:order-first transition-all duration-500",
-                    { "flex-grow": !graphVisibility }
+                    "relative flex flex-col h-full order-last md:order-first transition-all duration-500",
+                    { "flex-grow": !graphVisibility },
+                    { 'w-0 flex-0 opacity-0': chatVisibiilty },
+                    { 'flex-1': !chatVisibiilty }
                 )}
             >
                 <ModernHeader graphVisibility={graphVisibility} />
