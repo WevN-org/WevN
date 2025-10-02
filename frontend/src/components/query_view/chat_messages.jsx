@@ -7,6 +7,7 @@ import { materialDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import { useMessages } from "../../contexts/message-context/message_context";
 
 // --- Utility: Normalize math delimiters (\(...\), \[...\]) into $...$ / $$...$$ ---
 function normalizeMathDelimiters(text) {
@@ -110,9 +111,14 @@ const ChatMessageBubble = memo(function ChatMessageBubble({ message }) {
   );
 });
 
-export default function ChatMessages({ messages, graphVisibility }) {
+export default function ChatMessages({ graphVisibility }) {
+  // console.log("messages: ",messages)
   const scrollContainerRef = useRef(null); // Ref for the scrollable div
   const messagesEndRef = useRef(null);     // Ref for the target element at the bottom
+  const { messages } = useMessages();
+  useEffect(()=>{
+    console.log("messages from context: ", messages);
+  },[messages])
 
   useEffect(() => {
     const container = scrollContainerRef.current;
