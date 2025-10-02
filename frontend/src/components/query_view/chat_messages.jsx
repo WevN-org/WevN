@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { useEffect, useRef, useState, useMemo ,memo} from "react";
+import { useEffect, useRef, useState, useMemo, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -47,6 +47,7 @@ const ChatMessageBubble = memo(function ChatMessageBubble({ message }) {
   };
 
   return (
+
     <div className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
       <div
         className={clsx(
@@ -108,6 +109,7 @@ const ChatMessageBubble = memo(function ChatMessageBubble({ message }) {
         )}
       </div>
     </div>
+
   );
 });
 
@@ -145,7 +147,7 @@ export default function ChatMessages({ graphVisibility }) {
     <div
       ref={scrollContainerRef} // ✅ Assign the ref to the scrollable container
       className={clsx(
-        "overflow-y-auto p-4 space-y-4 max-h-[90%] pt-14 transition-all duration-500",
+        "overflow-y-auto p-4 space-y-2 max-h-[90%] transition-all duration-500",
         {
           "w-1/2 mx-auto": !graphVisibility,
         }

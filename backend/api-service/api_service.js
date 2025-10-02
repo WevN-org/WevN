@@ -329,18 +329,18 @@ export const ApiService = {
                 distance_threshold,
             }),
         });
-        return await handleResponse(response,"failed to create node");
+        return await handleResponse(response, "failed to create node");
     },
 
-    async clearMemory(conversation_id){
+    async clearMemory(conversation_id) {
         const response = await fetch(`${baseUrl}/history/summarize`, {
             method: "POST",
             headers: Headers,
-            body: JSON.stringify({conversation_id}),
+            body: JSON.stringify({ conversation_id }),
         });
         return await handleResponse(response, "failed to create history");
     }
-};
+}; // end of api service
 
 
 

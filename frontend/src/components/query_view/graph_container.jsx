@@ -193,7 +193,7 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
             // Set a new timer to activate the highlight after a delay
             hoverTimerRef.current = setTimeout(() => {
                 setHoveredNodeId(node.id);
-            }, 1000); // 200ms delay
+            }, 400); // 200ms delay
         } else {
             // If mouse leaves, clear highlight immediately
             setHoveredNodeId(null);
@@ -407,7 +407,7 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
             return link.source.color;
         }
 
-        
+
         // Priority 2: For all other "default" links
         // If a node is being hovered anywhere on the graph, make them transparent.
         // Otherwise, show them in the default grey color.
