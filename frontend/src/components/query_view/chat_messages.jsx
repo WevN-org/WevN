@@ -116,9 +116,9 @@ export default function ChatMessages({ graphVisibility }) {
   const scrollContainerRef = useRef(null); // Ref for the scrollable div
   const messagesEndRef = useRef(null);     // Ref for the target element at the bottom
   const { messages } = useMessages();
-  useEffect(()=>{
-    console.log("messages from context: ", messages);
-  },[messages])
+  // useEffect(()=>{
+  //   console.log("messages from context: ", messages);
+  // },[messages])
 
   useEffect(() => {
     const container = scrollContainerRef.current;

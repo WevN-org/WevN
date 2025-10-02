@@ -27,7 +27,7 @@ const App = ({ onLogout }) => {
             { role: "assistant", content: "Hi! Ask me anything about your knowledgebase." }
         ],
     });
-    const {setDomains } = useDomainsList();
+    const { setDomains } = useDomainsList();
 
     // Preventing the default browser menus (like: the rightclick browser default menu)
     // useEffect(() => {
@@ -56,7 +56,7 @@ const App = ({ onLogout }) => {
                         domains: result
                     })
                 )
-                 setDomains(result);
+                setDomains(result);
             }
             catch (err) {
                 console.log(err)
@@ -111,13 +111,16 @@ const App = ({ onLogout }) => {
 
 
     const [activeTab, setActiveTab] = useState('All');
+    const profile = JSON.parse(localStorage.getItem("userProfile") || "{}");
+
+
 
     return (
         //pass onlogout to accounts page later to logout
         <>
             <LogProvider>
                 <div className='flex overflow-hidden h-screen'>
-                    <Sidebar state={state} setState={setState} />
+                    <Sidebar state={state} setState={setState} userpic={profile.picture} username={profile.name} email={profile.email} />
                     {(() => {
                         switch (state.currentView) {
                             case 'query':
@@ -132,7 +135,7 @@ const App = ({ onLogout }) => {
                                     />
                                 );
                             case 'account':
-                                return <AccountView state={state} setState={setState} />;
+                                return <AccountView state={state} setState={setState} user={profile} onLogout={onLogout} />;
                             default:
                                 return null; // fallback if currentView is unexpected
                         }

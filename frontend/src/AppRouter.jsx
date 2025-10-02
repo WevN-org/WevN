@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import Auth from "./components/onboarding/auth";
 import App from "./app";
+import Auth from "./components/onboarding/Auth";
 
 const AppRouter = () => {
     const [accessToken, setAccessToken] = useState(null);
@@ -22,6 +22,7 @@ const AppRouter = () => {
     const handleLogout = () => {
         setAccessToken(null);
         localStorage.removeItem("accessToken");
+        localStorage.removeItem("userProfile");
     };
 
     if (loading) return <div>Loading...</div>;

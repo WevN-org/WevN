@@ -193,7 +193,7 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
             // Set a new timer to activate the highlight after a delay
             hoverTimerRef.current = setTimeout(() => {
                 setHoveredNodeId(node.id);
-            }, 400); // 200ms delay
+            }, 1000); // 200ms delay
         } else {
             // If mouse leaves, clear highlight immediately
             setHoveredNodeId(null);
@@ -373,7 +373,7 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
         ctx.fill();
 
         // 3. --- Node Label  ---
-        const TEXT_VISIBILITY_THRESHOLD = 1.9;
+        const TEXT_VISIBILITY_THRESHOLD = 1;
         if (globalScale >= TEXT_VISIBILITY_THRESHOLD) {
             // 3. If it is, draw the text as before
             ctx.font = `${13 / globalScale}px Sans-Serif`;

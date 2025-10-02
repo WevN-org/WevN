@@ -6,9 +6,7 @@ import { ApiService } from "../../../backend/api-service/api_service";
 import { toast } from "react-toastify";
 import { useDomain } from "../contexts/domain-context/domain_context";
 
-const Sidebar = ({ state, setState }) => {
-
-
+const Sidebar = ({ state, setState, userpic, username, email }) => {
     const { currentDomain, setDomain } = useDomain();
     // -- the currentDomain context --
     // console.log(`current: ${currentDomain}`)
@@ -64,7 +62,7 @@ const Sidebar = ({ state, setState }) => {
 
     const handleDomainRename = async (oldName, newName) => {
         try {
-            
+
             await ApiService.renameDomain(oldName, newName);
             toast.success(`${oldName} renamed to ${newName} successfully.`);
             setShowRenamePopup(false);
@@ -92,7 +90,7 @@ const Sidebar = ({ state, setState }) => {
                 toast.success(`${domainName} created successfully.`);
                 setShowCreatePopup(false);
                 setNewDomain("");
-            } catch(e) {
+            } catch (e) {
                 toast.error(`${e}`);
             }
         }
@@ -149,9 +147,19 @@ const Sidebar = ({ state, setState }) => {
                     onClick={handleAccountClick}
                 >
                     {!isCollapsed && !sidebarVisibility && (
-                        <h1 className="text-3xl font-extrabold text-gray-800">WevN</h1>
+                        <div className="flex flex-col items-start">
+                            <small>Hi there,</small>
+                            <span className="font-semibold text-2xl text-gray-900">{username || "User"}</span>
+                        </div>
                     )}
-                    <img src="https://randomuser.me/api/portraits/men/33.jpg" alt="WevN Logo" className={clsx('h-10 rounded-full', { 'mr-2 h-8': !isCollapsed })} />
+
+                    <img
+                        src={userpic ? userpic.replace(/=s96-c$/, "=s200-c") : "logo.png"}
+                        alt="WevN Logo"
+                        className={clsx('rounded-full', { 'h-10 mr-2': !isCollapsed, 'h-10': isCollapsed })}
+                        loading="lazy"
+                    />
+
                 </button>
 
                 {/* Collapsed Search Button */}

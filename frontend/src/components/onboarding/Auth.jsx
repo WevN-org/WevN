@@ -181,14 +181,20 @@ export default function Auth({ onLogin }) {
 const MyGoogleButton = ({ onLogin }) => {
     const navigate = useNavigate();
     const login = useGoogleLogin({
-        onSuccess: (tokenResponse) => {
-            //console.log(jwtDecode(tokenResponse.access_token));
-            //console.log(tokenResponse);
-            onLogin(tokenResponse.access_token);
+        onSuccess: async (tokenResponse) => {
+            const token = tokenResponse.access_token;
+            localStorage.setItem("accessToken", token);
+            // Fetch user profile
+            const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const profile = await res.json(); // { name, email, picture }
+            localStorage.setItem("userProfile", JSON.stringify(profile));
+            onLogin(token); // still needed to update state in AppRouter
             navigate("/");
-            toast.success("Login success!")
-
+            toast.success(`Welcome, ${profile.name}`);
         },
+
         onError: () => {
             toast.error("Unable to login. Please try again!");
         },
