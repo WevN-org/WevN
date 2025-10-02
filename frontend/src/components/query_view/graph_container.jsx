@@ -10,6 +10,7 @@ import { useDomain } from "../../contexts/domain-context/domain_context";
 import { useLinks } from "../../contexts/link-context/link_context";
 import { useDomainsList } from "../../contexts/domans-list-context/domains_list_context";
 import { useRagList } from "../../contexts/rag-list-context/rag_list_context";
+import { Expand } from "lucide-react";
 
 // 1. ✅ STABLE COLORS: A simple hash function to generate a consistent color from a node ID.
 const stringToColor = (str) => {
@@ -30,7 +31,7 @@ const stringToColor = (str) => {
     return `hsl(${hue * 360}, 90%,55%)`;
 };
 
-const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
+const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVisible, toggleChatWindow }) {
     const { domainLinks, setLinksForDomain } = useLinks();
     const { domains } = useDomainsList();
     const { nodesList } = useNodes();
@@ -457,6 +458,16 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible }) {
                 // linkDirectionalParticleSpeed={0.006}
                 />
             </div>
+
+            <div className="absolute top-5 right-5">
+                <button
+                    onClick={toggleChatWindow}
+                    className="px-3 py-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-md hover:shadow-lg transition-all duration-200 text-sm font-medium"
+                >
+                    {isChatVisible ? 'Hide Chat' : 'Show Chat'}
+                </button>
+            </div>
+
 
             {/* Graph Controls */}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-3xl">
