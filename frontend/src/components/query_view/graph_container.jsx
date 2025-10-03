@@ -12,7 +12,7 @@ import { useDomainsList } from "../../contexts/domans-list-context/domains_list_
 import { useRagList } from "../../contexts/rag-list-context/rag_list_context";
 import { Expand } from "lucide-react";
 
-// 1. ✅ STABLE COLORS: A simple hash function to generate a consistent color from a node ID.
+//  A simple hash function to generate a consistent color from a node ID.
 const stringToColor = (str) => {
     // 1. We still use FNV-1a to get a good hash.
     let hash = 2166136261;
@@ -20,10 +20,10 @@ const stringToColor = (str) => {
         hash ^= str.charCodeAt(i);
         hash *= 16777619;
     }
-    // 2. ✅ The Fix: Force the hash to be a positive 32-bit integer.
+    //Force the hash to be a positive 32-bit integer.
     // The '>>> 0' is a JavaScript trick for unsigned conversion.
     const unsignedHash = hash >>> 0;
-    // 3. ✅ Normalize the hash to a 0-1 range using division.
+    // Normalize the hash to a 0-1 range using division.
     // 0xffffffff is the largest 32-bit unsigned integer (4,294,967,295).
     const hue = unsignedHash / 0xffffffff;
 
@@ -47,7 +47,7 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVis
     const [hoveredNodeId, setHoveredNodeId] = useState(null);
     const hoverTimerRef = useRef(null);
 
-    // 2. ✅ LAZY INITIALIZATION: Initialize state from localStorage only once.
+    // LAZY INITIALIZATION: Initialize state from localStorage only once.
     const [useSemanticLinks, setUseSemanticLinks] = useState(() => {
         try {
             const saved = localStorage.getItem("graphSemanticView");
@@ -60,7 +60,7 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVis
 
 
 
-    // 3. ✅ DERIVED STATE: Derive settings directly from context instead of a useEffect->useState chain.
+    // DERIVED STATE: Derive settings directly from context instead of a useEffect->useState chain.
     const savedSettings = useMemo(() => {
         if (!currentDomain || !domains.length) {
             return { maxSemanticLinks: 20, threshold: 1.3 };
@@ -85,7 +85,7 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVis
         setThreshold(savedSettings.threshold);
     }, [savedSettings]);
 
-    // 4. ✅ MEMOIZED GRAPH DATA: Consolidate and memoize node/link calculation.
+    //  MEMOIZED GRAPH DATA: Consolidate and memoize node/link calculation.
     // This expensive operation now only runs when nodesList or the link type changes.
     const graphData = useMemo(() => {
         if (!nodesList) return { nodes: [], links: [] };
@@ -111,7 +111,7 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVis
     }, [nodesList, useSemanticLinks]);
 
 
-    // 5. ✅ MEMOIZED CALLBACKS: All handlers are wrapped in useCallback.
+    // MEMOIZED CALLBACKS: All handlers are wrapped in useCallback.
     const handleEditSave = useCallback(async (updated) => {
         setEditConcept(null);
         try {
@@ -189,12 +189,13 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVis
     // NEW: Delayed hover handler
     const handleNodeHover = useCallback((node) => {
         clearTimeout(hoverTimerRef.current); // Clear any existing timer
+        // console.log("rr",!editConcept)
 
-        if (node) {
+        if (node && !editConcept) {
             // Set a new timer to activate the highlight after a delay
             hoverTimerRef.current = setTimeout(() => {
                 setHoveredNodeId(node.id);
-            }, 400); // 200ms delay
+            }, 600); // 200ms delay
         } else {
             // If mouse leaves, clear highlight immediately
             setHoveredNodeId(null);
@@ -256,6 +257,12 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVis
     }, []);
 
     const handleNodeRightClick = useCallback((node) => {
+        // console.log("prb: ",nodesList.find((n) => n.node_id === node.id))
+         if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+    }
+        setHoveredNodeId(null); 
         setEditConcept(nodesList.find((n) => n.node_id === node.id));
     }, [nodesList]);
 
