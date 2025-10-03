@@ -131,8 +131,8 @@ const App = ({ onLogout }) => {
                                         activeTab={activeTab}
                                         setActiveTab={setActiveTab}
                                         setState={setState}
-                                        currentDomain={currentDomain}
-                                    />
+
+                                    />  
                                 );
                             case 'account':
                                 return <AccountView state={state} setState={setState} user={profile} onLogout={onLogout} />;

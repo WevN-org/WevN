@@ -10,7 +10,9 @@ import { useDomain } from "../../contexts/domain-context/domain_context";
 import { useLinks } from "../../contexts/link-context/link_context";
 import { useDomainsList } from "../../contexts/domans-list-context/domains_list_context";
 import { useRagList } from "../../contexts/rag-list-context/rag_list_context";
-import { Expand } from "lucide-react";
+import CreateConceptModel from "../concept_view/create_concept_model";
+
+
 
 //  A simple hash function to generate a consistent color from a node ID.
 const stringToColor = (str) => {
@@ -31,7 +33,7 @@ const stringToColor = (str) => {
     return `hsl(${hue * 360}, 90%,55%)`;
 };
 
-const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVisible, toggleChatWindow }) {
+const GraphContainer = React.memo(function GraphContainer({ setState, isVisible, isChatVisible, toggleChatWindow }) {
     const { domainLinks, setLinksForDomain } = useLinks();
     const { domains } = useDomainsList();
     const { nodesList } = useNodes();
@@ -46,6 +48,19 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVis
     // NEW: State for hover effects
     const [hoveredNodeId, setHoveredNodeId] = useState(null);
     const hoverTimerRef = useRef(null);
+
+
+    // popup for creating node
+    const [showCreateNodePopup, setShowNodeCreatePopup] = useState(false);
+
+
+    // for right click on the canvas
+    // const [contextMenu, setContextMenu] = useState({
+    //     visible: false,
+    //     x: 0,
+    //     y: 0,
+    // });
+
 
     // LAZY INITIALIZATION: Initialize state from localStorage only once.
     const [useSemanticLinks, setUseSemanticLinks] = useState(() => {
@@ -208,6 +223,7 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVis
 
 
 
+
     // --- Other Effects (largely unchanged as they were correct) ---
 
     useEffect(() => {
@@ -243,12 +259,8 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVis
     // }, [graphData]); // Re-run this effect whenever the graph data changes
 
 
-    useEffect(() => {
-        if (fgRef.current) {
-            fgRef.current.d3Force("charge").strength(-30);
-            fgRef.current.d3Force("link").distance(50);
-        }
-    }, []);
+    
+
 
     const handleNodeClick = useCallback((node) => {
         if (!fgRef.current) return;
@@ -258,13 +270,35 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVis
 
     const handleNodeRightClick = useCallback((node) => {
         // console.log("prb: ",nodesList.find((n) => n.node_id === node.id))
-         if (hoverTimerRef.current) {
-        clearTimeout(hoverTimerRef.current);
-        hoverTimerRef.current = null;
-    }
-        setHoveredNodeId(null); 
+        if (hoverTimerRef.current) {
+            clearTimeout(hoverTimerRef.current);
+            hoverTimerRef.current = null;
+        }
+        setHoveredNodeId(null);
         setEditConcept(nodesList.find((n) => n.node_id === node.id));
     }, [nodesList]);
+
+
+    const handleCanvasRightClick = useCallback((event) => {
+       
+        setShowNodeCreatePopup(true)
+         // const containerRect = containerRef.current.getBoundingClientRect();
+        // setContextMenu({
+        //     visible: true,
+        //     x: event.clientX - containerRect.left,
+        //     y: event.clientY - containerRect.top,
+        //     nodeId: null,
+        // });
+    }, []);
+
+    // abandoning handle delete from graph page
+    // const handleDeleteNodes = () => {
+    //     setState(prev => ({
+    //         ...prev,
+    //         currentView: 'concept',
+    //         selectedDomainId: null
+    //     }));
+    // }
 
     // ✅ FINAL, ROBUST SOLUTION: Handles browser tab throttling.
     // useEffect(() => {
@@ -334,7 +368,7 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVis
         // Determine if the graph is in a highlighted state and if the current node is NOT part of it
         const isDimmed = highlight.nodes.size > 0 && !highlight.nodes.has(node.id);
         const originalAlpha = ctx.globalAlpha;
-        ctx.globalAlpha = isDimmed ? 0 : 1.0; // Dim non-highlighted nodes
+        ctx.globalAlpha = isDimmed ? 0.1 : 1.0; // Dim non-highlighted nodes
 
 
 
@@ -426,9 +460,6 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVis
 
 
 
-
-
-
     const getLinkWidth = useCallback((link) => {
         return highlight.links.has(link) ? 2.5 : 1;
     }, [highlight]);
@@ -457,6 +488,8 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVis
                     onNodeHover={handleNodeHover}
                     onNodeClick={handleNodeClick}
                     onNodeRightClick={handleNodeRightClick}
+                    // onBackgroundClick={handleClickOutside}
+                    onBackgroundRightClick={handleCanvasRightClick}
                 // linkDirectionalParticleColor={(link) => link.source.color}
                 // linkDirectionalParticleSpeed={0.006} // The synced speed we calculated
                 // linkDirectionalParticleWidth={2}
@@ -550,6 +583,11 @@ const GraphContainer = React.memo(function GraphContainer({ isVisible, isChatVis
                     onCancel={() => setEditConcept(null)}
                 />
             )}
+            {showCreateNodePopup && (<CreateConceptModel setShowNodeCreatePopup={setShowNodeCreatePopup} />)}
+            {/* Create Concept Popup */}
+           
+            {/* {showCreateNodePopup && (<CreateConceptModel setShowNodeCreatePopup={setShowNodeCreatePopup} />)} */}
+
         </div>
     );
 });
