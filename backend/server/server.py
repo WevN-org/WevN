@@ -98,10 +98,16 @@ def create_summarization_chain():
     
     # Update the prompt to instruct the LLM on the new 'name' and 'content' fields
     prompt = PromptTemplate.from_template("""
-        You are an expert summarizer. Your response MUST be a valid JSON object.
-        Analyze the conversation below. Your task is to {task_description}.
-        
-        Based ONLY on the provided text, generate a descriptive 'name' (title) for the summary and the 'content' for the summary itself.
+        You are an expert at creating concise, self-contained knowledge nodes from conversations.
+        Your response MUST be a valid JSON object with the keys "name" and "content".
+
+        The user's instruction is: {task_description}.
+        When the instruction is to create a 'node', you must analyze the conversation below and distill its core ideas into a single summary.
+
+        - The 'name' for the node should be a very short, descriptive title (under 5 words) that captures the main subject.
+        - The 'content' for the node should be a clear and concise paragraph summarizing the key information, question, or conclusion from the text.
+
+        Based ONLY on the provided text, generate the 'name' and 'content'.
 
         --- CONVERSATION START ---
         {formatted_memory}

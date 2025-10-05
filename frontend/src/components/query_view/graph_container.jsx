@@ -259,7 +259,7 @@ const GraphContainer = React.memo(function GraphContainer({ setState, isVisible,
     // }, [graphData]); // Re-run this effect whenever the graph data changes
 
 
-    
+
 
 
     const handleNodeClick = useCallback((node) => {
@@ -280,9 +280,9 @@ const GraphContainer = React.memo(function GraphContainer({ setState, isVisible,
 
 
     const handleCanvasRightClick = useCallback((event) => {
-       
+
         setShowNodeCreatePopup(true)
-         // const containerRect = containerRef.current.getBoundingClientRect();
+        // const containerRect = containerRef.current.getBoundingClientRect();
         // setContextMenu({
         //     visible: true,
         //     x: event.clientX - containerRect.left,
@@ -458,6 +458,17 @@ const GraphContainer = React.memo(function GraphContainer({ setState, isVisible,
     }, [highlight, hoveredNodeId]); // <-- IMPORTANT: Add hoveredNodeId to the dependency array
 
 
+    const physicsConfig = useMemo(() => ({
+        timeStep: 0.5,
+        dimensions: 2,
+        gravity: -12,
+        theta: 0.8,
+        springLength: 50,
+        springCoefficient: 0.8,
+        dragCoefficient: 0.4
+    }), []);
+
+
 
 
     const getLinkWidth = useCallback((link) => {
@@ -482,6 +493,7 @@ const GraphContainer = React.memo(function GraphContainer({ setState, isVisible,
                     forceEngine="ngraph"
                     cooldownTime={ragList.length > 0 ? 120000 : 15000}
                     nodeLabel="label"
+                    // ngraphPhysics={physicsConfig}
                     nodeCanvasObject={nodeCanvasObject}
                     linkColor={getLinkColor}
                     backgroundColor="#fff"
@@ -585,7 +597,7 @@ const GraphContainer = React.memo(function GraphContainer({ setState, isVisible,
             )}
             {showCreateNodePopup && (<CreateConceptModel setShowNodeCreatePopup={setShowNodeCreatePopup} />)}
             {/* Create Concept Popup */}
-           
+
             {/* {showCreateNodePopup && (<CreateConceptModel setShowNodeCreatePopup={setShowNodeCreatePopup} />)} */}
 
         </div>
