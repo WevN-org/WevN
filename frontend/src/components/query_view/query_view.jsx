@@ -9,6 +9,8 @@ import { useDomain } from "../../contexts/domain-context/domain_context";
 import { useMessages } from "../../contexts/message-context/message_context";
 import { useLinks } from "../../contexts/link-context/link_context";
 import { toast } from "react-toastify";
+import { useRagList } from "../../contexts/rag-list-context/rag_list_context";
+
 
 
 export default function QueryView({ state, setState }) {
@@ -18,6 +20,7 @@ export default function QueryView({ state, setState }) {
 
     const toggleGraphView = () => setGraphVisibility((prev) => !prev);
     const toggleChatWindow = () => setChatVisibility((prev) => !prev);
+    
 
     return (
         <main
@@ -66,6 +69,7 @@ function ModernHeader({ graphVisibility }) {
     const { domainLinks } = useLinks();
     const [statusString, setStatusString] = useState()
     const [showClearConfirm, setShowClearConfirm] = useState(false);
+    const { setRagList } = useRagList();
     // console.log("dm: ",domainLinks[activeDomainId])
 
     const handleClearChat = async () => {
@@ -116,6 +120,7 @@ function ModernHeader({ graphVisibility }) {
 
             // Success - close modal and reset
             // setShowNodeModal(false); // enable if need autoclose
+            setRagList([newNode.id  ])
             setStatusString(`Node ${newNode.name} created successfully!`)
             toast.success(`Node ${newNode.name} created successfully!`);
             setSuccess(true);
@@ -123,7 +128,7 @@ function ModernHeader({ graphVisibility }) {
             setIsLoading(false);
 
             // Hide onSuccess message after 3 seconds
-            setTimeout(() => setSuccess(false), 3000);
+            // setTimeout(() => setSuccess(false), 3000);
 
         } catch (err) {
             // Failure - show retry
