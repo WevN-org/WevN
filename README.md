@@ -1,16 +1,18 @@
 # WevN
 
-**WevN** is a domain-specific adaptive data visualization and learning platform designed to enhance user engagement through interactive and personalized experiences. It leverages advanced AI tools and scalable backend architecture to offer intelligent data exploration and analysis.
+WevN is a secure, multi-tenant visual knowledge discovery platform designed for organizations. [cite_start]It addresses the critical gap of traditional search mechanisms by providing a unified system for visual exploration across multiple organizational domains[cite: 8, 10]. [cite_start]It allows users to discover hidden connections between concepts [cite: 14][cite_start], perform semantic operations that understand contextual meaning [cite: 12][cite_start], and interact with an AI assistant capable of reasoning from secure, isolated knowledge bases[cite: 16, 78].
 
 ---
 
 ## 🚀 Features
 
-* **Adaptive Data Visualization**: Dynamically adjusts visualizations based on user preferences and data context.
-* **Interactive Learning Modules**: Engages users with interactive tutorials and AI-assisted learning paths.
-* **AI-Powered Backend**: Utilizes FastAPI, Langchain, and ChromaDB for efficient data processing and intelligent recommendations.
-* **Responsive Design**: Optimized for desktop and mobile devices, ensuring seamless access across platforms.
-* **Modular Architecture**: Easily extendable components for future scalability and feature additions.
+* [cite_start]**Interactive Graph Visualization**: Visualize complex concept relationships as an interactive graph, not a static list[cite: 13, 92]. [cite_start]Powered by `react-force-graph-2d`[cite: 87, 107].
+* [cite_start]**RAG-Based AI Assistant**: A chatbot that provides context-aware, factually-grounded answers[cite: 295]. [cite_start]It leverages Retrieval-Augmented Generation (RAG) to synthesize information from your specific knowledge base and conversation history[cite: 78, 84, 307].
+* [cite_start]**Multi-Tenant Architecture**: Provides secure, isolated knowledge bases for different organizational units or domains, ensuring data privacy and separation[cite: 15, 95, 556].
+* [cite_start]**Semantic Search**: AI-powered retrieval based on meaning and context, not just keywords[cite: 94]. [cite_start]Uses `SentenceTransformers` [cite: 115] [cite_start]and `ChromaDB` [cite: 112] [cite_start]to find conceptually similar nodes[cite: 330].
+* [cite_start]**Domain Context Switching**: Seamlessly switch between different knowledge domains (e.g., medical, legal, technical) from a unified interface[cite: 11, 93].
+* [cite_start]**Automated Knowledge Discovery**: Features semantic linking to automatically build relationships between nodes based on vector distance[cite: 325, 327].
+* [cite_start]**Conversation-to-Node**: Can automatically summarize an AI chat conversation and save it as a new, structured knowledge node[cite: 301, 348, 349].
 
 ---
 
@@ -18,22 +20,29 @@
 
 ### Frontend
 
-* React.js
-* Vite
-* Tailwind CSS
+* [cite_start]**React.js** [cite: 118]
+* [cite_start]**React Force Graph** [cite: 107, 128] (for 2D graph visualization)
+* **Vite**
+* **Tailwind CSS**
+* [cite_start]**react-markdown** [cite: 366] (for rendering rich LLM responses)
+* [cite_start]**Jest** [cite: 137] (for frontend testing)
 * ESLint
 
 ### Backend
 
-* **FastAPI** – for high-performance asynchronous API services
-* **Langchain** – for conversational AI and language processing workflows
-* **ChromaDB** – for embedding-based vector storage and retrieval
-* Python 3.8+
-* Docker (optional, for containerization)
+* [cite_start]**FastAPI** [cite: 110, 127] (for high-performance, asynchronous API services)
+* [cite_start]**LangChain** [cite: 105, 129] [cite_start](for RAG pipelines, LLM orchestration, and managing conversational memory [cite: 342])
+* [cite_start]**Sentence Transformers** [cite: 115] [cite_start](using `all-mpnet-base-v2` for generating embeddings [cite: 323])
+* [cite_start]**Ollama** [cite: 303] [cite_start](for local LLM integration, tested with `deepseek-r1:7b` [cite: 303])
+* [cite_start]Python 3.8+ [cite: 125]
+* [cite_start]**pytest** [cite: 137] (for backend testing)
+* [cite_start]Docker [cite: 140] (for containerization)
 
 ### Database
 
-* PostgreSQL/MySQL (or other, based on deployment setup)
+* [cite_start]**ChromaDB** [cite: 112, 131] [cite_start](Primary vector database for knowledge nodes, embeddings, and metadata [cite: 132])
+* [cite_start]**SQLite** [cite: 262, 343] (Used for storing persistent, session-specific chat history)
+* [cite_start]**PostgreSQL** (Listed as an optional extension for managing user accounts and multi-tenant isolation [cite: 133])
 
 ---
 
@@ -44,152 +53,58 @@
 Ensure the following tools are installed:
 
 * Node.js (v16 or higher)
-* Python (v3.8 or higher)
-* Docker (optional)
+* [cite_start]Python (v3.8 or higher) [cite: 125]
+* [cite_start]Docker (optional) [cite: 140]
 
 ### Frontend Setup
 
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/WevN-org/WevN.git
-   cd WevN/frontend
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Start the development server:
-
-   ```bash
-   npm run dev
-   ```
+1.  Clone the repository:
+    ```bash
+    git clone [https://github.com/WevN-org/WevN.git](https://github.com/WevN-org/WevN.git)
+    cd WevN/frontend
+    ```
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Start the development server:
+    ```bash
+    npm run dev
+    ```
 
 ### Backend Setup
 
-1. Navigate to the backend directory:
-
-   ```bash
-   cd ../backend/server
-   ```
-
-2. Create and activate a virtual environment:
-
-   ```bash
-   python -m venv venv
-   ```
-
-   * On Windows:
-
-     ```bash
-     .\venv\Scripts\activate
-     ```
-
-   * On macOS/Linux:
-
-     ```bash
-     source venv/bin/activate
-     ```
-
-3. Install dependencies:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Run the FastAPI server:
-
-   ```bash
-   uvicorn server:app --host 0.0.0.0 --port 8000 --workers 2 --http httptools
-   ```
+1.  Navigate to the backend directory:
+    ```bash
+    cd ../backend/server
+    ```
+2.  Create and activate a virtual environment:
+    ```bash
+    python -m venv venv
+    ```
+    * On Windows:
+        ```bash
+        .\venv\Scripts\activate
+        ```
+    * On macOS/Linux:
+        ```bash
+        source venv/bin/activate
+        ```
+3.  Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+4.  Run the FastAPI server:
+    ```bash
+    uvicorn server:app --host 0.0.0.0 --port 8000 --workers 2 --http httptools
+    ```
 
 ---
 
 ## 🧪 Testing
 
-You can add and run tests using your preferred test framework, such as `pytest`, once test files are set up in the backend directory.
+[cite_start]The project uses `pytest` [cite: 137] [cite_start]for backend API and logic testing, and `Jest` [cite: 137] for frontend component testing and regression checks.
 
 ---
 
 ## 📂 Project Structure
-
-```
-WevN/
-├── backend/
-│   └── server/
-│       ├── main.py
-│       ├── requirements.txt
-│       └── ...
-├── frontend/
-│   ├── src/
-│   └── ...
-├── README.md
-└── ...
-```
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 📞 Contact
-
-For inquiries or contributions:
-
-* GitHub: [https://github.com/WevN-org/WevN](https://github.com/WevN-org/WevN)
-* Email: [contact@wevn.org](mailto:contact@wevn.org)
-
----
-
-Let me know if you want to include setup for environment variables, Docker instructions, or specific API endpoints!
-
-   ```
-
----
-
-## 🧪 Testing
-
-You can add and run tests using your preferred test framework, such as `pytest`, once test files are set up in the backend directory.
-
----
-
-## 📂 Project Structure
-
-```
-WevN/
-├── backend/
-│   └── server/
-│       ├── main.py
-│       ├── requirements.txt
-│       └── ...
-├── frontend/
-│   ├── src/
-│   └── ...
-├── README.md
-└── ...
-```
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 📞 Contact
-
-For inquiries or contributions:
-
-* GitHub: [https://github.com/WevN-org/WevN](https://github.com/WevN-org/WevN)
-* Email: [contact@wevn.org](mailto:contact@wevn.org)
-
----
-
-Let me know if you want to include setup for environment variables, Docker instructions, or specific API endpoints!
