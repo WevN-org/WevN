@@ -101,9 +101,6 @@ Ensure the following tools are installed:
 
 ---
 
-## 🧪 Testing
-
-[cite_start]The project uses `pytest` [cite: 137] [cite_start]for backend API and logic testing, and `Jest` [cite: 137] for frontend component testing and regression checks.
 
 ---
 
