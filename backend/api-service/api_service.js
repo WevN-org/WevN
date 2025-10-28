@@ -1,17 +1,19 @@
 import handleResponse from "./response_handler";
-import { apiKey, baseUrl, max_links, distance_threshold } from "./api_constants";
+import { apiKey, baseUrl } from "./api_constants";
 
 
 
 
 
-
+var max_links, distance_threshold;
 // -- Headers -- 
 
 const Headers = {
     'Content-Type': 'application/json; charset=UTF-8',
     'X-API-Key': apiKey,
 };
+
+
 
 
 export const ApiService = {
@@ -65,7 +67,7 @@ export const ApiService = {
             }
         );
 
-        return await handleResponse(response, "Failed to delete domain");
+        return await handleResponse(response, "Error: ");
     },
 
     async renameDomain(d_old, d_new) {
@@ -91,17 +93,18 @@ export const ApiService = {
  * @param {number} distance_threshold - Threshold for similarity
  * @returns {Promise<any>} - Response from the server
  */
-    async insertNode(collection, name, content, user_links) {
-        console.log(` Here ${JSON.stringify(
-            {
-                collection,
-                name,
-                content,
-                user_links,
-                max_links,
-                distance_threshold
-            }
-        )}`)
+    async insertNode(collection, name, content, user_links, max_links, distance_threshold) {
+        // console.log(` Here ${JSON.stringify(
+        //     {
+        //         collection,
+        //         name,
+        //         content,
+        //         user_links,
+        //         max_links,
+        //         distance_threshold
+        //     }
+        // )}`)
+
         const response = await fetch(
             `${baseUrl}/nodes/insert`, {
             method: 'POST',
@@ -133,18 +136,19 @@ export const ApiService = {
 * @param {number} distance_threshold - Threshold for similarity
 * @returns {Promise<any>} - Response from the server
 */
-    async updateNode(collection,node_id, name, content, user_links) {
-        console.log(` Here ${JSON.stringify(
-            {
-                collection,
-                node_id,
-                name,
-                content,
-                user_links,
-                max_links,
-                distance_threshold
-            }
-        )}`)
+    async updateNode(collection, node_id, name, content, user_links, max_links, distance_threshold) {
+        // console.log(` Here ${JSON.stringify(
+        //     {
+        //         collection,
+        //         node_id,
+        //         name,
+        //         content,
+        //         user_links,
+        //         max_links,
+        //         distance_threshold
+        //     }
+        // )}`)
+
         const response = await fetch(
             `${baseUrl}/nodes/update`, {
             method: 'POST',
@@ -165,6 +169,36 @@ export const ApiService = {
 
         return await handleResponse(response, "Failed to update node")
     },
+
+
+    async refactorNode(collection, max_links, distance_threshold) {
+        // console.log(` Here ${JSON.stringify(
+        //     {
+        //         collection,
+        //         name,
+        //         content,
+        //         user_links,
+        //         max_links,
+        //         distance_threshold
+        //     }
+        // )}`)
+        const response = await fetch(
+            `${baseUrl}/nodes/refactor`, {
+            method: 'POST',
+            headers: Headers,
+            body: JSON.stringify(
+                {
+                    collection,
+                    max_links,
+                    distance_threshold
+                }
+            )
+        }
+        );
+        return await handleResponse(response, "Failed to create node")
+    },
+
+
 
     /**
      * 
@@ -193,8 +227,8 @@ export const ApiService = {
         return data.map(item => new Node(item));
     },
 
-    
-    async deleteNode(collection,node_id) {
+
+    async deleteNode(collection, node_id) {
         const response = await fetch(
             `${baseUrl}/nodes/delete`, {
             method: 'POST',
@@ -206,8 +240,107 @@ export const ApiService = {
         }
         );
         return await handleResponse(response, "Failed to list nodes");
-    
+
+    },
+
+    /**
+     * Stream an agent response token-by-token
+     * @param {string} collection - The collection name
+     * @param {string} query - User query
+     * @param {string} conversation_id - Conversation ID
+     * @param {number} max_results - Max results to retrieve
+     * @param {number} distance_threshold - Similarity threshold
+     * @param {(chunk: string) => void} onChunk - Callback for each chunk
+     * @returns {Promise<void>}
+     */
+    async llm_response(
+        collection,
+        query,
+        conversation_id,
+        max_results = 5,
+        distance_threshold = 1.0,
+        onChunk,
+        onRetrievedIds
+    ) {
+        const response = await fetch(`${baseUrl}/query/stream`, {
+            method: "POST",
+            headers: Headers,
+            body: JSON.stringify({
+                collection,
+                query,
+                conversation_id,
+                max_results,
+                distance_threshold,
+            }),
+        });
+
+        // ✅ handle error responses before streaming
+        if (!response.ok) {
+            await handleResponse(response, "Streaming query failed");
+            return; // handleResponse will throw
+        }
+
+        const retrievedIdsHeader = response.headers.get("X-Retrieved-Ids");
+        console.log("here")
+        let retrievedIds = null;
+        if (retrievedIdsHeader) {
+
+            try {
+                retrievedIds = JSON.parse(retrievedIdsHeader);
+                if (onRetrievedIds) onRetrievedIds(retrievedIds);
+            } catch (e) {
+                console.warn("Failed to parse X-Retrieved-Ids:", retrievedIdsHeader);
+            }
+        }
+
+
+        if (!response.body) {
+            throw new Error("No response body from server");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            // console.log("Received chunk:", chunk); 
+            if (chunk && onChunk) onChunk(chunk);
+        }
+    },
+
+    async autoCreateNode(
+        collection,
+        session_id,
+        query,
+        max_results,
+        distance_threshold
+    ) {
+        const response = await fetch(`${baseUrl}/history/summarize`, {
+            method: "POST",
+            headers: Headers,
+            body: JSON.stringify({
+                session_id,
+                query,
+                collection,
+                max_results,
+                distance_threshold,
+            }),
+        });
+        return await handleResponse(response, "failed to create node");
+    },
+
+    async clearMemory(conversation_id) {
+        const response = await fetch(`${baseUrl}/history/clear`, {
+            method: "POST",
+            headers: Headers,
+            body: JSON.stringify({ conversation_id }),
+        });
+        return await handleResponse(response, "failed to clear history");
     }
+}; // end of api service
 
 
 
@@ -215,7 +348,6 @@ export const ApiService = {
 
 
 
-}
 
 
 

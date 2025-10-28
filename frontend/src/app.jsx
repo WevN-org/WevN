@@ -9,12 +9,12 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNodes } from './contexts/nodes-context/nodes_context.jsx';
 import { useDomain } from './contexts/domain-context/domain_context.jsx';
-
-
+import AccountView from './components/account_view/Account_View.jsx';
+import { useDomainsList } from './contexts/domans-list-context/domains_list_context.jsx';
 
 
 // This is the App component that orchestrates everything
-const App = () => {
+const App = ({ onLogout }) => {
 
     const { setNodes } = useNodes();
     const { currentDomain } = useDomain();
@@ -27,6 +27,20 @@ const App = () => {
             { role: "assistant", content: "Hi! Ask me anything about your knowledgebase." }
         ],
     });
+    const { setDomains } = useDomainsList();
+
+    // Preventing the default browser menus (like: the rightclick browser default menu)
+    // useEffect(() => {
+    //     const handleContextMenu = (event) => {
+    //         event.preventDefault(); // block default menu
+    //     };
+
+    //     document.addEventListener("contextmenu", handleContextMenu);
+
+    //     return () => {
+    //         document.removeEventListener("contextmenu", handleContextMenu);
+    //     };
+    // }, []);
 
 
 
@@ -42,6 +56,7 @@ const App = () => {
                         domains: result
                     })
                 )
+                setDomains(result);
             }
             catch (err) {
                 console.log(err)
@@ -96,21 +111,39 @@ const App = () => {
 
 
     const [activeTab, setActiveTab] = useState('All');
+    const profile = JSON.parse(localStorage.getItem("userProfile") || "{}");
+
+
 
     return (
+        //pass onlogout to accounts page later to logout
         <>
             <LogProvider>
                 <div className='flex overflow-hidden h-screen'>
-                    <Sidebar state={state} setState={setState} />
-                    {state.currentView === 'query' ? (
-                        <QueryView state={state} setState={setState} />
-                    ) : (
-                        <ConceptView activeTab={activeTab} setActiveTab={setActiveTab} setState={setState} currentDomain={currentDomain} />
-                    )}
-                </div >
+                    <Sidebar state={state} setState={setState} userpic={profile.picture} username={profile.name} email={profile.email} />
+                    {(() => {
+                        switch (state.currentView) {
+                            case 'query':
+                                return <QueryView state={state} setState={setState} />;
+                            case 'concept':
+                                return (
+                                    <ConceptView
+                                        activeTab={activeTab}
+                                        setActiveTab={setActiveTab}
+                                        setState={setState}
+
+                                    />  
+                                );
+                            case 'account':
+                                return <AccountView state={state} setState={setState} user={profile} onLogout={onLogout} />;
+                            default:
+                                return null; // fallback if currentView is unexpected
+                        }
+                    })()}
+                </div>
             </LogProvider>
             <ToastContainer
-                position="bottom-right"
+                position="top-right"
                 autoClose={2500}
                 newestOnTop={true}
                 closeOnClick
@@ -118,6 +151,7 @@ const App = () => {
                 draggable
             />
         </>
+
     );
 };
 

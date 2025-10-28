@@ -29,7 +29,7 @@ llmImport = True
 
 try:
 
-    from langchain_ollama import ChatOllama
+    from langchain_openai import ChatOpenAI
     from langchain.prompts import PromptTemplate
     from langchain_core.messages import BaseMessage
     # from sqlalchemy import create_engine
@@ -46,7 +46,8 @@ except Exception as e:
 
 
 # llm model
-llm_model = "deepseek-r1:7b"
+llm_model = "openai/gpt-oss-20b"
+# llm_model = "deepseek/deepseek-chat-v3.1"
 # llm_model="llama3.1:8b"
 
 # some important global parameters
@@ -68,6 +69,8 @@ raw_chain = None
 async_engine = create_async_engine("sqlite+aiosqlite:///chat_memory.db", echo=False)
 chain_with_memory = None
 
+openai_api_key = os.getenv("OPENAI_API_KEY", "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")
+openai_api_base = os.getenv("OPENAI_API_BASE_URL", "https://openrouter.ai/api/v1")
 
 
 
@@ -90,14 +93,21 @@ class CustomSummary(BaseModel):
 
 def create_summarization_chain():
     """Builds a chain that returns a structured CustomSummary object."""
-    
-    summarizer_llm = ChatOllama(model=llm_model, temperature=0)
-    
+
+    # CHANGED: Replaced ChatOllama with ChatOpenAI.
+    # Make sure your OPENAI_API_KEY is set in your environment variables.
+    summarizer_llm = ChatOpenAI(
+        model=llm_model,
+        temperature=0,
+        api_key=openai_api_key,
+        base_url=openai_api_base
+    )
+
     # Use with_structured_output with our new CustomSummary model
     structured_llm = summarizer_llm.with_structured_output(CustomSummary)
-    
-    # Update the prompt to instruct the LLM on the new 'name' and 'content' fields
-    prompt = PromptTemplate.from_template("""
+
+    # The prompt remains the same as it's model-agnostic.
+    prompt_template = PromptTemplate.from_template("""
         You are an expert at creating concise, self-contained knowledge nodes from conversations.
         Your response MUST be a valid JSON object with the keys "name" and "content".
 
@@ -113,66 +123,69 @@ def create_summarization_chain():
         {formatted_memory}
         --- CONVERSATION END ---
     """)
-    
+
     # The chain now ends with the structured output parser
-    return prompt | structured_llm
+    return prompt_template | structured_llm
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Handles application startup logic."""
     global model
 
     async def load_model():
+        """Loads the sentence transformer embedding model (no changes needed here)."""
         global model
         if model is None:
             local_path = "../__models__/embedding-model/models--sentence-transformers--all-mpnet-base-v2/snapshots/e8c3b32edf5434bc2275fc9bab85f82640a19130"
             if os.path.exists(local_path):
-                print("✅ Loading model from local cache...")
+                print("✅ Loading embedding model from local cache...")
                 model = await asyncio.to_thread(lambda: SentenceTransformer(local_path))
-                print("Model loaded!")
+                print("Embedding model loaded!")
                 model_ready.set()
             else:
-                print("🌐 Downloading model from Hugging Face...")
+                print("🌐 Downloading embedding model from Hugging Face...")
                 model = await asyncio.to_thread(
                     lambda: SentenceTransformer(
                         "all-mpnet-base-v2",
                         cache_folder="../__models__/embedding-model",
                     )
                 )
-                print("Model loaded!")
+                print("Embedding model loaded!")
                 model_ready.set()
 
     async def load_llm_and_parser():
-        global llm, llm_error, prompt, raw_chain, chain_with_memory
+        """Initializes the OpenAI LLM and the main conversation chain."""
+        global llm, llm_error, prompt, chain_with_memory
         if llm is None:
             try:
-
                 # ---------------------------
                 # 2. LLM + Memory
                 # ---------------------------
-                llm = ChatOllama(
+                # CHANGED: Replaced ChatOllama with ChatOpenAI.
+                # OpenAI-specific parameters like 'num_ctx' are not needed.
+                # Streaming can be enabled/disabled with the `streaming` parameter.
+                print(f"🚀 Initializing OpenAI model: {llm_model}...")
+                llm = ChatOpenAI(
                     model=llm_model,
                     temperature=0,
-                    disable_streaming=False,
-                    num_ctx=4096,
+                    streaming=True, # Set to True for streaming responses
                     verbose=True,
-                    
+                    api_key=openai_api_key,
+                    base_url=openai_api_base,
                 )
-                print(f"ChatOllama context size has been set to: {llm.num_ctx}")
 
+                # Health check to ensure the model is responsive
                 def health_check():
                     resp = llm.invoke("hello")
                     return resp
 
                 await asyncio.to_thread(health_check)
-                print("LLM (LangChain ChatOllama) ready.")
+                print(f"✅ LLM (LangChain ChatOpenAI with model '{llm.model_name}') is ready.")
                 llm_ready.set()
-                print("Ollama LLM ready.")
 
-                # llm Prompt template
-
-                # It's good practice to add dynamic data like the current date
-
+                # The prompt template for the main chat logic remains the same.
                 template = """
-                    You are **WevN Assistant**, a versatile and helpful AI companion. 
+                    You are **WevN Assistant**, a versatile and helpful AI companion.
                     Your job is to provide accurate, relevant, and natural answers.
 
                     ### Core Rules
@@ -196,27 +209,24 @@ async def lifespan(app: FastAPI):
                     Provide a clear, helpful answer below:
                     """
 
-                prompt = PromptTemplate(
-                    
+                prompt_template = PromptTemplate(
                     template=template,
                     input_variables=["conversation", "context", "question"],
                 )
 
-                # llm structured chain
-                core_chain = prompt | llm
+                # The core chain and memory setup remain the same.
+                core_chain = prompt_template | llm
                 chain_with_memory = RunnableWithMessageHistory(
                     core_chain,
-                    # This lambda function creates an ASYNC history object on the fly for each session
                     lambda session_id: SQLChatMessageHistory(
                         session_id=session_id,
-                        connection=async_engine,
+                        connection=async_engine, # Assumes async_engine is defined elsewhere
                     ),
                     input_messages_key="question",
                     history_messages_key="conversation",
                 )
 
                 print("✅ Chain with async memory history is ready.")
-                print("LLM model:", llm.model)
                 print("Initializing Summarization chain...")
                 app.state.db_engine = async_engine
                 summarization_chain = create_summarization_chain()
@@ -226,15 +236,15 @@ async def lifespan(app: FastAPI):
 
             except Exception as e:
                 llm_error = e
-                print("llm error : ", e)
+                print(f"❌ LLM Error: {e}")
 
+    # Start the loading tasks concurrently
     asyncio.create_task(load_model())
     asyncio.create_task(load_llm_and_parser())
 
-    yield  # ⚠️ THIS is required! App runs after this
+    yield  # ⚠️ This is required! The app runs after this point.
 
     print("Server shutting down")
-    
 
 
 # -- websocket  clients
@@ -403,7 +413,6 @@ class SummarizeHistoryRequest(BaseModel):
     collection: str
     max_results: Optional[int] = 10
     distance_threshold: Optional[float] = 1.4
-
 class SummaryReturnModel(BaseModel):
     name: str
     content: str

@@ -1,7 +1,7 @@
 Create a venv inside {root}/server --> python -m venv venv
 Activate : (windows) --> venv/Scripts/Activate
 requirements --> pip install -r requirements.txt
-run : in /server -->  uvicorn server:app --host 0.0.0.0 --port 8000 --workers 2 --http httptools 
+run : in /server -->  uvicorn server:app --host 0.0.0.0 --port 8000 --workers 2 --http httptools or uvicorn server:app --host 0.0.0.0 --port 8000 --reload
 
 
 cammand to create a domain from powershell
@@ -44,3 +44,10 @@ Invoke-WebRequest -Uri "http://localhost:8000/nodes/list" `
     -Headers @{ "X-API-Key" = "mysecretkey"; "Content-Type" = "application/json" } `
     -Body '{"name": "Anshul"}'
 
+
+llm stream checker  --> do it in cmd not in powershell
+
+curl -N http://127.0.0.1:8000/query/stream -H "X-API-Key: mysecretkey" -H "Content-Type: application/json" -d "{\"collection\":\"Anshul\",\"query\":\"do a command node my name that i have told u\",\"conversation_id\":\"abc123\",\"max_results\":5,\"distance_threshold\":1.0,\"include_semantic_links\":true,\"brainstorm_mode\":false}"
+
+
+curl -X POST "http://127.0.0.1:8000/history/summarize" -H "Content-Type: application/json" -H "X-API-Key: mysecretkey" -d "{\"session_id\": \"aa9de5b8-34a8-4b2e-83be-2f7ab158ebbf\", \"query\": \"Wave Behavior\", \"collection\": \"Quantum_Mechanics\", \"distance_threshold\": 1.4, \"max_results\": 10}"

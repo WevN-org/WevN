@@ -1,14 +1,12 @@
 import clsx from "clsx";
 import { Plus, PanelLeftClose, PanelLeftOpen, Search, FilePenLine, Trash2 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
-
+import { useRef, useCallback } from "react";
 import { ApiService } from "../../../backend/api-service/api_service";
 import { toast } from "react-toastify";
 import { useDomain } from "../contexts/domain-context/domain_context";
 
-const Sidebar = ({ state, setState }) => {
-
-
+const Sidebar = ({ state, setState, userpic, username, email }) => {
     const { currentDomain, setDomain } = useDomain();
     // -- the currentDomain context --
     // console.log(`current: ${currentDomain}`)
@@ -53,12 +51,20 @@ const Sidebar = ({ state, setState }) => {
         }));
     };
 
+    const handleAccountClick = () => {
+        setState(prev => ({
+            ...prev,
+            currentView: 'account'
+        }));
+    };
+
     // The different errors are not handled. just a common catch block is used
 
     const handleDomainRename = async (oldName, newName) => {
         try {
-            toast.success(`${oldName} renamed to ${newName} successfully.`);
+
             await ApiService.renameDomain(oldName, newName);
+            toast.success(`${oldName} renamed to ${newName} successfully.`);
             setShowRenamePopup(false);
         } catch {
             toast.error("Failed to rename domain. Please try again.");
@@ -67,8 +73,8 @@ const Sidebar = ({ state, setState }) => {
 
     const handleDomainDelete = async (domainName) => {
         try {
-            toast.info(`${domainName} deleted successfully.`);
             await ApiService.deleteDomain(domainName);
+            toast.info(`${domainName} deleted successfully.`);
             setDeleteDomain(null);
             setShowDeletePopup(false);
         } catch {
@@ -77,21 +83,58 @@ const Sidebar = ({ state, setState }) => {
     };
 
     const handleCreateDomain = async (domainName) => {
-        try {
-            await ApiService.createDomain(domainName);
-            toast.success(`${domainName} created successfully.`);
-            setShowCreatePopup(false);
-            setNewDomain("");
-        } catch {
-            toast.error("Failed to create domain. Please try again.");
+        if (validateDomain(domainName)) {
+
+            try {
+                await ApiService.createDomain(domainName);
+                toast.success(`${domainName} created successfully.`);
+                setShowCreatePopup(false);
+                setNewDomain("");
+            } catch (e) {
+                toast.error(`${e}`);
+            }
+        }
+        else {
+            toast.error("Name must be 3–512 characters long, use only letters, numbers, dots, hyphens, or underscores, and start and end with a letter or number.")
         }
     };
 
-    const ExpandSidbarAtStart = () => {
-        useEffect(() => {
-            setSidebarVisibility(false);
-        }, [])
+    const domainRegex = /^[a-zA-Z0-9](?:[a-zA-Z0-9._-]{1,510})[a-zA-Z0-9]$/;
+
+    const validateDomain = (domain) => {
+        // enforce length 3–512 explicitly
+        if (domain.length < 3 || domain.length > 512) return false;
+
+        return domainRegex.test(domain);
     };
+
+
+    function useClickAndDoubleClick(onClick, onDoubleClick, delay = 250) {
+        const timer = useRef(null);
+
+        const handleClick = useCallback(() => {
+            if (timer.current) return; // already waiting for second click
+            timer.current = setTimeout(() => {
+                onClick();
+                timer.current = null;
+            }, delay);
+        }, [onClick, delay]);
+
+        const handleDoubleClick = useCallback(() => {
+            if (timer.current) {
+                clearTimeout(timer.current);
+                timer.current = null;
+            }
+            onDoubleClick();
+        }, [onDoubleClick]);
+
+        return { showProfile: handleClick, collapseSidebar: handleDoubleClick };
+    }
+
+    const { showProfile, collapseSidebar } = useClickAndDoubleClick(
+        handleAccountClick,
+        toggleSidebar
+    );
 
     return (
         <div className="sidebar-wrapper relative z-50 bg-green-500 transition-colors duration-500 h-dvh">
@@ -121,13 +164,23 @@ const Sidebar = ({ state, setState }) => {
                         { 'justify-between p-4': !isCollapsed },
                         { 'collapsed p-0 justify-center': isCollapsed }
                     )}
-                    onDoubleClick={toggleSidebar} // This double-click still controls the parent state
-                    onClick={() => console.log("accounts page")}
+                    onClick={showProfile}
+                    onDoubleClick={collapseSidebar} // This double-click still controls the parent state
                 >
                     {!isCollapsed && !sidebarVisibility && (
-                        <h1 className="text-3xl font-extrabold text-gray-800">WevN</h1>
+                        <div className="flex flex-col items-start">
+                            <small>Hi there,</small>
+                            <span className="font-semibold text-2xl text-gray-900">{username || "User"}</span>
+                        </div>
                     )}
-                    <img src="https://randomuser.me/api/portraits/men/33.jpg" alt="WevN Logo" className={clsx('h-10 rounded-full', { 'mr-2 h-8': !isCollapsed })} />
+
+                    <img
+                        src={userpic ? userpic.replace(/=s96-c$/, "=s200-c") : "logo.png"}
+                        alt="WevN Logo"
+                        className={clsx('rounded-full', { 'h-10 mr-2': !isCollapsed, 'h-10': isCollapsed })}
+                        loading="lazy"
+                    />
+
                 </button>
 
                 {/* Collapsed Search Button */}
@@ -162,7 +215,7 @@ const Sidebar = ({ state, setState }) => {
                                 <p className="text-center">No domains found!</p>
                                 <button
                                     className="text-blue-500 hover:text-blue-600 transition-colors text-sm font-medium mt-2"
-                                    onClick={() => setShowCreatePopup(true)}
+                                    onClick={() => handleCreateDomain(query)}
                                 >
                                     + create new ?
                                 </button>
@@ -174,7 +227,7 @@ const Sidebar = ({ state, setState }) => {
                                         tabIndex={0}
                                         key={domain.id}
                                         className={clsx(
-                                            "flex items-center justify-between p-3 rounded-lg transition duration-200 cursor-pointer",
+                                            "flex items-center justify-between p-2 rounded-lg transition duration-200 cursor-pointer",
                                             currentDomain === domain.name
                                                 ? "bg-indigo-50 text-indigo-700 font-medium shadow-inner relative before:absolute before:left-5 before:-translate-x-8 before:top-1/2 before:-translate-y-1/2 before:w-5 before:h-5 before:bg-indigo-500 before:rounded-full"
                                                 : "text-gray-700 hover:bg-gray-100"

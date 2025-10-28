@@ -4,19 +4,26 @@ import { ChevronDown, X, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNodes } from "../../contexts/nodes-context/nodes_context";
 import { useDomain } from "../../contexts/domain-context/domain_context";
+import { toast } from "react-toastify";
+import { ApiService } from "../../../../backend/api-service/api_service";
+import DeleteConceptModal from "./delete_concept_modal";
 
 const EditConceptModal = ({ concept, onSave, onCancel }) => {
   const { currentDomain } = useDomain();
   const { nodesList } = useNodes();
-
+  const [showDeletePopup, setShowDeletePopup] = useState(false)
   const [nodeName, setNodeName] = useState(concept?.name || "");
   const [nodeContent, setNodeContent] = useState(concept?.content || "");
- const [selectedNodes, setSelectedNodes] = useState(
-  concept?.user_links?.map(id => nodesList.find(n => n.node_id === id)) || []
-);
-// expects concept.links = [{node_id, name}, ...]
+  const [selectedNodes, setSelectedNodes] = useState(
+    concept?.user_links
+      ?.map(id => nodesList.find(n => n.node_id === id))
+      .filter(Boolean) || [] // removes undefined entries
+  );
+  // expects concept.links = [{node_id, name}, ...]
   const [showDomainDropdown, setShowDomainDropdown] = useState(false);
   const nodeRef = useRef(null);
+
+  // console.log(concept)
 
   // Filter available nodes (exclude already linked)
   const availableNodes =
@@ -34,12 +41,26 @@ const EditConceptModal = ({ concept, onSave, onCancel }) => {
   };
 
   const handleSave = () => {
+    const selectedLinks = selectedNodes.map(node => node.node_id)
     onSave({
       ...concept,
       name: nodeName,
       content: nodeContent,
-      links: selectedNodes,
+      user_links: selectedLinks,
     });
+  };
+  const handleDeleteConfirm = async (concept) => {
+    console.log("Delete concept:", concept);
+    setShowDeletePopup(false);
+    onCancel();
+    // TODO: remove via context/api
+    try {
+      await ApiService.deleteNode(currentDomain, concept.node_id);
+      toast.success(`Deleted Node ${concept.name}`)
+    }
+    catch (err) {
+      toast.error(`Failed to delete concept ${err}. Please try again.`);
+    }
   };
 
   return (
@@ -88,7 +109,7 @@ const EditConceptModal = ({ concept, onSave, onCancel }) => {
               <div className="flex flex-wrap gap-2 mb-3">
                 {selectedNodes.map((node) => (
                   <div
-                    key={node.node_id || node.name} 
+                    key={node.node_id || node.name}
                     className="flex items-center space-x-2 bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm font-medium"
                   >
                     <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
@@ -109,11 +130,10 @@ const EditConceptModal = ({ concept, onSave, onCancel }) => {
               <button
                 onClick={() => setShowDomainDropdown(!showDomainDropdown)}
                 disabled={availableNodes.length === 0}
-                className={`flex items-center justify-between w-full px-3 py-2 text-left border border-gray-300 rounded-lg transition-colors ${
-                  availableNodes.length === 0
-                    ? "bg-gray-50 text-gray-400 cursor-not-allowed"
-                    : "bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                }`}
+                className={`flex items-center justify-between w-full px-3 py-2 text-left border border-gray-300 rounded-lg transition-colors ${availableNodes.length === 0
+                  ? "bg-gray-50 text-gray-400 cursor-not-allowed"
+                  : "bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  }`}
               >
                 <span className="flex items-center space-x-2">
                   <Plus size={16} />
@@ -125,9 +145,8 @@ const EditConceptModal = ({ concept, onSave, onCancel }) => {
                 </span>
                 <ChevronDown
                   size={16}
-                  className={`transition-transform duration-200 ${
-                    showDomainDropdown ? "rotate-180" : ""
-                  }`}
+                  className={`transition-transform duration-200 ${showDomainDropdown ? "rotate-180" : ""
+                    }`}
                 />
               </button>
 
@@ -141,7 +160,7 @@ const EditConceptModal = ({ concept, onSave, onCancel }) => {
                 >
                   {availableNodes.map((node) => (
                     <button
-                      key={node.node_id || node.name} 
+                      key={node.node_id || node.name}
                       onClick={() => handleDomainSelect(node)}
                       className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors flex items-center space-x-2"
                     >
@@ -174,25 +193,44 @@ const EditConceptModal = ({ concept, onSave, onCancel }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+          {/* Left-aligned button */}
           <button
-            onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            onClick={() => { setShowDeletePopup(true) }}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 border-gray-300 rounded-lg hover:bg-red-700 transition-colors"
           >
-            Cancel
+            Delete
           </button>
-          <button
-            onClick={handleSave}
-            disabled={!nodeName.trim()}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              nodeName.trim()
+
+          {/* Right-aligned buttons */}
+          <div className="flex space-x-3">
+            <button
+              onClick={onCancel}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!nodeName.trim()}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${nodeName.trim()
                 ? "bg-blue-600 text-white hover:bg-blue-700"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
-          >
-            Update Changes
-          </button>
+                }`}
+            >
+              Update Changes
+            </button>
+          </div>
         </div>
+
+        {showDeletePopup && (
+          <DeleteConceptModal
+            concept={concept}
+            onConfirm={handleDeleteConfirm}
+            onCancel={() => setShowDeletePopup(false)}
+          />
+        )}
+
       </div>
     </div>
   );
