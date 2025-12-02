@@ -1,120 +1,65 @@
 # WevN
 
-**WevN** is a domain-specific adaptive data visualization and learning platform designed to enhance user engagement through interactive and personalized experiences. It leverages advanced AI tools and scalable backend architecture to offer intelligent data exploration and analysis.
+**WevN** is a multi-tenant knowledge discovery and visualization platform that integrates **semantic search**, **interactive graph visualization**, and **AI-assisted reasoning**. It helps organizations explore and connect ideas across domains through an adaptive, RAG-based (Retrieval-Augmented Generation) architecture.
 
 ---
 
 ## 🚀 Features
 
-* **Adaptive Data Visualization**: Dynamically adjusts visualizations based on user preferences and data context.
-* **Interactive Learning Modules**: Engages users with interactive tutorials and AI-assisted learning paths.
-* **AI-Powered Backend**: Utilizes FastAPI, Langchain, and ChromaDB for efficient data processing and intelligent recommendations.
-* **Responsive Design**: Optimized for desktop and mobile devices, ensuring seamless access across platforms.
-* **Modular Architecture**: Easily extendable components for future scalability and feature additions.
+- **Semantic Search:** Context-aware retrieval using embeddings from ChromaDB.  
+- **Interactive Visualization:** Real-time knowledge graph rendered with React Force Graph.  
+- **LLM Integration:** RAG pipeline with `deepseek-r1:7b` via Ollama for domain-specific responses.  
+- **Multi-Tenant Design:** Secure, isolated knowledge bases per organization.  
+- **Node Automation:** Automatic summarization and node creation from conversations.  
 
 ---
 
-## 🛠️ Technologies Used
+## 🧱 Tech Stack
+
+**Frontend**
+- React 18+, Vite, TailwindCSS
+- React Force Graph, React Markdown
+
+**Backend**
+- FastAPI, LangChain, ChromaDB, SQLite
+- Sentence Transformers (`all-mpnet-base-v2`)
+- Ollama for local LLM inference
+
+**Other**
+- JWT Authentication, Google OAuth
+- Docker (optional)
+
+---
+
+## ⚙️ Setup
+
+### Prerequisites
+- Node.js ≥ 16  
+- Python ≥ 3.8  
+- Ollama installed and model `deepseek-r1:7b` pulled
+
+---
 
 ### Frontend
 
-* React.js
-* Vite
-* Tailwind CSS
-* ESLint
+```bash
+git clone https://github.com/WevN-org/WevN.git
+cd WevN/frontend
+npm install
+npm run dev
+```
 
 ### Backend
 
-* **FastAPI** – for high-performance asynchronous API services
-* **Langchain** – for conversational AI and language processing workflows
-* **ChromaDB** – for embedding-based vector storage and retrieval
-* Python 3.8+
-* Docker (optional, for containerization)
+```bash
+cd ../backend/server
+python -m venv venv
+source venv/bin/activate  # or .\venv\Scripts\activate on Windows
+pip install -r requirements.txt
+uvicorn server:app --host 0.0.0.0 --port 8000 --workers 2
+```
 
-### Database
-
-* PostgreSQL/MySQL (or other, based on deployment setup)
-
----
-
-## 📦 Installation
-
-### Prerequisites
-
-Ensure the following tools are installed:
-
-* Node.js (v16 or higher)
-* Python (v3.8 or higher)
-* Docker (optional)
-
-### Frontend Setup
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/WevN-org/WevN.git
-   cd WevN/frontend
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Start the development server:
-
-   ```bash
-   npm run dev
-   ```
-
-### Backend Setup
-
-1. Navigate to the backend directory:
-
-   ```bash
-   cd ../backend/server
-   ```
-
-2. Create and activate a virtual environment:
-
-   ```bash
-   python -m venv venv
-   ```
-
-   * On Windows:
-
-     ```bash
-     .\venv\Scripts\activate
-     ```
-
-   * On macOS/Linux:
-
-     ```bash
-     source venv/bin/activate
-     ```
-
-3. Install dependencies:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Run the FastAPI server:
-
-   ```bash
-   uvicorn server:app --host 0.0.0.0 --port 8000 --workers 2 --http httptools
-   ```
-
----
-
-## 🧪 Testing
-
-You can add and run tests using your preferred test framework, such as `pytest`, once test files are set up in the backend directory.
-
----
-
-## 📂 Project Structure
+### 📂 Structure
 
 ```
 WevN/
@@ -126,70 +71,6 @@ WevN/
 ├── frontend/
 │   ├── src/
 │   └── ...
-├── README.md
-└── ...
+└── README.md
 ```
 
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 📞 Contact
-
-For inquiries or contributions:
-
-* GitHub: [https://github.com/WevN-org/WevN](https://github.com/WevN-org/WevN)
-* Email: [contact@wevn.org](mailto:contact@wevn.org)
-
----
-
-Let me know if you want to include setup for environment variables, Docker instructions, or specific API endpoints!
-
-   ```
-
----
-
-## 🧪 Testing
-
-You can add and run tests using your preferred test framework, such as `pytest`, once test files are set up in the backend directory.
-
----
-
-## 📂 Project Structure
-
-```
-WevN/
-├── backend/
-│   └── server/
-│       ├── main.py
-│       ├── requirements.txt
-│       └── ...
-├── frontend/
-│   ├── src/
-│   └── ...
-├── README.md
-└── ...
-```
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 📞 Contact
-
-For inquiries or contributions:
-
-* GitHub: [https://github.com/WevN-org/WevN](https://github.com/WevN-org/WevN)
-* Email: [contact@wevn.org](mailto:contact@wevn.org)
-
----
-
-Let me know if you want to include setup for environment variables, Docker instructions, or specific API endpoints!
