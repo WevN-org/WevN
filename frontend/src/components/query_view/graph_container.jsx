@@ -49,6 +49,10 @@ const GraphContainer = React.memo(function GraphContainer({ setState, isVisible,
     const [hoveredNodeId, setHoveredNodeId] = useState(null);
     const hoverTimerRef = useRef(null);
 
+    // --- Render performance logging and export ---
+    const renderStatsRef = useRef([]);
+
+
 
     // popup for creating node
     const [showCreateNodePopup, setShowNodeCreatePopup] = useState(false);
@@ -475,6 +479,77 @@ const GraphContainer = React.memo(function GraphContainer({ setState, isVisible,
         return highlight.links.has(link) ? 2.5 : 1;
     }, [highlight]);
 
+
+
+    // Performance measurement on domain change or graph rebuild
+    useEffect(() => {
+        if (!fgRef.current || !graphData.nodes.length) return;
+
+        // Use unique names for marks to avoid collisions
+        const startMark = `graph-render-start-${Date.now()}`;
+        const endMark = `graph-render-end-${Date.now()}`;
+        const measureName = `graph-render-measure-${Date.now()}`;
+
+        // 1. Start a performance mark right before the render
+        performance.mark(startMark);
+
+        // 2. Wait for the next browser frame, which is when the canvas has likely been painted
+        requestAnimationFrame(() => {
+            performance.mark(endMark);
+            performance.measure(measureName, startMark, endMark);
+
+            const measure = performance.getEntriesByName(measureName).pop();
+            if (!measure) return; // Exit if measurement failed
+
+            const duration = measure.duration.toFixed(2);
+
+            // 3. Record the measurement
+            const entry = {
+                timestamp: new Date().toISOString(),
+                domain: currentDomain,
+                nodes: graphData.nodes.length,
+                links: graphData.links.length,
+                renderTimeMs: duration,
+            };
+
+            renderStatsRef.current.push(entry);
+            console.log(`[PERF] Graph Render: ${duration} ms for ${entry.nodes} nodes`);
+
+            // 4. Clean up the specific marks and measure you created to avoid memory leaks
+            performance.clearMarks(startMark);
+            performance.clearMarks(endMark);
+            performance.clearMeasures(measureName);
+        });
+    }, [currentDomain, graphData.nodes.length, graphData.links.length]); // Rerun when node or link count changes
+
+    // --- Function to export logs as CSV ---
+    const downloadRenderLogs = useCallback(() => {
+        if (renderStatsRef.current.length === 0) {
+            toast.warn("No render data has been recorded yet!");
+            return;
+        }
+
+        // Convert array of objects to CSV text
+        const header = "timestamp,domain,nodes,links,renderTimeMs\n";
+        const rows = renderStatsRef.current
+            .map(r => `${r.timestamp},${r.domain},${r.nodes},${r.links},${r.renderTimeMs}`)
+            .join("\n");
+        const csvContent = header + rows;
+
+        // Create a Blob and trigger a download
+        const blob = new Blob([csvContent], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "graph_render_logs.csv";
+        document.body.appendChild(a); // Append to body to be clickable
+        a.click();
+        document.body.removeChild(a); // Clean up
+        URL.revokeObjectURL(url);
+
+        toast.success("Render logs downloaded!");
+    }, []);
+
     return (
         <div
             className={clsx(
@@ -599,6 +674,14 @@ const GraphContainer = React.memo(function GraphContainer({ setState, isVisible,
             {/* Create Concept Popup */}
 
             {/* {showCreateNodePopup && (<CreateConceptModel setShowNodeCreatePopup={setShowNodeCreatePopup} />)} */}
+            <div className="absolute top-10 left-5">
+                <button
+                    onClick={downloadRenderLogs}
+                    className="px-3 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg transition-all duration-200 text-sm font-medium"
+                >
+                    Download Render Logs
+                </button>
+            </div>
 
         </div>
     );
