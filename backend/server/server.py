@@ -91,7 +91,8 @@ class CustomSummary(BaseModel):
 def create_summarization_chain():
     """Builds a chain that returns a structured CustomSummary object."""
     
-    summarizer_llm = ChatOllama(model=llm_model, temperature=0)
+    ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    summarizer_llm = ChatOllama(model=llm_model, temperature=0, base_url=ollama_base_url)
     
     # Use with_structured_output with our new CustomSummary model
     structured_llm = summarizer_llm.with_structured_output(CustomSummary)
@@ -148,13 +149,14 @@ async def lifespan(app: FastAPI):
                 # ---------------------------
                 # 2. LLM + Memory
                 # ---------------------------
+                ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
                 llm = ChatOllama(
                     model=llm_model,
                     temperature=0,
                     disable_streaming=False,
                     num_ctx=4096,
                     verbose=True,
-                    
+                    base_url=ollama_base_url
                 )
                 print(f"ChatOllama context size has been set to: {llm.num_ctx}")
 
