@@ -21,7 +21,7 @@ pip install -r requirements.txt
 uvicorn server2:app --reload --reload-exclude "db"
 
 # Production Command
-uvicorn server:app --host 0.0.0.0 --port 8000 --workers 2 --http httptools
+uvicorn server2:app --host 0.0.0.0 --port 8000 --workers 2 --http httptools
 ```
 
 ---
