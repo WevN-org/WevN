@@ -47,7 +47,8 @@ const GraphContainer = React.memo(function GraphContainer({ setState, isVisible,
     const [editConcept, setEditConcept] = useState(null);
     // NEW: State for hover effects
     const [hoveredNodeId, setHoveredNodeId] = useState(null);
-    const hoverTimerRef = useRef(null);
+    const hoverTimeoutRef = useRef(null);
+    const isNodeRightClicked = useRef(false);
 
     // --- Render performance logging and export ---
     const renderStatsRef = useRef([]);
@@ -130,7 +131,13 @@ const GraphContainer = React.memo(function GraphContainer({ setState, isVisible,
     }, [nodesList, useSemanticLinks]);
 
 
+
+
     // MEMOIZED CALLBACKS: All handlers are wrapped in useCallback.
+    useEffect(() => {
+        console.log("Blink Animation Data (ragList):", ragList);
+    }, [ragList]);
+
     const handleEditSave = useCallback(async (updated) => {
         setEditConcept(null);
         try {
@@ -205,20 +212,25 @@ const GraphContainer = React.memo(function GraphContainer({ setState, isVisible,
 
 
 
+
     // NEW: Delayed hover handler
     const handleNodeHover = useCallback((node) => {
-        clearTimeout(hoverTimerRef.current); // Clear any existing timer
-        // console.log("rr",!editConcept)
-
-        if (node && !editConcept) {
-            // Set a new timer to activate the highlight after a delay
-            hoverTimerRef.current = setTimeout(() => {
-                setHoveredNodeId(node.id);
-            }, 600); // 200ms delay
-        } else {
-            // If mouse leaves, clear highlight immediately
-            setHoveredNodeId(null);
+        // 1. Clear any pending state update
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
         }
+
+        // 2. If we are moving OFF a node (node is null), update immediately to clear highlight
+        if (!node) {
+            setHoveredNodeId(null);
+            return;
+        }
+
+        // 3. If we are moving ONTO a node, wait a tiny bit (e.g., 50ms)
+        // This prevents "flicker" when passing through nodes quickly
+        hoverTimeoutRef.current = setTimeout(() => {
+            setHoveredNodeId(node.id);
+        }, 50);
     }, []);
 
 
@@ -273,18 +285,27 @@ const GraphContainer = React.memo(function GraphContainer({ setState, isVisible,
     }, []);
 
     const handleNodeRightClick = useCallback((node) => {
-        // console.log("prb: ",nodesList.find((n) => n.node_id === node.id))
-        if (hoverTimerRef.current) {
-            clearTimeout(hoverTimerRef.current);
-            hoverTimerRef.current = null;
+        isNodeRightClicked.current = true;
+        setTimeout(() => { isNodeRightClicked.current = false; }, 200);
+
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
         }
         setHoveredNodeId(null);
-        setEditConcept(nodesList.find((n) => n.node_id === node.id));
+
+        const foundNode = nodesList.find((n) => n.node_id === node.id);
+        if (foundNode) {
+            setEditConcept(foundNode);
+        } else {
+            console.error("Node not found in list:", node.id, nodesList);
+            toast.error("Could not load node details");
+        }
     }, [nodesList]);
 
 
     const handleCanvasRightClick = useCallback((event) => {
-
+        if (isNodeRightClicked.current) return;
         setShowNodeCreatePopup(true)
         // const containerRect = containerRef.current.getBoundingClientRect();
         // setContextMenu({
@@ -367,71 +388,71 @@ const GraphContainer = React.memo(function GraphContainer({ setState, isVisible,
 
     // }, [ragList, graphData]); // Rerun if the core data changes
 
+
     const nodeCanvasObject = useCallback((node, ctx, globalScale) => {
-
-        // Determine if the graph is in a highlighted state and if the current node is NOT part of it
+        // 1. CACHE: Check if we are dimmed. 
+        // Accessing .has() on a Set is fast, but doing it inside the loop is still work.
         const isDimmed = highlight.nodes.size > 0 && !highlight.nodes.has(node.id);
-        const originalAlpha = ctx.globalAlpha;
-        ctx.globalAlpha = isDimmed ? 0.1 : 1.0; // Dim non-highlighted nodes
+
+        // 2. OPTIMIZATION: Don't render "invisible" dimmed nodes if there are too many
+        // If you have 1000+ nodes, you can skip rendering the dimmed ones entirely or just draw a tiny dot.
+        if (isDimmed) {
+            ctx.globalAlpha = 0.1;
+        }
 
 
-
-        // 1. --- Pulsing Halo Animation ---
+        // 2.5. ANIMATION: Pulsing Halo
         if (ragList.includes(node.id)) {
-            // --- Animation settings (tweak these for different effects) ---
-            const burstDuration = 1200; // milliseconds for one full burst cycle
-            const zoomOutFixRadius = 50 / globalScale;
-            const zoomInFixRadius = 20
-            const maxBurstRadius = zoomOutFixRadius > zoomInFixRadius ? zoomOutFixRadius : zoomInFixRadius  // Max radius of the burst circle
-            const baseAlpha = 1;      // Starting opacity for the burst
-
-            // Calculate time since component mount (or start of animation)
+            const burstDuration = 1200;
             const currentTime = Date.now();
-
-            // Calculate a phase for the animation (0 to 1) that loops
-            const phase = (currentTime % burstDuration) / burstDuration; // 0 -> 1 -> 0 -> 1...
-
-            // Use phase to determine current radius and opacity
-            // Radius grows from 0 to maxBurstRadius
+            const phase = (currentTime % burstDuration) / burstDuration;
+            const maxBurstRadius = Math.max(20, 50 / globalScale);
             const currentRadius = maxBurstRadius * phase;
+            const currentAlpha = 0.8 * (1 - phase);
 
-            // Opacity fades out as it expands: starts at baseAlpha, goes to 0
-            const currentAlpha = baseAlpha * (1 - phase);
+            // Simple color manipulation for performance
+            const burstColor = node.color.replace('hsl', 'hsla').replace(')', `, ${currentAlpha})`);
 
-            const burstColor = node.color
-                .replace('hsl', 'hsla') // Change hsl to hsla
-                .replace(')', `, ${currentAlpha})`);
-
-            // Draw the animated halo
             ctx.beginPath();
             ctx.arc(node.x, node.y, currentRadius, 0, 2 * Math.PI, false);
             ctx.fillStyle = burstColor;
             ctx.fill();
-            // ctx.lineWidth = 5 / globalScale; // Make line thin regardless of zoom
-            // ctx.strokeStyle = burstColor; // Slightly stronger gold outline
-            // ctx.stroke();
         }
 
-        // 2. --- Main Node Circle (unchanged) ---
-        ctx.fillStyle = node.color;
+        // 3. DRAWING
         ctx.beginPath();
         ctx.arc(node.x, node.y, 6, 0, 2 * Math.PI, false);
+        ctx.fillStyle = node.color;
         ctx.fill();
 
-        // 3. --- Node Label  ---
-        const TEXT_VISIBILITY_THRESHOLD = 1;
-        if (globalScale >= TEXT_VISIBILITY_THRESHOLD) {
-            // 3. If it is, draw the text as before
+        // 4. TEXT OPTIMIZATION: Only draw text if zoomed in or hovered
+        // This is the biggest performance saver.
+        if (globalScale >= 1.2 || hoveredNodeId === node.id) {
             ctx.font = `${13 / globalScale}px Sans-Serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillStyle = "black";
+            ctx.fillStyle = isDimmed ? "#ccc" : "black"; // Fade text color manually instead of globalAlpha for sharper text
             ctx.fillText(node.label, node.x, node.y + 10);
         }
-        // IMPORTANT: Reset alpha to its original value
-        ctx.globalAlpha = originalAlpha;
 
-    }, [ragList, highlight]); // Make sure ragList is in the dependency array if you use useCallback
+        // 5. RESTORE
+        if (isDimmed) ctx.globalAlpha = 1.0;
+    }, [highlight, hoveredNodeId, ragList]);
+
+
+
+    const nodePointerAreaPaint = useCallback((node, color, ctx) => {
+        // 1. Set the color provided by the library (DO NOT use node.color)
+        ctx.fillStyle = color;
+
+        // 2. Draw the Node Body (Hit Area 1)
+        // Keeping this simple helps performance
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, 12, 0, 2 * Math.PI, false);
+        ctx.fill();
+
+
+    }, []);
 
     // At the top of your component
     // const getLinkParticles = useCallback((link) => {
@@ -570,6 +591,7 @@ const GraphContainer = React.memo(function GraphContainer({ setState, isVisible,
                     nodeLabel="label"
                     // ngraphPhysics={physicsConfig}
                     nodeCanvasObject={nodeCanvasObject}
+                    nodePointerAreaPaint={nodePointerAreaPaint}
                     linkColor={getLinkColor}
                     backgroundColor="#fff"
                     onNodeHover={handleNodeHover}

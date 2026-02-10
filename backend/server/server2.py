@@ -100,21 +100,23 @@ class CustomSummary(BaseModel):
 def create_summarization_chain():
     """Builds a chain that returns a structured CustomSummary object."""
 
+    from langchain_core.output_parsers import PydanticOutputParser
+
     # CHANGED: Replaced ChatOpenAI with ChatGroq.
-    # Make sure your GROQ_API_KEY is set in your environment variables.
     summarizer_llm = ChatGroq(
         model=llm_model,
         temperature=0,
         api_key=groq_api_key
     )
 
-    # Use with_structured_output with our new CustomSummary model
-    structured_llm = summarizer_llm.with_structured_output(CustomSummary)
+    # Set up a parser + format instructions
+    parser = PydanticOutputParser(pydantic_object=CustomSummary)
 
-    # The prompt remains the same as it's model-agnostic.
-    prompt_template = PromptTemplate.from_template("""
+    prompt_template = PromptTemplate(
+        template="""
         You are an expert at creating concise, self-contained knowledge nodes from conversations.
-        Your response MUST be a valid JSON object with the keys "name" and "content".
+        
+        {format_instructions}
 
         The user's instruction is: {task_description}.
         When the instruction is to create a 'node', you must analyze the conversation below and distill its core ideas into a single summary.
@@ -127,10 +129,13 @@ def create_summarization_chain():
         --- CONVERSATION START ---
         {formatted_memory}
         --- CONVERSATION END ---
-    """)
+        """,
+        input_variables=["task_description", "formatted_memory"],
+        partial_variables={"format_instructions": parser.get_format_instructions()},
+    )
 
-    # The chain now ends with the structured output parser
-    return prompt_template | structured_llm
+    # Chain: Prompt -> LLM -> Parser
+    return prompt_template | summarizer_llm | parser
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
