@@ -30,7 +30,7 @@ llmImport = True
 try:
 
     from langchain_ollama import ChatOllama
-    from langchain.prompts import PromptTemplate
+    from lanchain_core.prompts import PromptTemplate
     from langchain_core.messages import BaseMessage
 
     # from sqlalchemy import create_engine
@@ -127,7 +127,7 @@ app_state = {}
 prompt = None
 raw_chain = None
 
-async_engine = create_async_engine("sqlite+aiosqlite:///chat_memory.db", echo=False)
+async_engine = create_async_engine("sqlite+aiosqlite:///db/chat_memory.db", echo=False)
 chain_with_memory = None
 
 

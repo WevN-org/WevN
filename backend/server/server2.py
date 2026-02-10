@@ -30,7 +30,7 @@ llmImport = True
 try:
 
     from langchain_openai import ChatOpenAI
-    from langchain.prompts import PromptTemplate
+    from lanchain_core.prompts import PromptTemplate
     from langchain_core.messages import BaseMessage
     # from sqlalchemy import create_engine
     # from langchain.memory import ConversationSummaryBufferMemory
@@ -66,7 +66,7 @@ app_state = {}
 prompt = None
 raw_chain = None
 
-async_engine = create_async_engine("sqlite+aiosqlite:///chat_memory.db", echo=False)
+async_engine = create_async_engine("sqlite+aiosqlite:///db/chat_memory.db", echo=False)
 chain_with_memory = None
 
 openai_api_key = os.getenv("OPENAI_API_KEY", "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")
