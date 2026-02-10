@@ -17,7 +17,7 @@ import { useDomainsList } from './contexts/domans-list-context/domains_list_cont
 const App = ({ onLogout }) => {
 
     const { setNodes } = useNodes();
-    const { currentDomain } = useDomain();
+    const { currentDomain, setDomain } = useDomain();
     // --- State Management for the App ---
     const [state, setState] = useState({
         domains: [],
@@ -57,11 +57,22 @@ const App = ({ onLogout }) => {
                     })
                 )
                 setDomains(result);
+
+                if (currentDomain) {
+                    const exists = result.find(d => d.name === currentDomain)
+                    if (!exists) {
+                        if (result.length > 0) {
+                            setDomain(result[0].name)
+                        } else {
+                            setDomain("")
+                        }
+                    }
+                }
             }
             catch (err) {
                 console.log(err)
             }
-        }, []);
+        }, [currentDomain, setDomain, setDomains]);
 
 
     const fetchNodes = useCallback(
@@ -132,7 +143,7 @@ const App = ({ onLogout }) => {
                                         setActiveTab={setActiveTab}
                                         setState={setState}
 
-                                    />  
+                                    />
                                 );
                             case 'account':
                                 return <AccountView state={state} setState={setState} user={profile} onLogout={onLogout} />;

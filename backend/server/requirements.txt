@@ -12,3 +12,4 @@ aiosqlite
 locust
 python-dotenv
 websockets
+langchain-groq

@@ -22,6 +22,9 @@ from sentence_transformers import SentenceTransformer
 import uuid
 from typing import List, Optional
 import asyncio
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 # -- sentence - transformers  model
@@ -29,8 +32,9 @@ llmImport = True
 
 try:
 
+    from langchain_groq import ChatGroq
     from langchain_openai import ChatOpenAI
-    from lanchain_core.prompts import PromptTemplate
+    from langchain_core.prompts import PromptTemplate
     from langchain_core.messages import BaseMessage
     # from sqlalchemy import create_engine
     # from langchain.memory import ConversationSummaryBufferMemory
@@ -46,7 +50,8 @@ except Exception as e:
 
 
 # llm model
-llm_model = "openai/gpt-oss-20b"
+# llm model
+llm_model = os.getenv("MODEL_NAME", "llama3-8b-8192")
 # llm_model = "deepseek/deepseek-chat-v3.1"
 # llm_model="llama3.1:8b"
 
@@ -71,6 +76,7 @@ chain_with_memory = None
 
 openai_api_key = os.getenv("OPENAI_API_KEY", "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")
 openai_api_base = os.getenv("OPENAI_API_BASE_URL", "https://openrouter.ai/api/v1")
+groq_api_key = os.getenv("GROQ_API_KEY")
 
 
 
@@ -94,13 +100,12 @@ class CustomSummary(BaseModel):
 def create_summarization_chain():
     """Builds a chain that returns a structured CustomSummary object."""
 
-    # CHANGED: Replaced ChatOllama with ChatOpenAI.
-    # Make sure your OPENAI_API_KEY is set in your environment variables.
-    summarizer_llm = ChatOpenAI(
+    # CHANGED: Replaced ChatOpenAI with ChatGroq.
+    # Make sure your GROQ_API_KEY is set in your environment variables.
+    summarizer_llm = ChatGroq(
         model=llm_model,
         temperature=0,
-        api_key=openai_api_key,
-        base_url=openai_api_base
+        api_key=groq_api_key
     )
 
     # Use with_structured_output with our new CustomSummary model
@@ -161,17 +166,14 @@ async def lifespan(app: FastAPI):
                 # ---------------------------
                 # 2. LLM + Memory
                 # ---------------------------
-                # CHANGED: Replaced ChatOllama with ChatOpenAI.
-                # OpenAI-specific parameters like 'num_ctx' are not needed.
-                # Streaming can be enabled/disabled with the `streaming` parameter.
-                print(f"🚀 Initializing OpenAI model: {llm_model}...")
-                llm = ChatOpenAI(
+                # CHANGED: Replaced ChatOpenAI with ChatGroq.
+                print(f"🚀 Initializing Groq model: {llm_model}...")
+                llm = ChatGroq(
                     model=llm_model,
                     temperature=0,
                     streaming=True, # Set to True for streaming responses
                     verbose=True,
-                    api_key=openai_api_key,
-                    base_url=openai_api_base,
+                    api_key=groq_api_key,
                 )
 
                 # Health check to ensure the model is responsive
