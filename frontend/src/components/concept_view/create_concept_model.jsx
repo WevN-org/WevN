@@ -41,7 +41,10 @@ const CreateConceptModel = ({ setShowNodeCreatePopup }) => {
 
 
     const handleSubmit = async () => {
-        if (!currentDomain) return;
+        if (!currentDomain) {
+            toast.error("Please select a domain first");
+            return;
+        }
 
         try {
             let max_links = 20;
