@@ -31,3 +31,5 @@ backend/server/db/
 backend/server/chat_memory.db
 __pycache__/
 __models__/
+penv
+.env
